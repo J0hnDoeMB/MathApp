@@ -3012,3 +3012,15 @@ body.theme-dark .settings-body select { background: #101822; color: var(--ink); 
 #historyDrawer, #reviewDrawer, #quizDrawer, #kbDrawer, #styleDrawer, #settingsDrawer {
   z-index: 2147483000 !important;
 }
+.settings-diag {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  background: var(--hover-soft);
+  font-size: 12.5px;
+}
+.settings-diag b { color: var(--ink); }
+.settings-diag button { align-self: flex-start; }

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.3 - 2026-10-19
+
+### Added
+- Preflight `start-mathapp.ps1 -Check` (Node/Python/SymPy/Whisper/port/key).
+- `GET /api/diagnostics` and the Settings "Funzionalità" panel.
+- README core/optional matrix, troubleshooting guide and architecture notes.
+
 ## v1.0.2 - 2026-10-19
 
 ### Fixed

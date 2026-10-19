@@ -22,6 +22,24 @@ Al primo avvio compare un banner: apri **Impostazioni**, scegli il provider (**O
 
 La chiave resta in `settings.json`, solo sul tuo PC, e non viene mai mostrata. Senza chiave l'app resta utilizzabile per il quaderno SymPy/GeoGebra ma la chat non risponde. Le dipendenze Python (SymPy, Whisper) sono opzionali: senza di esse restano disponibili chat e GeoGebra.
 
+## Core e funzionalità opzionali
+
+| Funzione | Richiede | Se manca |
+|---|---|---|
+| Chat AI, API key, conversazioni, impostazioni | Node.js | - |
+| GeoGebra e LaTeX | browser + internet (CDN) | la chat funziona, manca il disegno |
+| Calcolo esatto, studio di funzione, matrici, vettori | Python + SymPy | la chat funziona; il quaderno esatto no |
+| Dettatura | Python + faster-whisper | il microfono non è disponibile |
+| Quiz, ripasso, appunti, stile, TTS | solo l'app | - |
+
+Il **core è Node-only**: non serve Python per avviare, chattare, disegnare o salvare le conversazioni. Python/SymPy/Whisper sono opzionali e vengono rilevati all'avvio.
+
+## Diagnostica
+
+- `.\start-mathapp.ps1 -Check` mostra Node/Python/SymPy/Whisper, porta e chiave senza avviare il server.
+- In **Impostazioni → Funzionalità** vedi lo stato e puoi ricontrollare.
+- Problemi comuni: [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
+
 ## Come si usa
 - Scrivi la domanda nella chat (a destra). Invio per inviare, Shift+Invio per andare a capo.
 - L'IA può usare due strumenti: **SymPy** (calcolo esatto) e **GeoGebra** (disegno + modifica della geometria).

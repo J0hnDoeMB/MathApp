@@ -36,6 +36,24 @@ const EXTRACT_PY = path.join(__dirname, "extract.py");
 const TRANSCRIBE_PY = path.join(__dirname, "transcribe.py");
 const SETTINGS_FILE = process.env.MATHAPP_SETTINGS_FILE || path.join(__dirname, "settings.json");
 const MAX_BODY = 64 * 1024 * 1024;
+// Diagnostica delle dipendenze opzionali (cache 60 s: Python puo' essere lento).
+let diagCache = { ts: 0, data: null };
+function detectOptional() {
+  if (diagCache.data && Date.now() - diagCache.ts < 60000) return diagCache.data;
+  const out = { python: null, sympy: null, whisper: false };
+  try {
+    const r = spawnSync("python", ["-c", "import sys; print(sys.version.split()[0])"], { encoding: "utf8", timeout: 3000, windowsHide: true });
+    if (r.status === 0) {
+      out.python = String(r.stdout || "").trim();
+      const s = spawnSync("python", ["-c", "import sympy; print(sympy.__version__)"], { encoding: "utf8", timeout: 4000, windowsHide: true });
+      if (s.status === 0) out.sympy = String(s.stdout || "").trim();
+      const w = spawnSync("python", ["-c", "import faster_whisper; print('ok')"], { encoding: "utf8", timeout: 4000, windowsHide: true });
+      out.whisper = w.status === 0;
+    }
+  } catch {}
+  diagCache = { ts: Date.now(), data: out };
+  return out;
+}
 function saveSettingsFile() {
   const tmp = SETTINGS_FILE + ".tmp." + process.pid + "." + Math.random().toString(36).slice(2);
   fs.writeFileSync(tmp, JSON.stringify(SETTINGS, null, 2), "utf8");
@@ -1214,6 +1232,15 @@ const server = http.createServer((req, res) => {
     const def = (SETTINGS.model && list.includes(SETTINGS.model)) ? SETTINGS.model : list[0];
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
     return res.end(JSON.stringify({ models: list, default: def, provider: providerName(), hasKey: keySource() !== "none", vision: MODEL_VISION, visionFallback: VISION_FALLBACK }));
+  }
+  if (req.method === "GET" && url.pathname === "/api/diagnostics") {
+    const d = detectOptional();
+    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    return res.end(JSON.stringify({
+      ok: true, node: process.version, platform: process.platform, port: PORT,
+      python: d.python, sympy: d.sympy, whisper: d.whisper,
+      provider: providerName(), model: SETTINGS.model || MODELS[0], hasKey: keySource() !== "none"
+    }));
   }
   if (req.method === "GET" && url.pathname === "/api/settings") {
     const src = keySource();

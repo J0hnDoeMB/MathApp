@@ -2968,6 +2968,16 @@ function initPreferences() {
 // ---------- impostazioni: API key e preferenze ----------
 let settingsData = null;
 
+async function loadDiagnostics() {
+  const el = $("#diagStatus");
+  if (!el) return;
+  try {
+    const r = await fetch("/api/diagnostics");
+    const d = await r.json();
+    el.textContent = "Node " + d.node + " · Python " + (d.python || "non installato") + " · SymPy " + (d.sympy || "non installato") + " · Whisper " + (d.whisper ? "ok" : "non installato");
+  } catch { el.textContent = "diagnostica non disponibile"; }
+}
+
 async function loadSettings() {
   try { const r = await fetch("/api/settings"); settingsData = await r.json(); } catch { settingsData = null; }
   const d = settingsData;
@@ -2987,6 +2997,7 @@ async function loadSettings() {
       mdl.value = d.model || mj.default;
     } catch {}
   }
+  loadDiagnostics();
 }
 
 async function saveSettings(extra) {
@@ -3022,6 +3033,7 @@ function initSettingsUI() {
   const so = $("#setupOpen"); if (so) so.addEventListener("click", () => { d.hidden = false; loadSettings(); });
   $("#settingsSave").addEventListener("click", () => saveSettings());
   $("#settingsClearKey").addEventListener("click", () => saveSettings({ clearKey: true }));
+  const dr = $("#diagRefresh"); if (dr) dr.addEventListener("click", () => { loadDiagnostics(); });
 }
 
 initSettingsUI();

@@ -66,6 +66,10 @@ try {
   const j0 = JSON.parse(s0.body);
   chk("GET /api/settings -> provider openrouter senza chiave", j0.ok === true && j0.provider === "openrouter" && j0.hasKey === false);
 
+  const diag = await request(port, "GET", "/api/diagnostics");
+  const dj = JSON.parse(diag.body);
+  chk("GET /api/diagnostics -> 200", diag.status === 200 && dj.ok === true && typeof dj.node === "string" && typeof dj.python !== "undefined");
+
   const evil = await request(port, "POST", "/api/settings", { origin: "https://evil.example", headers: { "Content-Type": "application/json" }, body: "{}" });
   chk("POST cross-origin -> 403", evil.status === 403);
 
