@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.0 - 2026-10-19
+
+### Changed
+- Refactor: `server.mjs` split into `lib/config.mjs`, `lib/models.mjs`, `lib/llm.mjs` and `lib/log.mjs`; one client for OpenCode/OpenRouter. Behavior unchanged; both provider paths verified with a real chat.
+- `server.mjs` is ~1,640 lines (from ~1,930); the remaining split (SymPy, KB, conversations, backups) is documented in `docs/ARCHITECTURE.md`.
+
 ## v1.0.3 - 2026-10-19
 
 ### Added

@@ -3,63 +3,21 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { parseCards } from "./lib/flashparse.mjs";
 import { parseQuiz } from "./lib/quizparse.mjs";
+import { settings as SETTINGS, SETTINGS_FILE, MAX_BODY, providerName, keySource, currentKey, getKey, saveSettingsFile, detectOptional } from "./lib/config.mjs";
+import { MODELS, MODEL_VISION, VISION_FALLBACK, MODEL_CAPS, pickSpecialist, OR_MODEL_MAP } from "./lib/models.mjs";
+import { logErr } from "./lib/log.mjs";
+import { streamUpstream, callModel, transcribeImages } from "./lib/llm.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.MATHAPP_PORT) || 8790;
-const UPSTREAM = "https://opencode.ai/zen/go/v1/chat/completions";
-const AUTH_FILE = process.env.MATHAPP_AUTH_FILE || path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
-const MODELS_JSON = process.env.MATHAPP_MODELS_JSON || path.join(os.homedir(), ".cache", "opencode", "models.json");
-// Fallback: se la chiave opencode scade o viene rifiutata, si continua con OpenRouter
-// (chiave dell'utente in auth.json; consumo a token). MATHAPP_NO_OR_FALLBACK=1 lo disattiva.
-const OR_UPSTREAM = "https://openrouter.ai/api/v1/chat/completions";
-const OR_FALLBACK = process.env.MATHAPP_NO_OR_FALLBACK !== "1";
-const OR_ROUTING = { order: ["Morph", "DeepSeek", "Together", "Fireworks", "Novita", "DigitalOcean", "DeepInfra"], allow_fallbacks: true };
-const OR_MODEL_MAP = {
-  "deepseek-v4.1-flash": "deepseek/deepseek-v4.1-flash",
-  "deepseek-v4-flash": "deepseek/deepseek-v4-flash",
-  "deepseek-v4-pro": "deepseek/deepseek-v4-pro",
-  "glm-5.3-flash": "z-ai/glm-5.3-flash",
-  "mimo-v2.6-flash": "xiaomi/mimo-v2.6-flash",
-  "qwen3.8-flash": "qwen/qwen3.8-flash",
-  "qwen3.8-max": "qwen/qwen3.8-max-0902",
-  "longcat-2.5-preview-free": "meituan/longcat-2.0",
-};
-const OR_DEFAULT = "deepseek/deepseek-v4-flash";
 const SYMPY_CLI = path.join(__dirname, "sympy_cli.py");
 const EXTRACT_PY = path.join(__dirname, "extract.py");
 const TRANSCRIBE_PY = path.join(__dirname, "transcribe.py");
-const SETTINGS_FILE = process.env.MATHAPP_SETTINGS_FILE || path.join(__dirname, "settings.json");
-const MAX_BODY = 64 * 1024 * 1024;
-// Diagnostica delle dipendenze opzionali (cache 60 s: Python puo' essere lento).
-let diagCache = { ts: 0, data: null };
-function detectOptional() {
-  if (diagCache.data && Date.now() - diagCache.ts < 60000) return diagCache.data;
-  const out = { python: null, sympy: null, whisper: false };
-  try {
-    const r = spawnSync("python", ["-c", "import sys; print(sys.version.split()[0])"], { encoding: "utf8", timeout: 3000, windowsHide: true });
-    if (r.status === 0) {
-      out.python = String(r.stdout || "").trim();
-      const s = spawnSync("python", ["-c", "import sympy; print(sympy.__version__)"], { encoding: "utf8", timeout: 4000, windowsHide: true });
-      if (s.status === 0) out.sympy = String(s.stdout || "").trim();
-      const w = spawnSync("python", ["-c", "import faster_whisper; print('ok')"], { encoding: "utf8", timeout: 4000, windowsHide: true });
-      out.whisper = w.status === 0;
-    }
-  } catch {}
-  diagCache = { ts: Date.now(), data: out };
-  return out;
-}
-function saveSettingsFile() {
-  const tmp = SETTINGS_FILE + ".tmp." + process.pid + "." + Math.random().toString(36).slice(2);
-  fs.writeFileSync(tmp, JSON.stringify(SETTINGS, null, 2), "utf8");
-  fs.renameSync(tmp, SETTINGS_FILE);
-}
-let SETTINGS = (() => { try { return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8")); } catch { return {}; } })();
 const WHISPER_MODEL = SETTINGS.whisperModel || "large-v3-turbo";
 let WHISPER_LANG = SETTINGS.whisperLanguage || "it";
 const WHISPER_TIMEOUT_MS = Math.max(30000, Number(process.env.MATHAPP_WHISPER_TIMEOUT_MS) || 30 * 60 * 1000);
@@ -195,123 +153,7 @@ const EXPLAIN_PROMPT = `Spieghi a uno studente i passaggi di un calcolo gia' ris
 - Al massimo ~12 righe. Niente titoli e niente introduzione: inizia subito dal primo passaggio.
 - Notazione: \\cdot per moltiplicare (non *), \\frac per le frazioni, ^{...} per gli esponenti.`;
 
-const MODELS = [
-  "deepseek-v4.1-flash",
-  "deepseek-v4-flash",
-  "glm-5.3-flash",
-  "mimo-v2.6-flash",
-  "qwen3.8-flash",
-  "longcat-2.5-preview-free",
-  "space-bunny",
-  "deepseek-v4-pro",
-  "qwen3.8-max",
-];
-
-// Capacità dei modelli (dal catalogo opencode): chi legge le immagini?
-const MODEL_VISION = (() => {
-  const out = {};
-  try {
-    const mj = JSON.parse(fs.readFileSync(MODELS_JSON, "utf8"));
-    const go = (mj["opencode-go"] && mj["opencode-go"].models) || {};
-    for (const [id, m] of Object.entries(go)) {
-      const inp = (m.modalities && m.modalities.input) || [];
-      const list = Array.isArray(inp) ? inp : String(inp).split(/\s+/);
-      out[id] = list.includes("image");
-    }
-  } catch {}
-  return out;
-})();
-const VISION_FALLBACK = MODELS.find((m) => MODEL_VISION[m] === true) || "deepseek-v4.1-flash";
-
-// Capacità complete (contesto, costo, tool) per l'orchestrazione.
-const MODEL_CAPS = (() => {
-  const out = {};
-  try {
-    const mj = JSON.parse(fs.readFileSync(MODELS_JSON, "utf8"));
-    const go = (mj["opencode-go"] && mj["opencode-go"].models) || {};
-    for (const [id, m] of Object.entries(go)) {
-      const raw = (m.modalities && m.modalities.input) || [];
-      const inp = Array.isArray(raw) ? raw : String(raw).split(/\s+/);
-      out[id] = {
-        image: inp.includes("image"), audio: inp.includes("audio"), video: inp.includes("video"),
-        tools: !!m.tool_call,
-        context: (m.limit && m.limit.context) || 0,
-        costIn: (m.cost && m.cost.input) || 0, costOut: (m.cost && m.cost.output) || 0,
-      };
-    }
-  } catch {}
-  return out;
-})();
-
-// specialisti usati dal tool "delega" — solo modelli VERIFICATI sul nostro endpoint (protocollo OpenAI).
-// gpt-*-luna e grok-* NON funzionano qui: rispondono "ModelProtocolUnsupported".
-const OPENAI_OK = ["deepseek-v4.1-flash", "deepseek-v4-flash", "deepseek-v4-pro", "glm-5.3", "glm-5.3-flash", "qwen3.8-max", "qwen3.7-plus", "qwen3.8-flash", "kimi-k3", "minimax-m3", "mimo-v2.6-pro", "mimo-v2.6-flash", "longcat-2.0", "hy3"];
-const EXPERT_MODEL = ["qwen3.8-max", "deepseek-v4-pro", "glm-5.3"].find((m) => OPENAI_OK.includes(m)) || MODELS[0];
-const VERIFY_MODEL = ["deepseek-v4-pro", "glm-5.3", "kimi-k3"].find((m) => OPENAI_OK.includes(m)) || MODELS[0];
-const LONG_MODEL = ["deepseek-v4.1-flash", "deepseek-v4-pro", "qwen3.7-plus"].find((m) => OPENAI_OK.includes(m)) || MODELS[0];
-
-function pickSpecialist(tipo, primary) {
-  const t = String(tipo || "").toLowerCase();
-  if (t.includes("vision") || t.includes("immagin")) return VISION_FALLBACK;
-  if (t.includes("lung") || t.includes("long")) return LONG_MODEL === primary ? EXPERT_MODEL : LONG_MODEL;
-  if (t.includes("verif") || t.includes("controll")) return VERIFY_MODEL === primary ? EXPERT_MODEL : VERIFY_MODEL;
-  return EXPERT_MODEL === primary ? VERIFY_MODEL : EXPERT_MODEL;
-}
 const MAX_DELEGHE = 2;
-
-function legacyAuth() {
-  try { return JSON.parse(fs.readFileSync(AUTH_FILE, "utf8")) || {}; } catch { return {}; }
-}
-function legacyKey(name) {
-  const v = legacyAuth()[name];
-  return (v && v.key) ? String(v.key) : "";
-}
-function providerName() {
-  if (SETTINGS.provider === "opencode" || SETTINGS.provider === "openrouter") return SETTINGS.provider;
-  return legacyKey("opencode-go") ? "opencode" : "openrouter";
-}
-function currentKey() {
-  if (typeof SETTINGS.apiKey === "string" && SETTINGS.apiKey) return SETTINGS.apiKey;
-  return legacyKey(providerName() === "opencode" ? "opencode-go" : "openrouter");
-}
-function keySource() {
-  if (typeof SETTINGS.apiKey === "string" && SETTINGS.apiKey) return "settings";
-  return legacyKey(providerName() === "opencode" ? "opencode-go" : "openrouter") ? "legacy" : "none";
-}
-const useOR = () => providerName() === "openrouter";
-
-function getKey() {
-  const k = currentKey();
-  if (!k) throw new Error("API key non configurata: apri Impostazioni e inserisci la chiave.");
-  return k;
-}
-
-// chiave OpenRouter (fallback quando opencode risponde 401/403, o provider principale)
-function getOrKey() {
-  const k = (useOR() && SETTINGS.apiKey) ? SETTINGS.apiKey : legacyKey("openrouter");
-  if (!k) throw new Error("chiave OpenRouter non configurata: apri Impostazioni e inserisci la chiave.");
-  return k;
-}
-
-const OR_NOTICE = "La chiave opencode e' scaduta o rifiutata: sto rispondendo via OpenRouter (a consumo). Rigenera la chiave da OpenCode Console oppure imposta la tua API key in Impostazioni.";
-
-// richiesta all'upstream OpenRouter (stesso payload, modello mappato, routing Morph-first)
-async function openUpstreamOpenRouter(body, signal, why) {
-  const payload = { ...body.payload };
-  const src = String(payload.model || "");
-  payload.model = OR_MODEL_MAP[src] || OR_DEFAULT;
-  payload.provider = OR_ROUTING;
-  const res = await fetch(OR_UPSTREAM, {
-    method: "POST",
-    headers: { "Authorization": "Bearer " + getOrKey(), "Content-Type": "application/json", "User-Agent": "mathapp/1.0" },
-    body: JSON.stringify(payload),
-    signal,
-  });
-  if (!res.ok) throw new Error("fallback OpenRouter HTTP " + res.status + ": " + (await res.text()).slice(0, 300));
-  logErr(`OpenRouter (${src} → ${payload.model}): ${String(why).slice(0, 160)}`);
-  res.__fallback = "openrouter";
-  return res;
-}
 
 const SYSTEM = `Sei un tutor di matematica che risponde SEMPRE in italiano.
 Regole:
@@ -751,170 +593,9 @@ function runGGBEdit(send, ops, signal) {
 
 // "Strumento visione": fa trascrivere le immagini da un modello che le vede,
 // così anche i modelli solo-testo possono usarle.
-async function transcribeImages(atts, sessionId, signal) {
-  const parts = [{ type: "text", text: "Trascrivi fedelmente il contenuto di queste immagini in Markdown. Metti le formule in LaTeX tra $...$. Non risolvere e non commentare: trascrivi soltanto. Se c'e' un grafico, descrivilo in una riga." }];
-  for (const a of atts.slice(0, 3)) parts.push({ type: "image_url", image_url: { url: `data:${a.mime};base64,${a.b64}` } });
-  if (useOR()) {
-    const r = await fetch(OR_UPSTREAM, {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + getOrKey(), "Content-Type": "application/json", "User-Agent": "mathapp/1.0" },
-      body: JSON.stringify({ model: OR_MODEL_MAP[VISION_FALLBACK] || OR_DEFAULT, provider: OR_ROUTING, messages: [{ role: "user", content: parts }], stream: false, max_tokens: 1600 }),
-      signal,
-    });
-    if (!r.ok) throw new Error("vision tool HTTP " + r.status + ": " + (await r.text()).slice(0, 200));
-    const j = await r.json();
-    return String((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "").trim();
-  }
-  let res = await fetch(UPSTREAM, {
-    method: "POST",
-    headers: { "Authorization": "Bearer " + getKey(), "Content-Type": "application/json", "User-Agent": "mathapp/1.0", "x-opencode-session": sessionId + "-vision" },
-    body: JSON.stringify({ model: VISION_FALLBACK, messages: [{ role: "user", content: parts }], stream: false, max_tokens: 1600 }),
-    signal,
-  });
-  if (!res.ok && (res.status === 401 || res.status === 403) && OR_FALLBACK) {
-    const why = (await res.text()).slice(0, 160);
-    res = await fetch(OR_UPSTREAM, {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + getOrKey(), "Content-Type": "application/json", "User-Agent": "mathapp/1.0" },
-      body: JSON.stringify({ model: OR_MODEL_MAP[VISION_FALLBACK] || OR_DEFAULT, provider: OR_ROUTING, messages: [{ role: "user", content: parts }], stream: false, max_tokens: 1600 }),
-      signal,
-    });
-    logErr(`transcribeImages fallback OpenRouter: ${why.slice(0, 120)}`);
-  }
-  if (!res.ok) throw new Error("vision tool HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
-  const j = await res.json();
-  return String((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "").trim();
-}
-
 // ---------- SSE upstream parse ----------
-const LOGFILE = path.join(__dirname, "mathapp.log");
-function logErr(m) {
-  try {
-    try { if (fs.statSync(LOGFILE).size > 512 * 1024) fs.writeFileSync(LOGFILE, ""); } catch {}
-    fs.appendFileSync(LOGFILE, `[${new Date().toISOString()}] ${m}\n`);
-  } catch {}
-}
 // cache con tetto: evita crescita illimitata in sessioni lunghe
 const cachePut = (map, key, val, max = 24) => { if (!map.has(key) && map.size >= max) map.clear(); map.set(key, val); return val; };
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function openUpstream(body, signal) {
-  if (useOR()) return openUpstreamOpenRouter(body, signal, "provider=openrouter");
-  const key = getKey();
-  let lastErr;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    if (signal && signal.aborted) throw new Error("richiesta annullata dal client");
-    let res;
-    try {
-      res = await fetch(UPSTREAM, {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + key, "Content-Type": "application/json",
-          "User-Agent": "mathapp/1.0", "x-opencode-session": body.sessionId,
-        },
-        body: JSON.stringify(body.payload),
-        signal,
-      });
-    } catch (e) {
-      if (signal && signal.aborted) throw e;
-      lastErr = e; logErr(`upstream fetch ERR tentativo ${attempt}: ${e.message}`); if (attempt < 2) { await sleep(1500); continue; } throw e;
-    }
-    if (res.ok) return res;
-    const txt = await res.text();
-    lastErr = new Error(`upstream HTTP ${res.status}: ${txt.slice(0, 400)}`);
-    logErr(`upstream HTTP ${res.status} (tentativo ${attempt}): ${txt.slice(0, 400)}`);
-    // chiave scaduta o rifiutata: riprovare è inutile → fallback OpenRouter
-    if ((res.status === 401 || res.status === 403) && OR_FALLBACK) {
-      return openUpstreamOpenRouter(body, signal, txt);
-    }
-    if ((res.status >= 500 || res.status === 429) && attempt < 2) { await sleep(1500); continue; }
-    throw lastErr;
-  }
-  throw lastErr;
-}
-
-async function streamUpstream(body, onDelta, signal) {
-  const res = await openUpstream(body, signal);
-  if (res.__fallback) { try { onDelta("notice", { text: OR_NOTICE }); } catch {} }
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = "";
-  const acc = { content: "", reasoning: "", toolCalls: [], finish: null };
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i;
-    while ((i = buf.indexOf("\n")) >= 0) {
-      const line = buf.slice(0, i).trim();
-      buf = buf.slice(i + 1);
-      if (!line.startsWith("data:")) continue;
-      const data = line.slice(5).trim();
-      if (data === "[DONE]") continue;
-      let chunk;
-      try { chunk = JSON.parse(data); } catch { continue; }
-      const ch = chunk.choices && chunk.choices[0];
-      if (!ch) continue;
-      const d = ch.delta || {};
-      if (d.content) { acc.content += d.content; onDelta("delta", { text: d.content }); }
-      if (d.reasoning_content) { acc.reasoning += d.reasoning_content; onDelta("reasoning", { text: d.reasoning_content }); }
-      if (d.tool_calls) {
-        for (const tc of d.tool_calls) {
-          const idx = tc.index ?? 0;
-          acc.toolCalls[idx] = acc.toolCalls[idx] || { id: "", name: "", args: "" };
-          if (tc.id) acc.toolCalls[idx].id = tc.id;
-          if (tc.function?.name) acc.toolCalls[idx].name = tc.function.name;
-          if (tc.function?.arguments) acc.toolCalls[idx].args += tc.function.arguments;
-        }
-      }
-      if (ch.finish_reason) acc.finish = ch.finish_reason;
-      if (chunk.usage) acc.usage = chunk.usage;
-    }
-  }
-  return acc;
-}
-
-// ---------- orchestrazione: chiamata singola, delega, escalation ----------
-async function callModel(model, messages, opts = {}) {
-  const payload = Object.assign({ model, messages, stream: false, max_tokens: opts.maxTokens || 1400 }, opts.tools ? { tools: opts.tools } : {});
-  if (useOR()) {
-    const orPayload = { ...payload, model: OR_MODEL_MAP[model] || OR_DEFAULT, provider: OR_ROUTING };
-    const r = await fetch(OR_UPSTREAM, {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + getOrKey(), "Content-Type": "application/json", "User-Agent": "mathapp/1.0" },
-      body: JSON.stringify(orPayload),
-      signal: opts.signal,
-    });
-    if (!r.ok) throw new Error("HTTP " + r.status + ": " + (await r.text()).slice(0, 200));
-    const j = await r.json();
-    const msg = (j.choices && j.choices[0] && j.choices[0].message) || {};
-    return { text: String(msg.content || "").trim(), reasoning: String(msg.reasoning_content || "").trim() };
-  }
-  let res = await fetch(UPSTREAM, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + getKey(), "Content-Type": "application/json",
-      "User-Agent": "mathapp/1.0", "x-opencode-session": opts.sessionId || "delega-" + Date.now(),
-    },
-    body: JSON.stringify(payload),
-    signal: opts.signal,
-  });
-  if (!res.ok && (res.status === 401 || res.status === 403) && OR_FALLBACK) {
-    const why = (await res.text()).slice(0, 160);
-    const orPayload = { ...payload, model: OR_MODEL_MAP[model] || OR_DEFAULT, provider: OR_ROUTING };
-    res = await fetch(OR_UPSTREAM, {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + getOrKey(), "Content-Type": "application/json", "User-Agent": "mathapp/1.0" },
-      body: JSON.stringify(orPayload),
-      signal: opts.signal,
-    });
-    logErr(`callModel fallback OpenRouter (${model} → ${orPayload.model}): ${why.slice(0, 120)}`);
-  }
-  if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
-  const j = await res.json();
-  const msg = (j.choices && j.choices[0] && j.choices[0].message) || {};
-  return { text: String(msg.content || "").trim(), reasoning: String(msg.reasoning_content || "").trim() };
-}
 
 async function runDelega(args, send, primary, signal) {
   const richiesta = String(args.richiesta || "").trim();

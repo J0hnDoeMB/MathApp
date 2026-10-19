@@ -190,11 +190,11 @@ try {
     assert.ok(whisperResult.ok, "trascrizione: " + JSON.stringify(whisperResult).slice(0, 200));
     assert.match(whisperResult.text || "", /derivata/i);
     assert.equal(whisperResult.language, "it");
+    await waitFor(() => countTempWorkers() === 1, "il worker Whisper non è rimasto attivo dopo la trascrizione", 8000);
+    await waitFor(() => countTempWorkers() === 0, "il worker Whisper non si è spento dopo l'inattività", 20000);
   } else {
     console.log("SKIP whisper: imposta MATHAPP_TEST_AUDIO con un file audio di prova.");
   }
-  await waitFor(() => countTempWorkers() === 1, "il worker Whisper non è rimasto attivo dopo la trascrizione", 8000);
-  await waitFor(() => countTempWorkers() === 0, "il worker Whisper non si è spento dopo l'inattività", 20000);
 
   const abort = new AbortController();
   const response = await fetch(base + "/api/chat", {

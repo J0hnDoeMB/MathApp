@@ -12,14 +12,21 @@ This boundary is the main answer to setup fragility: a missing optional dependen
 
 ## Current shape
 
-`server.mjs` is still a monolith (~1,900 lines): HTTP routes, provider client, chat orchestration, SymPy/GeoGebra tools, knowledge base, reviews and backups live together. It is covered by server/security and Python tests, but the file is the main maintenance risk.
+`server.mjs` is now ~1,640 lines (from ~1,930). The stable parts have been extracted without behavior changes:
+
+- `lib/config.mjs` - paths, settings file (atomic writes), provider/key resolution, optional-dependency detection.
+- `lib/models.mjs` - model catalog, capabilities, OpenRouter mapping and specialists.
+- `lib/llm.mjs` - one client for OpenCode/OpenRouter (streaming, non-streaming, vision), retries and fallbacks.
+- `lib/log.mjs` - bounded error log.
+
+Still in `server.mjs`: HTTP routes, chat orchestration/tool schemas, SymPy bridge, knowledge base, conversations/reviews and backups.
 
 ## Planned split (incremental, no behavior change)
 
-1. `lib/config.mjs` - runtime paths, settings file (atomic writes), provider/key resolution, capability detection.
-2. `lib/llm.mjs` - one OpenAI-compatible client (OpenRouter/OpenCode endpoints, model mapping, retries, timeouts, streaming, vision). Removes the duplicated HTTP paths.
-3. `lib/sympy-tools.mjs` - Python bridge, timeouts/concurrency limits, tool schemas.
-4. `lib/kb.mjs`, `lib/reviews.mjs`, `lib/conversations.mjs`, `lib/backup.mjs` - storage and domain logic.
+1. ~~`lib/config.mjs` - runtime paths, settings file (atomic writes), provider/key resolution, capability detection.~~
+2. ~~`lib/models.mjs` + `lib/log.mjs` - catalog/capabilities and logging.~~
+3. ~~`lib/llm.mjs` - one OpenAI-compatible client (OpenRouter/OpenCode endpoints, model mapping, retries, timeouts, streaming, vision).~~
+4. Next: `lib/sympy-tools.mjs`, `lib/kb.mjs`, `lib/conversations.mjs`, `lib/backup.mjs`.
 5. `server.mjs` - routes, chat orchestration and startup only.
 
 Each step is a mechanical extraction verified by `npm test`, the server/security suite and `test_server_cancel.mjs`; the browser tests remain manual.

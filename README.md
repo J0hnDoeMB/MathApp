@@ -219,6 +219,7 @@ Il **core è Node-only**: non serve Python per avviare, chattare, disegnare o sa
 - `transcribe.py` — trascrizione audio locale (worker persistente con modello caldo)
 - `test_sympy_cli.py`, `test_xss.mjs`, `test_conversation_restore.mjs`, `test_conversation_switch.mjs`, `test_geogebra_state.mjs`, `test_geogebra_3d.mjs`, `test_server_cancel.mjs`, `test_whisper.mjs`, `test_algebra_ui.mjs`, `test_layout.mjs`, `test_tutor.mjs`, `test_review.mjs`, `test_vista.mjs`, `test_analisi.mjs`, `test_lavagna.mjs`, `test_strumenti.mjs`, `test_tts.mjs`, `test_fasec.mjs`, `test_tags.mjs`, `test_ripasso.mjs`, `test_quiz.mjs`, `test_stop.mjs`, `test_flashparse.mjs`, `test_quizparse.mjs` — regressioni parser, XSS, sessioni/GeoGebra (anche 3D), server, trascrittore, quaderno, layout, modo tutor, ripasso, pannello Vista, laboratorio di analisi, lavagna, strumenti, dettatura, fasi C/D (dati, tag, quiz) e parser di flashcard/quiz
 - `lib/flashparse.mjs`, `lib/quizparse.mjs` — parser delle flashcard e dei quiz generati dall'IA
+- `lib/config.mjs`, `lib/models.mjs`, `lib/llm.mjs`, `lib/log.mjs` - configurazione/provider, catalogo modelli, client LLM (OpenCode/OpenRouter) e log
 - `extract.py` — estrazione testo dai PDF
 - `public/` — pagina (GeoGebra + chat + quaderno)
 - `start-mathapp.ps1` — avvio
