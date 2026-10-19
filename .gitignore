@@ -1,0 +1,8 @@
+settings.json
+data/
+backups/
+mathapp.log
+__pycache__/
+*.bak
+*.bak-*
+public/*.new.*

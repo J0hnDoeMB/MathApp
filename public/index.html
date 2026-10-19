@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#edf3f3" />
+  <title>MathApp — Tutor di matematica</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23edf3f3'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23a87338' stroke-width='2'/%3E%3Cpath d='M16 4v24M4 16h24' stroke='%231b303d' stroke-width='2'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <link rel="stylesheet" href="/style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://www.geogebra.org/apps/deployggb.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" aria-label="MathApp">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">MathApp</span>
+    </div>
+
+    <div class="toolbar" aria-label="Controlli della sessione">
+      <div class="mode-switch" role="group" aria-label="Modalità di lavoro">
+        <button id="modeFigure" class="mode-btn is-active" type="button" aria-pressed="true">Figura</button>
+        <button id="modeAlgebra" class="mode-btn" type="button" aria-pressed="false">Algebra</button>
+      </div>
+      <label class="model-picker" for="model">
+        <span class="control-label">Modello</span>
+        <select id="model" aria-label="Scegli il modello"></select>
+      </label>
+      <button id="toggleGgb" type="button" title="Mostra o nascondi la figura" aria-controls="ggbwrap">Nascondi figura</button>
+      <button id="historyBtn" type="button" title="Argomenti trattati" aria-controls="historyDrawer">Storico</button>
+      <button id="reviewBtn" type="button" title="Argomenti da rivedere" aria-controls="reviewDrawer">Ripasso<span id="reviewBadge" class="tool-badge" hidden></span></button>
+      <button id="kbBtn" type="button" title="Appunti e libri nella rete concettuale" aria-controls="kbDrawer">Appunti</button>
+      <button id="quizBtn" type="button" title="Verifica te stesso con un quiz" aria-controls="quizDrawer">Quiz</button>
+      <button id="styleBtn" type="button" title="Lo stile che l'IA ha imparato da te" aria-controls="styleDrawer">Stile</button>
+      <button id="newChat" type="button" title="Inizia una nuova conversazione">Nuova chat</button>
+    </div>
+
+    <div class="tool-mini" aria-label="Strumenti di studio">
+      <div class="mode-switch tutor-switch" role="group" aria-label="Modo del tutor">
+        <button id="socraticBtn" class="mode-btn" type="button" aria-pressed="false" title="Esercitami: il tutor ti guida con domande, senza darti la soluzione">Esercitami</button>
+        <button id="stepBtn" class="mode-btn" type="button" aria-pressed="false" title="Passo-passo: la risposta si rivela un blocco alla volta">Passo-passo</button>
+      </div>
+      <button id="exportPdf" type="button" title="Apri la sessione in una finestra pronta da stampare o salvare in PDF">PDF</button>
+      <button id="exportMd" type="button" title="Scarica la sessione in Markdown">MD</button>
+      <button id="themeBtn" type="button" title="Tema chiaro/scuro">◐</button>
+      <button id="settingsBtn" type="button" title="API key e preferenze" aria-controls="settingsDrawer">Impostazioni</button>
+      <span id="usage" title="Token usati in questa sessione"></span>
+    </div>
+
+    <span id="status" class="status" role="status" aria-live="polite"></span>
+  </header>
+
+  <main id="main" aria-label="Spazio di studio">
+  <div id="setupBanner" class="setup-banner" hidden>
+    <span>Per iniziare, inserisci la tua API key.</span>
+    <button id="setupOpen" type="button">Apri impostazioni</button>
+  </div>
+    <section id="panelAlgebra" hidden aria-label="Quaderno di algebra">
+      <div class="panel-heading">
+        <div>
+          <span class="section-label">Algebra</span>
+          <p>Calcolo esatto, senza figura</p>
+        </div>
+        <div class="panel-actions">
+          <span class="panel-note" id="calcCount">nessun calcolo</span>
+          <button id="calcPdf" type="button" title="Apri il quaderno in una finestra pronta da stampare o salvare in PDF">PDF</button>
+        </div>
+      </div>
+      <form id="calcForm" autocomplete="off">
+        <div class="calc-row">
+          <input id="calcExpr" type="text" placeholder="Espressione o equazione — es. x^2-3x+2=0" aria-label="Espressione" />
+          <select id="calcOp" aria-label="Operazione">
+            <optgroup label="Algebra">
+              <option value="simplify">Semplifica</option>
+              <option value="expand">Espandi</option>
+              <option value="factor">Fattorizza</option>
+              <option value="solve">Risolvi</option>
+              <option value="evaluate">Valuta</option>
+            </optgroup>
+            <optgroup label="Analisi">
+              <option value="studio">Studio di funzione</option>
+              <option value="diff">Deriva</option>
+              <option value="integrate">Integra</option>
+              <option value="limit">Limite</option>
+              <option value="series">Serie</option>
+            </optgroup>
+            <optgroup label="Dati e numeri">
+              <option value="stats">Statistica</option>
+              <option value="regressione">Regressione lineare</option>
+              <option value="complesso">Numeri complessi</option>
+              <option value="parziali">Somme parziali</option>
+              <option value="sistema">Sistema di equazioni</option>
+            </optgroup>
+            <optgroup label="Matrici">
+              <option value="det">Determinante</option>
+              <option value="inverse">Inversa</option>
+              <option value="rank">Rango</option>
+              <option value="transpose">Trasposta</option>
+            </optgroup>
+            <optgroup label="Vettori e spazi">
+              <option value="dot">Prodotto scalare</option>
+              <option value="cross">Prodotto vettoriale</option>
+              <option value="norm">Norma</option>
+              <option value="angle">Angolo</option>
+              <option value="projection">Proiezione</option>
+              <option value="independence">Indipendenza</option>
+              <option value="gram_schmidt">Gram-Schmidt</option>
+            </optgroup>
+          </select>
+          <button id="calcGo" type="submit">Calcola</button>
+        </div>
+        <div class="calc-extra">
+          <label id="labVar" hidden>variabile <input id="calcVar" type="text" value="x" /></label>
+          <label id="labA" hidden>da <input id="calcA" type="text" /></label>
+          <label id="labB" hidden>a <input id="calcB" type="text" /></label>
+          <label id="labOrder" hidden>ordine <input id="calcOrder" type="text" inputmode="numeric" /></label>
+          <span class="calc-hint" id="calcHint">Invio per calcolare · ↑ richiama l'ultima espressione</span>
+        </div>
+      </form>
+      <div id="calcEmpty" class="calc-empty">
+        <p class="calc-empty-title">Il quaderno è vuoto</p>
+        <p class="calc-empty-sub">Scrivi un'espressione e premi <b>Calcola</b>. I risultati restano qui, in ordine; con <b>Spiega</b> il tutor li commenta.</p>
+        <div class="calc-examples" aria-label="Esempi da provare">
+          <span>Prova:</span>
+          <button type="button" data-op="factor" data-expr="x^2-9">Fattorizza x²−9</button>
+          <button type="button" data-op="solve" data-expr="x^2-3x+2=0">Risolvi x²−3x+2=0</button>
+          <button type="button" data-op="limit" data-expr="sin(x)/x" data-point="0">Limite sin(x)/x → 0</button>
+          <button type="button" data-op="studio" data-expr="x^2-3x+2">Studia x²−3x+2</button>
+        </div>
+      </div>
+      <div id="calcCells"></div>
+    </section>
+
+    <section id="ggbwrap" aria-label="Figura interattiva">
+      <div class="panel-heading">
+        <div>
+          <span class="section-label">Figura</span>
+          <p>Costruisci · manipola · osserva</p>
+        </div>
+        <div class="fig-head">
+          <select id="figSel" class="fig-sel" title="Costruzioni salvate in questa sessione" disabled>
+            <option value="">nessuna costruzione</option>
+          </select>
+          <button id="viewBtn" type="button" title="Personalizza la finestra del grafico: intervalli, assi, griglia" aria-expanded="false">Vista</button>
+          <button id="view3d" type="button" title="Mostra o nascondi la vista 3D (solidi, superfici, funzioni di due variabili)" aria-pressed="false">3D</button>
+          <button id="view3dReset" type="button" hidden title="Ripristina l'orientamento standard della vista 3D">⟲</button>
+          <button id="undoFig" type="button" title="Annulla l'ultima modifica alla lavagna (Ctrl+Z)">↶</button>
+          <button id="redoFig" type="button" title="Ripeti la modifica annullata (Ctrl+Y)">↷</button>
+          <button id="saveFig" type="button" title="Salva la lavagna come immagine PNG">⬇ PNG</button>
+          <button id="clearFigs" type="button" title="Svuota l'elenco delle costruzioni e ripulisci la lavagna">Pulisci</button>
+        </div>
+      </div>
+      <div id="viewPanel" class="view-panel" hidden role="dialog" aria-label="Finestra del grafico">
+        <div class="vp-head">
+          <b>Finestra del grafico</b>
+          <button id="viewClose" type="button" title="Chiudi">✕</button>
+        </div>
+        <div class="vp-grid">
+          <label>x min<input id="vxmin" type="number" step="any" inputmode="decimal" /></label>
+          <label>x max<input id="vxmax" type="number" step="any" inputmode="decimal" /></label>
+          <label>y min<input id="vymin" type="number" step="any" inputmode="decimal" /></label>
+          <label>y max<input id="vymax" type="number" step="any" inputmode="decimal" /></label>
+        </div>
+        <div class="vp-checks">
+          <label><input id="vaxes" type="checkbox" checked /> assi</label>
+          <label><input id="vgrid" type="checkbox" /> griglia</label>
+        </div>
+        <div class="vp-actions">
+          <button id="viewApply" type="button" class="vp-primary">Applica</button>
+          <button id="viewFit" type="button" title="Inquadra funzioni e punti notevoli del grafico">Adatta</button>
+          <button id="viewStd" type="button" title="Finestra standard da −10 a 10">Standard</button>
+        </div>
+        <div class="vp-hint" id="viewHint">La finestra si salva nella conversazione. In 3D si regola con rotella e trascinamento.</div>
+      </div>
+      <div id="ggb"></div>
+      <div id="figTools" aria-label="Strumenti rapidi sulla lavagna">
+        <span class="ft-label">f(x) =</span>
+        <input id="ftFn" type="text" placeholder="es. x^2-1" aria-label="Funzione per area e tangente" />
+        <label>da <input id="ftA" type="text" inputmode="decimal" class="ft-num" /></label>
+        <label>a <input id="ftB" type="text" inputmode="decimal" class="ft-num" /></label>
+        <button id="ftArea" type="button" title="Colora l'area sotto la curva fra a e b">Area</button>
+        <label>punto <input id="ftX0" type="text" inputmode="decimal" class="ft-num" /></label>
+        <button id="ftTangent" type="button" title="Disegna la retta tangente nel punto indicato">Tangente</button>
+        <button id="ftTangentAnim" type="button" title="Cursore t che scorre: la tangente si muove lungo la curva">Tangente animata</button>
+      </div>
+    </section>
+    <div id="divider" title="Trascina per ridimensionare le aree" role="separator" aria-orientation="vertical" aria-label="Ridimensiona figura e spiegazione"></div>
+    <section id="chatpanel" aria-label="Conversazione con il tutor">
+      <div class="chat-heading">
+        <div>
+          <span class="section-label">Spiegazione</span>
+          <p>Passaggi, intuizioni e formule</p>
+        </div>
+        <span class="chat-heading-note">Tutor di matematica</span>
+      </div>
+      <div id="chat"></div>
+      <button id="jumpBtn" class="jump-btn" type="button" hidden>↓ Vai in fondo</button>
+      <div id="modeHint" class="mode-hint" hidden>
+        <span></span>
+        <button id="modeHintExit" type="button" title="Torna alla modalità normale">Esci</button>
+      </div>
+      <form id="composer">
+        <div id="attachChips" class="attach-chips" hidden></div>
+        <label class="sr-only" for="input">Scrivi una domanda di matematica</label>
+        <textarea id="input" rows="2" placeholder="Scrivi una domanda, un passaggio o un dubbio… (puoi allegare immagini, PDF, audio, testo)" aria-describedby="composer-hint"></textarea>
+        <div class="composer-footer">
+          <span id="composer-hint">Invio per inviare <span aria-hidden="true">·</span> Maiusc+Invio per andare a capo <span aria-hidden="true">·</span> trascina o incolla un file</span>
+          <div class="composer-actions">
+            <button id="micBtn" type="button" title="Parla: registra la voce e la trascrivo in locale">🎤</button>
+            <button id="attachBtn" type="button" title="Allega un file: immagine, PDF, audio o testo">Allega</button>
+            <input id="fileInput" type="file" multiple hidden />
+            <button id="send" type="submit">Invia</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <aside id="historyDrawer" hidden aria-label="Cronologia degli argomenti">
+    <div class="drawer-head">
+      <div>
+        <span class="section-label">Cronologia</span>
+        <p>Argomenti già trattati</p>
+      </div>
+      <button id="historyClose" type="button">Chiudi</button>
+    </div>
+    <div class="drawer-search">
+      <input id="historySearch" type="search" placeholder="Cerca ovunque: titolo, testo, #tag…" aria-label="Cerca nella cronologia" />
+    </div>
+    <div id="historyList"></div>
+    <div class="drawer-foot">
+      <button id="backupBtn" type="button" title="Crea subito una copia di sicurezza dei dati: chat, appunti, ripasso">💾 Backup ora</button>
+      <span id="backupInfo"></span>
+    </div>
+  </aside>
+
+  <aside id="reviewDrawer" hidden aria-label="Argomenti da ripassare">
+    <div class="drawer-head">
+      <div>
+        <span class="section-label">Ripasso</span>
+        <p id="reviewCount">Argomenti da rivedere</p>
+      </div>
+      <button id="reviewClose" type="button">Chiudi</button>
+    </div>
+    <div id="reviewList"></div>
+    <div class="drawer-foot">
+      <button id="ankiBtn" type="button">⬇ Anki (CSV)</button>
+      <span id="ankiHint">file compatibile con Anki e altre app di ripetizione</span>
+    </div>
+  </aside>
+
+  <aside id="quizDrawer" hidden aria-label="Verifica a quiz">
+    <div class="drawer-head">
+      <div>
+        <span class="section-label">Quiz</span>
+        <p>Mettiti alla prova su un argomento</p>
+      </div>
+      <button id="quizClose" type="button">Chiudi</button>
+    </div>
+    <div class="quiz-setup">
+      <input id="quizTopic" type="text" maxlength="300" placeholder="Argomento (es. derivate delle funzioni composte)" aria-label="Argomento del quiz" />
+      <label class="quiz-line">domande <input id="quizN" type="number" min="3" max="10" value="5" /></label>
+      <label class="quiz-line"><input id="quizTimed" type="checkbox" /> a tempo (1 minuto per domanda)</label>
+      <button id="quizStart" type="button">Genera verifica</button>
+    </div>
+    <div id="quizTimer" class="quiz-timer" hidden></div>
+    <div id="quizList"></div>
+    <div class="drawer-foot">
+      <button id="quizGrade" type="button" hidden>Consegna</button>
+      <span id="quizHint">le risposte sbagliate finiscono nel Ripasso</span>
+    </div>
+  </aside>
+
+  <aside id="kbDrawer" hidden aria-label="Rete concettuale: appunti e libri">
+    <div class="drawer-head">
+      <div>
+        <span class="section-label">Appunti</span>
+        <p>Libri e appunti nella rete concettuale</p>
+      </div>
+      <button id="kbClose" type="button">Chiudi</button>
+    </div>
+    <div class="kb-add">
+      <button id="kbUpload" type="button">Carica appunti</button>
+      <input id="kbFile" type="file" multiple hidden />
+      <span id="kbStatus" class="kb-status"></span>
+    </div>
+    <div id="kbList"></div>
+    <div id="kbViewer" hidden></div>
+  </aside>
+
+  <aside id="styleDrawer" hidden aria-label="Stile imparato dall'IA">
+    <div class="drawer-head">
+      <div>
+        <span class="section-label">Stile</span>
+        <p>Cosa l'IA ha imparato da te</p>
+      </div>
+      <button id="styleClose" type="button">Chiudi</button>
+    </div>
+    <div class="style-add">
+      <input id="styleInput" type="text" placeholder="es. preferisco più esempi concreti" aria-label="Nuova preferenza di stile" />
+      <button id="styleAdd" type="button">Aggiungi</button>
+    </div>
+    <div id="styleList"></div>
+  </aside>
+
+  <aside id="settingsDrawer" hidden aria-label="Impostazioni">
+    <div class="drawer-head">
+      <div>
+        <span class="section-label">Impostazioni</span>
+        <p>Connessione all'IA e preferenze</p>
+      </div>
+      <button id="settingsClose" type="button">Chiudi</button>
+    </div>
+    <div class="settings-body">
+      <label>Provider
+        <select id="setProvider">
+          <option value="openrouter">OpenRouter (consigliato)</option>
+          <option value="opencode">OpenCode Go</option>
+        </select>
+      </label>
+      <label>API key
+        <input id="setKey" type="password" autocomplete="off" placeholder="incolla qui la chiave" />
+        <span id="setKeyState" class="settings-hint"></span>
+      </label>
+      <label>Modello predefinito
+        <select id="setModel"></select>
+      </label>
+      <label>Lingua dettatura
+        <select id="setLang">
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+          <option value="es">Espa&ntilde;ol</option>
+          <option value="fr">Fran&ccedil;ais</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </label>
+      <p class="settings-hint">La chiave viene salvata solo sul tuo PC (settings.json) e non viene mai mostrata. Con OpenRouter serve una chiave da openrouter.ai/keys.</p>
+      <div class="settings-actions">
+        <button id="settingsSave" type="button">Salva</button>
+        <button id="settingsClearKey" type="button" hidden>Rimuovi chiave</button>
+        <span id="settingsMsg" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </aside>
+</body>
+</html>
