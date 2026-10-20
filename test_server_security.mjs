@@ -12,6 +12,8 @@ const root = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mathapp-sec-"));
 const settingsFile = path.join(tmp, "settings.json");
 const authFile = path.join(tmp, "noauth.json");
+const dataDir = path.join(tmp, "data");
+const backupDir = path.join(tmp, "backups");
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -45,7 +47,7 @@ async function waitReady(port) {
 const port = await freePort();
 const child = spawn(process.execPath, ["server.mjs"], {
   cwd: root,
-  env: { ...process.env, MATHAPP_PORT: String(port), MATHAPP_SETTINGS_FILE: settingsFile, MATHAPP_AUTH_FILE: authFile, MATHAPP_NO_WHISPER: "1" },
+  env: { ...process.env, MATHAPP_PORT: String(port), MATHAPP_SETTINGS_FILE: settingsFile, MATHAPP_AUTH_FILE: authFile, MATHAPP_DATA_DIR: dataDir, MATHAPP_BACKUP_DIR: backupDir, MATHAPP_NO_WHISPER: "1" },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true,
 });
@@ -105,6 +107,26 @@ try {
 
   const clear = await request(port, "POST", "/api/settings", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clearKey: true }) });
   chk("clearKey -> 200 senza chiave", clear.status === 200 && JSON.parse(clear.body).hasKey === false);
+
+  const stateId = "state-test";
+  const stateBody = {
+    id: stateId, revision: 1, ggb: "<ggb/>",
+    cells: [{ expr: "x^2", op: "diff", result: "2*x" }],
+    figures: [], mode: "figure", view3d: false,
+    view: { xmin: -5, xmax: 5, ymin: -5, ymax: 5, axes: true, grid: true },
+  };
+  const stateSave = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify(stateBody) });
+  chk("conversation/state -> 200", stateSave.status === 200 && JSON.parse(stateSave.body).ok === true);
+  const stateGet = await request(port, "GET", `/api/conversation?id=${encodeURIComponent(stateId)}`);
+  const saved = JSON.parse(stateGet.body);
+  chk("session persistence: ggb/cells/view", stateGet.status === 200 && saved.ggb === "<ggb/>" && saved.cells.length === 1 && saved.view && saved.view.xmin === -5 && saved.stateRevision === 1);
+  const stale = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...stateBody, ggb: "<stale/>" }) });
+  const staleJson = JSON.parse(stale.body);
+  const afterStale = JSON.parse((await request(port, "GET", `/api/conversation?id=${encodeURIComponent(stateId)}`)).body);
+  chk("state revision: stale non sovrascrive", stale.status === 200 && staleJson.stale === true && afterStale.ggb === "<ggb/>");
+  const history = await request(port, "GET", "/api/history");
+  const histJson = JSON.parse(history.body);
+  chk("history includes persisted session", history.status === 200 && histJson.items.some((it) => it.id === stateId && it.cells === 1));
 
   const trav1 = await request(port, "GET", "/../server.mjs");
   const trav2 = await request(port, "GET", "/..%2Fserver.mjs");

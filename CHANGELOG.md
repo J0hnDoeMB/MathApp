@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.2 - 2026-10-20
+
+### Added
+- `test_agent.mjs`: loop agente con upstream finto (tool call -> SymPy -> verifica -> done), senza rete o chiavi.
+- Test di sessione nel security smoke: salvataggio stato, persistenza ggb/cells/view, revisione stale e presenza in cronologia.
+- `MATHAPP_DATA_DIR` / `MATHAPP_BACKUP_DIR` per test isolati.
+- `docs/ROADMAP.md`, `docs/RELEASE.md`, `docs/ONBOARDING.md` e contratti in `docs/ARCHITECTURE.md`.
+
+### Changed
+- `npm test` esegue **37 check** (10 moduli + 4 agente + 23 sicurezza/sessione).
+
 ## v1.5.1 - 2026-10-20
 
 ### Fixed

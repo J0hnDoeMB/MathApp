@@ -36,6 +36,15 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 
 Dependency direction: `server -> agent -> tools/services -> storage/config`. Lower layers never import `server.mjs` or `public/`.
 
+## Contracts and invariants
+
+- `server.mjs` owns HTTP only: parsing, validation, status codes, SSE framing. Domain modules never import it.
+- `runAgent(payload, sessionId, send, isGone, signal, deps?)` emits SSE events and returns the final text. `deps` is a test seam; production uses the real provider/tools.
+- `runSympy`, `runGGB`, `audioToText`, `docToText` return structured results; adapter failures are reported as `{ok:false,error}` or tool errors, not process crashes.
+- `storage` is the only module that knows `data/` paths; `MATHAPP_DATA_DIR` isolates tests.
+- Core modules must not import optional feature modules. `agent` uses the tool registry, not UI or routes.
+- A failing provider, PDF, audio file or GeoGebra command must not block chat/session persistence.
+
 ## What changed in the refactor
 
 - `server.mjs` dropped from **~1,688 lines / 92 KB** to **~818 lines / 43 KB**.
@@ -70,7 +79,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 29 checks (10 module checks + parsers + security smoke: CSRF, body limit, traversal, settings API).
+- `npm test`: 37 checks (10 module + 4 agent + parsers + 23 security/session: CSRF, body limit, traversal, settings API, state persistence/revision).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test_server_cancel.mjs`: cancellation and state revisions.
 - Browser/UI tests need Puppeteer (`npm i -D puppeteer` or `MATHAPP_PUPPETEER`) and a running app.
