@@ -55,7 +55,7 @@ Dependency direction: `server -> agent -> tools/services -> storage/config`. Low
 
 ## Remaining risks / next steps
 
-1. Browser smoke covers new chat, session restore and view state; a dedicated GeoGebra applet rebuild test remains manual.
+1. Browser smoke covers new chat/session/view; `test_geogebra_smoke.mjs` covers the GeoGebra applet rebuild in CI.
 2. External dependencies (AI providers, GeoGebra/KaTeX CDN, Whisper models) remain the main failure surface; keep capabilities explicit and fallbacks visible.
 3. Windows/PowerShell setup is convenient but platform-specific; the Node server itself stays portable.
 4. The full browser suite (XSS, conversation switch, GeoGebra applet) still runs manually; only the smoke subset is in CI.
@@ -82,6 +82,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 - `npm test`: 42 checks (10 module + 4 agent + parsers + 28 security/session: CSRF, body limit, traversal, settings API, state persistence/revision, library routes).
 - `npm run test:ui`: 7 browser smoke checks (new chat, session restore, view, UI); CI uses puppeteer-core + Edge.
+- `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test_server_cancel.mjs`: cancellation and state revisions.
 - Full browser tests need Puppeteer and a running app; `npm run test:ui` is the CI smoke subset.

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.4 - 2026-10-20
+
+### Added
+- `test_geogebra_smoke.mjs`: crea una costruzione, la serializza, salva lo stato via API, ricarica e verifica il rebuild dell'applet GeoGebra (5 check, in CI).
+
 ## v1.5.3 - 2026-10-20
 
 ### Changed
