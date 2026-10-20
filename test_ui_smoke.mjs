@@ -122,6 +122,7 @@ try {
   await page.evaluate((id) => { localStorage.setItem("mathapp.conv", id); localStorage.setItem("mathapp.empty", "1"); }, stateId);
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.querySelectorAll("#calcCells .cell").length > 0, { timeout: 10000 });
+  await page.waitForFunction(() => document.getElementById("vxmin")?.value === "-5", { timeout: 10000 });
   const restored = await page.evaluate(() => ({
     cells: document.querySelectorAll("#calcCells .cell").length,
     expr: document.querySelector("#calcCells .cell-expr")?.textContent || "",
