@@ -1,5 +1,8 @@
 // Test dei moduli di dominio senza avviare il server.
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { LEVELS, normalizeLevel, levelRule } from "./lib/levels.mjs";
 import { tokenize, chunkText } from "./lib/kb.mjs";
 import { revNorm } from "./lib/storage.mjs";
@@ -11,6 +14,7 @@ import { featureForPath, isOptionalApi } from "./lib/features.mjs";
 import { gradeReview } from "./lib/review.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
 import { SCHEMA_VERSION, migrateSession, validateState } from "./lib/schema.mjs";
+import { readJson, writeJsonAtomic } from "./lib/json-store.mjs";
 
 let ok = 0, fail = 0;
 function chk(name, fn) {
@@ -163,6 +167,20 @@ chk("schema: normalizza view e celle", () => {
   assert.equal(r.ok, true);
   assert.equal(r.state.cells.length, 1);
   assert.deepEqual(r.state.view, { xmin: -5, xmax: 5, ymin: -4, ymax: 8, axes: false, grid: true });
+});
+
+chk("json-store: scrittura atomica e quarantena", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mathapp-json-"));
+  try {
+    const file = path.join(dir, "state.json");
+    assert.equal(writeJsonAtomic(file, { a: 1 }).ok, true);
+    assert.deepEqual(readJson(file, null), { a: 1 });
+    assert.equal(fs.readdirSync(dir).some((f) => f.includes(".tmp.")), false);
+    fs.writeFileSync(file, "{rotto", "utf8");
+    assert.deepEqual(readJson(file, { fallback: true }), { fallback: true });
+    assert.equal(fs.readdirSync(dir).some((f) => f.includes(".corrupt-")), true);
+    assert.equal(readJson(path.join(dir, "missing.json"), { missing: true }).missing, true);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 console.log("----");

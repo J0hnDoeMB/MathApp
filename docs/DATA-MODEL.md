@@ -59,6 +59,10 @@ La chiave non viene mai restituita dalle API, non finisce nei log e non è inclu
 
 `file`, `size`, `t` (mtime). Retention: 7 zip; il backup contiene solo `data/`.
 
+## Persistenza
+
+Tutte le scritture JSON passano da `lib/json-store.mjs`: file temporaneo + rename atomico. Un file non parsabile viene rinominato in `.corrupt-<epoch>` e sostituito dal fallback in lettura; i file `.tmp.*`/`.corrupt-*` non sono sessioni valide. Dettagli in [`PERSISTENCE.md`](PERSISTENCE.md).
+
 ## Versioning e migrazione
 
 - `schemaVersion` assente → migrazione a `1` in lettura (`migrateSession`).

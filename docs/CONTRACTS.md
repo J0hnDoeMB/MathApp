@@ -68,6 +68,13 @@ init(MathAppApp) // app = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64Fro
 ```
 The loader injects `/features/<id>.js` only when needed; core mode never downloads optional UI.
 
+### JsonStore
+```text
+readJson(file, fallback) -> value
+writeJsonAtomic(file, value) -> { ok, error? }
+```
+Implementation: `lib/json-store.mjs`. Repositories must use it; corrupt files are quarantined, missing files return the fallback.
+
 ### Diagnostics
 ```text
 diagnostics(port) -> { ok, node, python, sympy, whisper, provider, hasKey, dataDirOk, backupDirOk, port, mode, level }

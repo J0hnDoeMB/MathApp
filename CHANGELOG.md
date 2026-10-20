@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.17.0 - 2026-10-20
+
+### Added
+- `lib/json-store.mjs`: atomic JSON writes (temp + rename) and quarantine of corrupt files.
+- Session, review, profile and KB repositories now use the shared JSON store.
+- `docs/PERSISTENCE.md` documents the storage contract and corruption policy.
+
+### Tests
+- `npm test`: **65 checks** (20 module + 4 agent + 4 chat-service + 37 security/session); UI 15; GeoGebra 5; Python 29.
+
 ## v1.16.0 - 2026-10-20
 
 ### Added

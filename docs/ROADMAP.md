@@ -40,6 +40,7 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] migrare review/KB/TTS/stile al loader UI
 - [x] command bus per session.new/chat.send/session.restore
 - [x] diagnostica unica API/launcher (storage, provider, porta) + quality gate
+- [x] JSON atomico + quarantena file corrotti + docs PERSISTENCE
 - [ ] event model per tutti i flussi UI → application
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
