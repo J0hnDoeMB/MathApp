@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.1 - 2026-10-20
+
+### Fixed
+- CI: installa Python/SymPy prima dei test Node, esegue `test_modules.mjs` e il check di sintassi su tutti i moduli `lib/`; il test `/api/compute` viene saltato se SymPy non e' disponibile.
+
 ## v1.5.0 - 2026-10-20
 
 ### Changed

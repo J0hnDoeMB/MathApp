@@ -22,18 +22,18 @@ jobs:
         run: |
           node --check server.mjs
           node --check public/app.js
-          node --check lib/flashparse.mjs
-          node --check lib/quizparse.mjs
-      - name: Node tests (parsers + security smoke)
-        run: |
-          node test_flashparse.mjs
-          node test_quizparse.mjs
-          node test_server_security.mjs
+          Get-ChildItem lib -Filter *.mjs | ForEach-Object { node --check $_.FullName }
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Python dependencies
         run: python -m pip install --disable-pip-version-check sympy
+      - name: Node tests (modules + parsers + security smoke)
+        run: |
+          node test_modules.mjs
+          node test_flashparse.mjs
+          node test_quizparse.mjs
+          node test_server_security.mjs
       - name: Launcher check
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\start-mathapp.ps1 -Check
       - name: Python syntax
