@@ -57,6 +57,8 @@ jobs:
         run: node test_ui_smoke.mjs
       - name: GeoGebra rebuild smoke
         run: node test_geogebra_smoke.mjs
+      - name: Math eval (SymPy)
+        run: npm run eval
       - name: Launcher check
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\start-mathapp.ps1 -Check
       - name: Python syntax

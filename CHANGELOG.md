@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.21.0 - 2026-10-20
+
+### Added
+- Prompt version (`PROMPT_VERSION`) exposed by diagnostics and chat traces.
+- Deterministic math eval suite: `eval/math-cases.json` + `eval/run-eval.mjs` (17 cases), run by `npm run eval` and CI.
+- `docs/SECURITY-MODEL.md`, `docs/PERFORMANCE.md`, `docs/SCORECARD.md`, `docs/KNOWN-LIMITATIONS.md`, ADR 0001/0002.
+
+### Tests
+- `npm test`: 79 checks; UI 15; GeoGebra 5; Python 29; math eval 17 cases.
+
 ## v1.20.0 - 2026-10-20
 
 ### Added

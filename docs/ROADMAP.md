@@ -44,6 +44,8 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] adapter ports espliciti + capabilities/degraded model
 - [x] observability: request ID, operation ID, trace tool/chat
 - [x] test provider fallback e session corruption
+- [x] prompt version + eval math deterministica (17 casi)
+- [x] security model, performance budget, scorecard, ADR
 - [ ] event model per tutti i flussi UI → application
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
