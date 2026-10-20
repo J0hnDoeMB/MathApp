@@ -5,7 +5,7 @@ Current state (v1.21.0):
 | Metric | Current |
 |---|---|
 | Build/CI | green, branch protected |
-| Node checks | 79 |
+| Node checks | 80 |
 | UI smoke | 16 |
 | GeoGebra smoke | 5 |
 | Python tests | 29 |

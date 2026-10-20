@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.23.0 - 2026-10-20
+
+### Changed
+- Adapter container wired into production: agent uses `adapters.math/graph`, chat uses `adapters.llm.vision`, diagnostics validates ports (`adaptersOk`).
+- Secondary repositories validate records on read/write: review, profile and KB docs/chunks discard malformed entries without failing the file.
+
+### Tests
+- `npm test`: **80 checks** (23 module + 4 agent + 4 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 40 security/session); UI 16; GeoGebra 5; eval 17; Python 29.
+
 ## v1.22.0 - 2026-10-20
 
 ### Changed

@@ -61,6 +61,8 @@ La chiave non viene mai restituita dalle API, non finisce nei log e non è inclu
 
 ## Persistenza
 
+I repository secondari (review/profile/KB) validano i record e scartano quelli malformati senza perdere il file.
+
 Tutte le scritture JSON passano da `lib/json-store.mjs`: file temporaneo + rename atomico. Un file non parsabile viene rinominato in `.corrupt-<epoch>` e sostituito dal fallback in lettura; i file `.tmp.*`/`.corrupt-*` non sono sessioni valide. Dettagli in [`PERSISTENCE.md`](PERSISTENCE.md).
 
 ## Versioning e migrazione

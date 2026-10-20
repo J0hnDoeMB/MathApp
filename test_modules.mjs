@@ -13,7 +13,7 @@ import { systemFor } from "./lib/prompts.mjs";
 import { featureForPath, isOptionalApi } from "./lib/features.mjs";
 import { gradeReview } from "./lib/review.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
-import { SCHEMA_VERSION, migrateSession, validateState } from "./lib/schema.mjs";
+import { SCHEMA_VERSION, migrateSession, validateState, normalizeReviewItem, normalizeProfileItem, normalizeDocument } from "./lib/schema.mjs";
 import { readJson, writeJsonAtomic } from "./lib/json-store.mjs";
 import { adapters } from "./lib/adapters.mjs";
 import { assertPorts } from "./lib/ports.mjs";
@@ -197,6 +197,15 @@ chk("capabilities: core e optional", () => {
   assert.equal(typeof r.capabilities.storage.available, "boolean");
   assert.equal(typeof r.capabilities.math.available, "boolean");
   assert.equal(typeof r.capabilities.provider.fallback, "string");
+});
+
+chk("schema: repository secondari", () => {
+  assert.equal(normalizeReviewItem({ id: "r1", text: "risposta", t: 1 }).id, "r1");
+  assert.equal(normalizeReviewItem({ id: "r1" }), null);
+  assert.equal(normalizeProfileItem({ testo: "preferisco esempi concreti" })?.testo, "preferisco esempi concreti");
+  assert.equal(normalizeProfileItem({ testo: "corto" }), null);
+  assert.equal(normalizeDocument({ id: "d1", name: "nota.pdf" }).name, "nota.pdf");
+  assert.equal(normalizeDocument({ id: "d1" }), null);
 });
 
 console.log("----");

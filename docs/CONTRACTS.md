@@ -76,7 +76,7 @@ graph: { run, edit, resolve }
 audio: { transcribe }
 documents: { extractText }
 ```
-Implementation: `lib/adapters.mjs`, validated by `lib/ports.mjs`. The concrete integrations remain in `lib/llm/sympy/geogebra/audio/documents`.
+Implementation: `lib/adapters.mjs`, validated by `lib/ports.mjs` and used by the agent/chat in production. The concrete integrations remain in `lib/llm/sympy/geogebra/audio/documents`.
 
 ### Observability
 ```text
