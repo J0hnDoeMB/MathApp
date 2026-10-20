@@ -36,6 +36,10 @@ Il **core è Node-only**: non serve Python per avviare, chattare, disegnare o sa
 
 La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + conversazioni). Quiz, ripasso, appunti, stile, TTS e delega si abilitano da **Impostazioni → Modalità → Completa**; gli endpoint e i tool relativi restano spenti finché non la attivi.
 
+Il **livello di spiegazione** (Auto, Scuola media, Scuola superiore, Università) si sceglie nelle stesse Impostazioni: cambia lessico e formalismo, non i contenuti. Il tutor spiega il perché dei passaggi e chiude con una breve domanda di controllo quando serve.
+
+Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esatti**. Se la risposta contiene matematica ma non ha usato SymPy, compare un avviso: il badge è volutamente onesto, perché il calcolo esatto non garantisce che il testo lo riporti correttamente.
+
 ## Diagnostica
 
 - `.\start-mathapp.ps1 -Check` mostra Node/Python/SymPy/Whisper, porta e chiave senza avviare il server.
@@ -43,6 +47,7 @@ La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + c
 - Problemi comuni: [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
 
 ## Come si usa
+- All'avvio la scheda **Inizia da qui** propone tre esempi cliccabili; sparisce al primo messaggio e torna con **Nuova chat**.
 - Scrivi la domanda nella chat (a destra). Invio per inviare, Shift+Invio per andare a capo.
 - L'IA può usare due strumenti: **SymPy** (calcolo esatto) e **GeoGebra** (disegno + modifica della geometria).
 - **Figura / Algebra**: l'interruttore in alto cambia cosa vedi a sinistra (la chat resta sempre).
@@ -97,6 +102,7 @@ La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + c
   - **◐ tema** chiaro/scuro, **tok N** = token usati nella sessione.
   - Scorciatoie: `Ctrl+K` cursore nella casella, `Alt+N` nuova chat, `↑` richiama l'ultima domanda.
   - **Badge "✔ verificato con SymPy"**: ogni risultato calcolato mostra il comando esatto usato.
+  - **Riepilogo verifica**: sotto la risposta, **SymPy: N calcoli esatti** oppure un avviso se la matematica non è passata dal calcolo simbolico.
   - Nel quaderno, ogni cella ha **→ calcolo** (porta il risultato nella casella) e **→ chat** (lo mette nella domanda).
   - **Cronologia** con **ricerca** per argomento.
 - **Lettura disturbata no**: mentre l'IA scrive puoi **scorrere in alto** senza essere riportato giù a forza.
@@ -196,6 +202,12 @@ La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + c
   - Esempio: `{"whisperModel": "small", "whisperLanguage": "it"}` per dettature più rapide ma meno precise.
 - I modelli audio (Whisper) si scaricano la prima volta in `~/.cache/huggingface` (il primo uso può richiedere qualche minuto).
 
+## Privacy e chiavi API
+- La chiave è salvata solo in `settings.json` sul PC, non viene mai restituita dall'API, non finisce nei log e non è inclusa nei backup (che copiano solo `data/`).
+- Viene inviata esclusivamente al provider scelto (**OpenRouter** o **OpenCode Go**) via HTTPS; l'app non ha telemetria né server propri.
+- **Rimuovi chiave** cancella il dato locale; per revocarla definitivamente usare la console del provider.
+- Conversazioni, appunti e cronologia restano in `data/` sul PC.
+
 ## Requisiti
 - Node.js. Opzionali: Python + SymPy per il calcolo esatto, Whisper per la dettatura.
 - Connessione internet (per l'IA e per GeoGebra/KaTeX da CDN).
@@ -209,7 +221,7 @@ La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + c
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (parser + security smoke con CSRF, body cap, path traversal e API impostazioni); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (17 check: parser + security smoke con CSRF, body cap, path traversal, modalità core e API impostazioni); `npm run test:py` per SymPy.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test_xss.mjs`, `node test_conversation_restore.mjs`, `node test_conversation_switch.mjs`, `node test_geogebra_state.mjs`, `node test_geogebra_3d.mjs`, `node test_layout.mjs`, `node test_tutor.mjs`, `node test_review.mjs`, `node test_algebra_ui.mjs`, `node test_vista.mjs` e `node test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.

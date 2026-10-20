@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.3.0 - 2026-10-19
+
+### Added
+- **Livello di spiegazione** (`settings.level`): Auto, Scuola media, Scuola superiore, Università; il system prompt adatta lessico e formalismo.
+- **Riepilogo verifica** sotto ogni risposta: conteggio dei calcoli esatti SymPy, oppure avviso se la matematica non è passata dal calcolo simbolico.
+- **Inizia da qui**: tre esempi cliccabili nella chat vuota, nascosti al primo messaggio e ripristinati con Nuova chat.
+- **Privacy e chiave API**: nota esplicita in Impostazioni e README (storage locale, provider, backup che escludono la chiave).
+
+### Changed
+- Prompt didattico: spiegare il perché, correggere indicando il punto dell'errore, dichiarare quando un risultato non è verificabile.
+- Test di sicurezza: 17 check (default core/level, 403, full 200).
+
 ## v1.2.0 - 2026-10-19
 
 ### Added

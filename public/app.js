@@ -739,6 +739,7 @@ chatEl.addEventListener("scroll", () => {
 if (jumpBtn) jumpBtn.addEventListener("click", () => { autoFollow = true; stick(true); });
 
 function addMsg(role) {
+  const w = $("#chatWelcome"); if (w) w.hidden = true;
   const d = document.createElement("div");
   d.className = "msg " + role;
   chatEl.appendChild(d);
@@ -859,9 +860,20 @@ async function runTurn() {
           if (r.ok) {
             const vb = document.createElement("div");
             vb.className = "vbadge";
-            vb.textContent = "✔ verificato con SymPy · " + (a2.operation || "") + "(" + (a2.expr || a2.vectors || a2.matrix || "") + ") = " + String(r.result).slice(0, 140);
+            vb.textContent = "✓ verificato con SymPy — " + (a2.operation || "") + "(" + (a2.expr || a2.vectors || a2.matrix || "") + ") = " + String(r.result).slice(0, 140);
             bubble.appendChild(vb);
           } else showDetails();
+        } else if (ev === "verification") {
+          const hasMath = /\$|=|\\frac|\\sqrt/.test(acc);
+          if (data.sympy || data.geogebra || hasMath) {
+            const v = document.createElement("div");
+            v.className = "vsum" + (data.sympy ? " ok" : " warn");
+            v.title = "Conta i calcoli esatti eseguiti con SymPy in questa risposta. Controlla sempre che il testo riporti correttamente quei risultati.";
+            v.textContent = data.sympy
+              ? "✓ SymPy: " + data.sympy + " calcolo/i esatto/i"
+              : (data.geogebra ? "Figura GeoGebra; nessun calcolo simbolico" : "Nessun calcolo simbolico in questa risposta");
+            bubble.appendChild(v);
+          }
         } else if (ev === "sources") {
           pendingSources = data; // mostrato a fine risposta, e solo se davvero ripreso
         } else if (ev === "usage") {
@@ -2083,6 +2095,7 @@ $("#newChat").addEventListener("click", () => {
   messages = []; sessionId = crypto.randomUUID(); conversationId = crypto.randomUUID();
   chatEl.replaceChildren(); calcCells.replaceChildren(); cellData = [];
   refreshCalcEmpty();
+  const welcome = $("#chatWelcome"); if (welcome) welcome.hidden = false;
   figures = []; figSeq = 0; refreshFigureList(); // BUG FIX: le costruzioni non si trascinano nella nuova chat
   try { localStorage.setItem("mathapp.conv", conversationId); localStorage.setItem("mathapp.empty", "1"); } catch {}
   pending = []; renderChips();
@@ -2991,6 +3004,7 @@ async function loadSettings() {
   if (!d || !d.ok) return;
   applyMode(d.mode || "core");
   const modeSel = $("#setMode"); if (modeSel) modeSel.value = d.mode || "core";
+  const levelSel = $("#setLevel"); if (levelSel) levelSel.value = d.level || "auto";
   const banner = $("#setupBanner"); if (banner) banner.hidden = !!d.hasKey;
   const prov = $("#setProvider"); if (prov) prov.value = d.provider || "openrouter";
   const keyEl = $("#setKey"); if (keyEl) keyEl.value = "";
@@ -3017,6 +3031,7 @@ async function saveSettings(extra) {
   }, extra || {});
   const mv = $("#setModel").value; if (mv) body.model = mv;
   const modeEl = $("#setMode"); if (modeEl) body.mode = modeEl.value;
+  const levelEl = $("#setLevel"); if (levelEl) body.level = levelEl.value;
   const k = $("#setKey").value.trim();
   if (k) body.apiKey = k;
   try {
@@ -3026,6 +3041,7 @@ async function saveSettings(extra) {
     if (msg) msg.textContent = "Salvato.";
     if (j.model) { currentModel = j.model; if (modelEl) modelEl.value = j.model; }
     if (j.mode) { applyMode(j.mode); const ms = $("#setMode"); if (ms) ms.value = j.mode; }
+    if (j.level) { const ls = $("#setLevel"); if (ls) ls.value = j.level; }
     await loadSettings();
     try {
       const mr = await fetch("/api/models"); const mj = await mr.json();
@@ -3039,6 +3055,13 @@ async function saveSettings(extra) {
 
 function initSettingsUI() {
   const d = $("#settingsDrawer"); if (!d) return;
+  const chatWelcome = $("#chatWelcome");
+  if (chatWelcome) chatWelcome.addEventListener("click", (e) => {
+    const q = e.target.closest("[data-q]");
+    if (!q) return;
+    inputEl.value = q.dataset.q;
+    inputEl.focus();
+  });
   $("#settingsBtn").addEventListener("click", () => { d.hidden = !d.hidden; if (!d.hidden) loadSettings(); });
   $("#settingsClose").addEventListener("click", () => { d.hidden = true; });
   const so = $("#setupOpen"); if (so) so.addEventListener("click", () => { d.hidden = false; loadSettings(); });

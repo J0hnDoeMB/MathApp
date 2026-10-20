@@ -25,6 +25,17 @@ const WHISPER_IDLE_MS = Math.max(1000, Number(process.env.MATHAPP_WHISPER_IDLE_M
 // Modalità essenziale (default): chat + GeoGebra + SymPy + conversazioni.
 // Solo "full" abilita quiz, ripasso, appunti, stile, TTS e delega.
 const isFullMode = () => SETTINGS.mode === "full";
+const LEVELS = ["auto", "base", "superiore", "universita"];
+function levelRule() {
+  const l = LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto";
+  const rules = {
+    auto: "deduci il livello dal linguaggio e dal tipo di domanda; se e' ambiguo parti da un livello scolastico e offri l'approfondimento.",
+    base: "scuola media: frasi brevi, passaggi piccoli, pochi simboli alla volta; spiega ogni simbolo nuovo e usa esempi concreti.",
+    superiore: "scuola superiore: formalismo standard, passaggi giustificati, collegamenti a definizioni e teoremi.",
+    universita: "universita': linguaggio tecnico, ipotesi e rigore, notazione corretta; sintetico ma senza saltare passaggi logici.",
+  };
+  return "\n- LIVELLO (" + l + "): " + rules[l];
+}
 const AUDIO_EXT = /\.(mp3|wav|m4a|m4b|ogg|oga|opus|flac|webm|aac|wma|amr|3gp|mp4)$/i;
 const PUBLIC = path.join(__dirname, "public");
 const CONVDIR = path.join(__dirname, "data", "conversations");
@@ -137,7 +148,7 @@ const LATEX_RULES = `
 const PROFILE_RULES = `\n- Tieni conto dello STILE dell'utente (te lo passo come messaggio di sistema, se ne conosci qualcuno). Se l'utente ti corregge sullo stile o esprime una preferenza stabile su come vuole le spiegazioni, registrala con il tool "ricorda" e rispettala da quel momento.`;
 
 function systemFor(tutor, dark) {
-  let s = SYSTEM + LATEX_RULES + PROFILE_RULES;
+  let s = SYSTEM + LATEX_RULES + PROFILE_RULES + levelRule();
   if (tutor === "socratic") s += SOCRATIC;
   if (tutor === "step") s += STEPWISE;
   if (dark) s += DARKBOARD;
@@ -182,7 +193,10 @@ Regole:
 - Teoria degli insiemi: usa sympy_compute con operation "evaluate" e notazione Python (unione: "{1,2,3} | {2,3,4}", intersezione: "... & ...", differenza: "... - ..."), oppure spiega a parole.
 - STUDIO DI FUNZIONE: per il quadro completo usa sympy_compute con operation "studio" e expr "f(x)=x^2-3x+2" (accetta anche "y=..." o l'espressione nuda, es. "x^2-3x+2"). Ottieni un referto a sezioni (dominio, simmetrie, zeri, intersezione con l'asse y, segno, limiti, asintoti, derivate, monotonia, estremi, concavita', flessi) piu' i dati di disegno. Riassumi le voci importanti della richiesta invece di incollare tutto il referto; nel riquadro del calcolo l'utente ha i pulsanti "Disegna" (curva + punti notevoli + asintoti) e "Spiega".
 - VETTORI E SPAZI VETTORIALI: usa sympy_compute con operation dot | cross | norm | angle | projection | independence | gram_schmidt e vectors = lista di vettori, es. "[[1,2],[3,4]]" (una lista per ogni vettore; cross solo in R^3; gram_schmidt richiede vettori linearmente indipendenti). Il riquadro del calcolo mostra i pulsanti "Disegna" 2D/3D quando i vettori sono 2D o 3D.
-- Spiega in modo chiaro e graduale, come a lezione.`;
+- Spiega in modo chiaro e graduale, come a lezione.
+- METODO DIDATTICO: spiega il PERCHE' di ogni passaggio, non solo il come; richiama un prerequisito solo se serve; adatta lessico e formalismo al livello dello studente; chiudi con una domanda di controllo breve quando aiuta davvero.
+- CORREZIONE: se l'utente sbaglia, indica il punto esatto e il tipo di errore, poi guidalo a correggere; non limitarti a dare la soluzione.
+- ONESTA': se non puoi verificare un risultato con sympy_compute o non sei sicuro, dillo; non inventare passaggi o teoremi.`;
 
 const TOOLS = [
   {
@@ -844,6 +858,8 @@ const sysBase = systemFor(payload.__tutor, payload.__dark) + (isFullMode() && pa
   let last = "";
   let deleghe = 0;
   const usage = { prompt: 0, completion: 0, total: 0 };
+  const used = { sympy: 0, geogebra: 0 };
+  const sendVerification = () => send("verification", { sympy: used.sympy, geogebra: used.geogebra });
   const sendUsage = () => { if (usage.total) send("usage", usage); };
   for (let step = 0; step < 8; step++) {
     if (cancelled()) { logErr("chat interrotta dal client: stop del lavoro lato server"); return last; }
@@ -859,7 +875,7 @@ const sysBase = systemFor(payload.__tutor, payload.__dark) + (isFullMode() && pa
     messages.push(asst);
     if (acc.content) last = acc.content;
 
-    if (!acc.toolCalls.length) { sendUsage(); send("done", {}); return acc.content; }
+    if (!acc.toolCalls.length) { sendUsage(); sendVerification(); send("done", {}); return acc.content; }
 
     for (const tc of acc.toolCalls) {
       if (cancelled()) return last;
@@ -867,8 +883,8 @@ const sysBase = systemFor(payload.__tutor, payload.__dark) + (isFullMode() && pa
       try { args = JSON.parse(tc.args || "{}"); } catch { args = {}; }
       send("tool", { name: tc.name, args });
       let result;
-      if (tc.name === "sympy_compute") { result = await runSympy(args); if (cancelled()) return last; send("sympy_result", { args, result }); }
-      else if (tc.name === "geogebra") result = await runGGB(send, args.commands || [], args.title, args.mode, payload.__conv, args.view, signal);
+      if (tc.name === "sympy_compute") { used.sympy++; result = await runSympy(args); if (cancelled()) return last; send("sympy_result", { args, result }); }
+      else if (tc.name === "geogebra") { used.geogebra++; result = await runGGB(send, args.commands || [], args.title, args.mode, payload.__conv, args.view, signal); }
       else if (tc.name === "delega") {
         if (deleghe >= MAX_DELEGHE) result = { error: `limite di ${MAX_DELEGHE} deleghe raggiunto: procedi con quello che hai.` };
         else { deleghe++; result = await runDelega(args, send, payload.__model, signal); }
@@ -878,7 +894,7 @@ const sysBase = systemFor(payload.__tutor, payload.__dark) + (isFullMode() && pa
         if (c) send("notice", { text: "ðŸ§  imparato sul tuo stile: " + c.testo });
         result = c ? { ok: true, registrato: c.testo } : { error: "preferenza vuota o troppo corta" };
       }
-      else if (tc.name === "geogebra_edit") result = await runGGBEdit(send, args.ops || [], signal);
+      else if (tc.name === "geogebra_edit") { used.geogebra++; result = await runGGBEdit(send, args.ops || [], signal); }
       else result = { error: "tool sconosciuto: " + tc.name };
       if (cancelled()) return last;
       const capTool = result && (result.kind === "studio" || result.kind === "vettori") ? 9000 : 4000;
@@ -886,6 +902,7 @@ const sysBase = systemFor(payload.__tutor, payload.__dark) + (isFullMode() && pa
     }
   }
   sendUsage();
+  sendVerification();
   send("done", {});
   return last;
 }
@@ -933,7 +950,8 @@ const server = http.createServer((req, res) => {
       ok: true, node: process.version, platform: process.platform, port: PORT,
       python: d.python, sympy: d.sympy, whisper: d.whisper,
       provider: providerName(), model: SETTINGS.model || MODELS[0], hasKey: keySource() !== "none",
-      mode: isFullMode() ? "full" : "core"
+      mode: isFullMode() ? "full" : "core",
+      level: LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto"
     }));
   }
   if (req.method === "GET" && url.pathname === "/api/settings") {
@@ -944,7 +962,8 @@ const server = http.createServer((req, res) => {
       whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src,
       keyHint: src === "none" ? "" : (currentKey() || "").slice(-4),
       backup: SETTINGS.backup !== false, backupHours: Number(SETTINGS.backupHours) || 24,
-      mode: isFullMode() ? "full" : "core"
+      mode: isFullMode() ? "full" : "core",
+      level: LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto"
     }));
   }
   if (req.method === "POST" && url.pathname === "/api/settings") {
@@ -959,8 +978,12 @@ const server = http.createServer((req, res) => {
       try {
         const j = JSON.parse(b || "{}");
         if (j.mode !== undefined) {
-          if (!["core", "full"].includes(j.mode)) throw new Error("modalità non valida");
+          if (!["core", "full"].includes(j.mode)) throw new Error("modalita' non valida");
           SETTINGS.mode = j.mode;
+        }
+        if (j.level !== undefined) {
+          if (!LEVELS.includes(j.level)) throw new Error("livello non valido");
+          SETTINGS.level = j.level;
         }
         if (j.provider !== undefined) {
           if (!["openrouter", "opencode"].includes(j.provider)) throw new Error("provider non valido");
@@ -985,7 +1008,7 @@ const server = http.createServer((req, res) => {
         saveSettingsFile();
         const src = keySource();
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), mode: isFullMode() ? "full" : "core" }));
+        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), mode: isFullMode() ? "full" : "core", level: LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto" }));
       } catch (e) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, err: String(e.message || e) }));

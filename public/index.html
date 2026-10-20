@@ -200,6 +200,18 @@
         </div>
         <span class="chat-heading-note">Tutor di matematica</span>
       </div>
+      <div id="chatWelcome" class="chat-welcome">
+        <div>
+          <b>Inizia da qui</b>
+          <p>Scrivi una domanda o prova un esempio. Il tutor usa <b>SymPy</b> per i calcoli esatti e <b>GeoGebra</b> per i grafici.</p>
+        </div>
+        <div class="welcome-chips">
+          <button type="button" data-q="Spiega la derivata di x^2 e disegnala">Derivata di x&sup2;</button>
+          <button type="button" data-q="Risolvi x^2 - 3x + 2 = 0 e mostra la parabola">Equazione e parabola</button>
+          <button type="button" data-q="Spiega il teorema di Pitagora con un esempio">Teorema di Pitagora</button>
+        </div>
+        <p class="settings-hint">La chiave API si imposta in Impostazioni e resta sul tuo PC.</p>
+      </div>
       <div id="chat"></div>
       <button id="jumpBtn" class="jump-btn" type="button" hidden>↓ Vai in fondo</button>
       <div id="modeHint" class="mode-hint" hidden>
@@ -341,6 +353,14 @@
           <option value="de">Deutsch</option>
         </select>
       </label>
+      <label>Livello di spiegazione
+        <select id="setLevel">
+          <option value="auto">Auto (deduci dalla domanda)</option>
+          <option value="base">Scuola media</option>
+          <option value="superiore">Scuola superiore</option>
+          <option value="universita">Universit&agrave;</option>
+        </select>
+      </label>
       <label>Modalità
         <select id="setMode">
           <option value="core">Essenziale (chat + GeoGebra)</option>
@@ -352,7 +372,11 @@
         <div id="diagStatus" class="settings-hint">...</div>
         <button id="diagRefresh" type="button">Ricontrolla</button>
       </div>
-      <p class="settings-hint">La chiave viene salvata solo sul tuo PC (settings.json) e non viene mai mostrata. Con OpenRouter serve una chiave da openrouter.ai/keys.</p>
+      <div class="privacy-note">
+        <b>Privacy e chiave API</b>
+        <p>La chiave resta in <code>settings.json</code> su questo PC e viene inviata solo al provider scelto, via HTTPS. Nessuna telemetria. <b>Rimuovi chiave</b> cancella il dato locale; i backup includono solo <code>data/</code>, non la chiave.</p>
+        <p class="settings-hint">OpenRouter: openrouter.ai &middot; OpenCode Go: opencode.ai</p>
+      </div>
       <div class="settings-actions">
         <button id="settingsSave" type="button">Salva</button>
         <button id="settingsClearKey" type="button" hidden>Rimuovi chiave</button>

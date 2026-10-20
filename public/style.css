@@ -3031,3 +3031,53 @@ body.mode-core #kbBtn,
 body.mode-core #styleBtn,
 body.mode-core .tts-btn,
 body.mode-core .review-btn { display: none !important; }
+
+/* Riepilogo verifica: dice se la risposta si appoggia a calcoli esatti. */
+.vsum {
+  margin-top: 8px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  border: 1px solid var(--grid);
+  background: var(--hover-soft);
+  color: var(--muted);
+  width: fit-content;
+}
+.vsum.ok { color: #1f7a4d; border-color: #9fd8b8; background: #eefaf3; }
+.vsum.warn { color: #8a5b00; border-color: #e8ce9a; background: #fff8e8; }
+body.theme-dark .vsum.ok { color: #9fe3bc; border-color: #2d6b4c; background: #16352a; }
+body.theme-dark .vsum.warn { color: #f1d38d; border-color: #6b5422; background: #362d16; }
+
+/* Guida iniziale: evita che l'app sembri solo "piena di funzioni". */
+.chat-welcome {
+  margin: 10px 12px 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--grid);
+  border-radius: 10px;
+  background: var(--hover-soft);
+}
+.chat-welcome b { color: var(--ink); }
+.chat-welcome p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.welcome-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.welcome-chips button {
+  width: auto;
+  padding: 5px 9px;
+  font-size: 12.5px;
+  border-radius: 999px;
+  border: 1px solid var(--grid);
+  background: var(--panel);
+  color: var(--ink);
+}
+.welcome-chips button:hover { background: var(--hover); }
+.privacy-note {
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  background: var(--hover-soft);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.privacy-note b { color: var(--ink); }
+.privacy-note p { margin: 4px 0 0; }
+.privacy-note code { font-size: 12px; }

@@ -66,6 +66,7 @@ try {
   const j0 = JSON.parse(s0.body);
   chk("GET /api/settings -> provider openrouter senza chiave", j0.ok === true && j0.provider === "openrouter" && j0.hasKey === false);
   chk("default mode -> core", j0.mode === "core");
+  chk("default level -> auto", j0.level === "auto");
   const kbCore = await request(port, "GET", "/api/kb");
   chk("core: /api/kb -> 403", kbCore.status === 403);
 
@@ -82,11 +83,12 @@ try {
   const save = await request(port, "POST", "/api/settings", {
     origin: base,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider: "openrouter", apiKey: "sk-or-v1-security-test-9999", model: "deepseek-v4-flash", whisperLanguage: "en", mode: "full" }),
+    body: JSON.stringify({ provider: "openrouter", apiKey: "sk-or-v1-security-test-9999", model: "deepseek-v4-flash", whisperLanguage: "en", mode: "full", level: "universita" }),
   });
   const j1 = JSON.parse(save.body);
   chk("POST settings same-origin -> 200", save.status === 200 && j1.ok === true && j1.hasKey === true && j1.keyHint === "9999");
   chk("mode salvata -> full", j1.mode === "full");
+  chk("level salvato -> universita", j1.level === "universita");
   const kbFull = await request(port, "GET", "/api/kb");
   chk("full: /api/kb -> 200", kbFull.status === 200);
   chk("risposta senza chiave completa", !save.body.includes("security-test-9999"));
