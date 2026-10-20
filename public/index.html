@@ -17,7 +17,7 @@
   <script defer src="https://www.geogebra.org/apps/deployggb.js"></script>
   <script defer src="/app.js"></script>
 </head>
-<body>
+<body class="mode-core">
   <header class="topbar">
     <div class="brand" aria-label="MathApp">
       <span class="brand-mark" aria-hidden="true"></span>
@@ -339,6 +339,12 @@
           <option value="es">Espa&ntilde;ol</option>
           <option value="fr">Fran&ccedil;ais</option>
           <option value="de">Deutsch</option>
+        </select>
+      </label>
+      <label>Modalità
+        <select id="setMode">
+          <option value="core">Essenziale (chat + GeoGebra)</option>
+          <option value="full">Completa (quiz, ripasso, appunti, stile, TTS)</option>
         </select>
       </label>
       <div class="settings-diag">

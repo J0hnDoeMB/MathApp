@@ -2218,7 +2218,9 @@ function addMsgActions(bubble, idx) {
   const bar = document.createElement("div"); bar.className = "msg-actions";
   bar.appendChild(mkBtn("⧉ Copia", () => copyText((messages[idx] || {}).content, "risposta copiata in Markdown")));
   if ((messages[idx] || {}).role === "assistant" && messages[idx].content) {
-    bar.appendChild(mkBtn("🔊 Ascolta", (ev) => ttsSpeak(messages[idx].content, ev.currentTarget)));
+    const tts = mkBtn("🔊 Ascolta", (ev) => ttsSpeak(messages[idx].content, ev.currentTarget));
+    tts.classList.add("tts-btn");
+    bar.appendChild(tts);
   }
   if (idx === messages.length - 1) bar.appendChild(mkBtn("↻ Rigenera", () => regenerate()));
   const starBtn = mkBtn("★ Ripasso", async () => {
@@ -2237,6 +2239,7 @@ function addMsgActions(bubble, idx) {
     } catch { starBtn.disabled = false; flash("non riuscito"); }
   });
   bar.appendChild(starBtn);
+  starBtn.classList.add("review-btn");
   bubble.appendChild(bar);
 }
 
@@ -2968,13 +2971,17 @@ function initPreferences() {
 // ---------- impostazioni: API key e preferenze ----------
 let settingsData = null;
 
+function applyMode(mode) {
+  document.body.classList.toggle("mode-core", mode !== "full");
+}
+
 async function loadDiagnostics() {
   const el = $("#diagStatus");
   if (!el) return;
   try {
     const r = await fetch("/api/diagnostics");
     const d = await r.json();
-    el.textContent = "Node " + d.node + " · Python " + (d.python || "non installato") + " · SymPy " + (d.sympy || "non installato") + " · Whisper " + (d.whisper ? "ok" : "non installato");
+    el.textContent = "Node " + d.node + " · Python " + (d.python || "non installato") + " · SymPy " + (d.sympy || "non installato") + " · Whisper " + (d.whisper ? "ok" : "non installato") + " · Modo " + (d.mode === "full" ? "completo" : "essenziale");
   } catch { el.textContent = "diagnostica non disponibile"; }
 }
 
@@ -2982,6 +2989,8 @@ async function loadSettings() {
   try { const r = await fetch("/api/settings"); settingsData = await r.json(); } catch { settingsData = null; }
   const d = settingsData;
   if (!d || !d.ok) return;
+  applyMode(d.mode || "core");
+  const modeSel = $("#setMode"); if (modeSel) modeSel.value = d.mode || "core";
   const banner = $("#setupBanner"); if (banner) banner.hidden = !!d.hasKey;
   const prov = $("#setProvider"); if (prov) prov.value = d.provider || "openrouter";
   const keyEl = $("#setKey"); if (keyEl) keyEl.value = "";
@@ -3007,6 +3016,7 @@ async function saveSettings(extra) {
     whisperLanguage: $("#setLang").value
   }, extra || {});
   const mv = $("#setModel").value; if (mv) body.model = mv;
+  const modeEl = $("#setMode"); if (modeEl) body.mode = modeEl.value;
   const k = $("#setKey").value.trim();
   if (k) body.apiKey = k;
   try {
@@ -3015,6 +3025,7 @@ async function saveSettings(extra) {
     if (!j.ok) { if (msg) msg.textContent = "Errore: " + (j.err || "salvataggio fallito"); return; }
     if (msg) msg.textContent = "Salvato.";
     if (j.model) { currentModel = j.model; if (modelEl) modelEl.value = j.model; }
+    if (j.mode) { applyMode(j.mode); const ms = $("#setMode"); if (ms) ms.value = j.mode; }
     await loadSettings();
     try {
       const mr = await fetch("/api/models"); const mj = await mr.json();

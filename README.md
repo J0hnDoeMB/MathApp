@@ -34,6 +34,8 @@ La chiave resta in `settings.json`, solo sul tuo PC, e non viene mai mostrata. S
 
 Il **core è Node-only**: non serve Python per avviare, chattare, disegnare o salvare le conversazioni. Python/SymPy/Whisper sono opzionali e vengono rilevati all'avvio.
 
+La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + conversazioni). Quiz, ripasso, appunti, stile, TTS e delega si abilitano da **Impostazioni → Modalità → Completa**; gli endpoint e i tool relativi restano spenti finché non la attivi.
+
 ## Diagnostica
 
 - `.\start-mathapp.ps1 -Check` mostra Node/Python/SymPy/Whisper, porta e chiave senza avviare il server.

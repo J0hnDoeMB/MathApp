@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.0 - 2026-10-19
+
+### Added
+- **Core mode** (`settings.mode`, default `core`): chat + GeoGebra + SymPy + conversations; quiz, review, KB, style, TTS and delegation are disabled (routes/tools/UI) until switching to **Completa** in Settings.
+
+### Changed
+- `/api/settings` and `/api/diagnostics` expose the mode; `/api/kb*`, `/api/review*`, `/api/profile`, `/api/quiz`, `/api/flashcards` return `403` in core; the AI tool list drops `delega`/`ricorda`.
+
 ## v1.1.0 - 2026-10-19
 
 ### Changed

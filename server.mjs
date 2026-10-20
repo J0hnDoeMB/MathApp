@@ -22,6 +22,9 @@ const WHISPER_MODEL = SETTINGS.whisperModel || "large-v3-turbo";
 let WHISPER_LANG = SETTINGS.whisperLanguage || "it";
 const WHISPER_TIMEOUT_MS = Math.max(30000, Number(process.env.MATHAPP_WHISPER_TIMEOUT_MS) || 30 * 60 * 1000);
 const WHISPER_IDLE_MS = Math.max(1000, Number(process.env.MATHAPP_WHISPER_IDLE_MS) || 2 * 60 * 60 * 1000);
+// Modalità essenziale (default): chat + GeoGebra + SymPy + conversazioni.
+// Solo "full" abilita quiz, ripasso, appunti, stile, TTS e delega.
+const isFullMode = () => SETTINGS.mode === "full";
 const AUDIO_EXT = /\.(mp3|wav|m4a|m4b|ogg|oga|opus|flac|webm|aac|wma|amr|3gp|mp4)$/i;
 const PUBLIC = path.join(__dirname, "public");
 const CONVDIR = path.join(__dirname, "data", "conversations");
@@ -109,7 +112,11 @@ function listConvs() {
 const SOCRATIC = `\n- MODALITA' "ESERCITAMI" ATTIVA — HA PRIORITA' SU TUTTE LE ALTRE REGOLE: NON risolvere il problema e NON mostrare lo svolgimento. La regola delle "due letture" NON si applica e non disegnare figure. Rispondi con UNA sola domanda di guida (o un piccolissimo indizio), breve, e fermati li'. Aspetta la risposta dello studente. Quando risponde, verifica il suo passaggio con sympy_compute e poi fai la domanda successiva. Se sbaglia, dai un indizio piu' preciso. Mostra la soluzione completa SOLO se te la chiede esplicitamente ("dammi la soluzione") o dopo 3 tentativi falliti.`;
 const STEPWISE = `\n- MODALITA' "PASSO-PASSO" ATTIVA: struttura la risposta in passi numerati, ognuno con un titolo nel formato "### Passo N — <cosa fai>" seguito dal contenuto. Non anticipare i passi successivi: ogni passo deve reggersi da solo.`;
 
-function toolsFor() { return TOOLS; }
+function toolsFor() {
+  if (isFullMode()) return TOOLS;
+  const disabled = new Set(["delega", "ricorda"]);
+  return TOOLS.filter((t) => !(t && t.function && disabled.has(t.function.name)));
+}
 
 // Qualità tipografica delle formule: evita gli "obrobri" (tutto su una riga, *, apici...)
 const LATEX_RULES = `
@@ -814,6 +821,7 @@ function profAdd(testo, source) {
 }
 
 function profForPrompt() {
+  if (!isFullMode()) return [];
   const list = profLoad().slice(0, 30);
   for (const c of list) c.hits = (c.hits || 0) + 1;
   profSave(profLoad().map((c) => { const f = list.find((x) => x.id === c.id); return f ? { ...c, hits: f.hits } : c; }));
@@ -823,9 +831,9 @@ function profForPrompt() {
 // ---------- agent loop ----------
 async function runAgent(payload, sessionId, send, mode, isGone, signal) {
   const cancelled = () => !!(signal && signal.aborted) || !!(isGone && isGone());
-  const sysBase = systemFor(payload.__tutor, payload.__dark) + (payload.__kb && payload.__kb.length ? KB_RULES : "");
+const sysBase = systemFor(payload.__tutor, payload.__dark) + (isFullMode() && payload.__kb && payload.__kb.length ? KB_RULES : "");
   const messages = [{ role: "system", content: sysBase }, ...payload];
-  if (payload.__kb && payload.__kb.length) {
+  if (isFullMode() && payload.__kb && payload.__kb.length) {
     const estratti = payload.__kb.map((c) => "[" + c.docName + (c.page ? " p." + c.page : "") + "]\n" + c.text).join("\n\n---\n\n");
     messages.splice(1, 0, { role: "system", content: "ESTRATTI DAGLI APPUNTI/LIBRI DELL'UTENTE:\n\n" + estratti });
   }
@@ -908,6 +916,10 @@ const server = http.createServer((req, res) => {
     });
   }
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) maybePreloadWhisper();
+  if (!isFullMode() && (url.pathname === "/api/quiz" || url.pathname === "/api/flashcards" || url.pathname === "/api/profile" || url.pathname.startsWith("/api/kb") || url.pathname.startsWith("/api/review"))) {
+    res.writeHead(403, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    return res.end('{"ok":false,"err":"funzione non disponibile nella modalità essenziale"}');
+  }
   if (req.method === "GET" && url.pathname === "/api/models") {
     const list = providerName() === "openrouter" ? MODELS.filter((m) => OR_MODEL_MAP[m]) : MODELS;
     const def = (SETTINGS.model && list.includes(SETTINGS.model)) ? SETTINGS.model : list[0];
@@ -920,7 +932,8 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({
       ok: true, node: process.version, platform: process.platform, port: PORT,
       python: d.python, sympy: d.sympy, whisper: d.whisper,
-      provider: providerName(), model: SETTINGS.model || MODELS[0], hasKey: keySource() !== "none"
+      provider: providerName(), model: SETTINGS.model || MODELS[0], hasKey: keySource() !== "none",
+      mode: isFullMode() ? "full" : "core"
     }));
   }
   if (req.method === "GET" && url.pathname === "/api/settings") {
@@ -930,7 +943,8 @@ const server = http.createServer((req, res) => {
       ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0],
       whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src,
       keyHint: src === "none" ? "" : (currentKey() || "").slice(-4),
-      backup: SETTINGS.backup !== false, backupHours: Number(SETTINGS.backupHours) || 24
+      backup: SETTINGS.backup !== false, backupHours: Number(SETTINGS.backupHours) || 24,
+      mode: isFullMode() ? "full" : "core"
     }));
   }
   if (req.method === "POST" && url.pathname === "/api/settings") {
@@ -944,6 +958,10 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       try {
         const j = JSON.parse(b || "{}");
+        if (j.mode !== undefined) {
+          if (!["core", "full"].includes(j.mode)) throw new Error("modalità non valida");
+          SETTINGS.mode = j.mode;
+        }
         if (j.provider !== undefined) {
           if (!["openrouter", "opencode"].includes(j.provider)) throw new Error("provider non valido");
           SETTINGS.provider = j.provider;
@@ -967,7 +985,7 @@ const server = http.createServer((req, res) => {
         saveSettingsFile();
         const src = keySource();
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4) }));
+        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), mode: isFullMode() ? "full" : "core" }));
       } catch (e) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, err: String(e.message || e) }));

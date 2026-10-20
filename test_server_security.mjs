@@ -65,6 +65,9 @@ try {
   const s0 = await request(port, "GET", "/api/settings");
   const j0 = JSON.parse(s0.body);
   chk("GET /api/settings -> provider openrouter senza chiave", j0.ok === true && j0.provider === "openrouter" && j0.hasKey === false);
+  chk("default mode -> core", j0.mode === "core");
+  const kbCore = await request(port, "GET", "/api/kb");
+  chk("core: /api/kb -> 403", kbCore.status === 403);
 
   const diag = await request(port, "GET", "/api/diagnostics");
   const dj = JSON.parse(diag.body);
@@ -79,10 +82,13 @@ try {
   const save = await request(port, "POST", "/api/settings", {
     origin: base,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider: "openrouter", apiKey: "sk-or-v1-security-test-9999", model: "deepseek-v4-flash", whisperLanguage: "en" }),
+    body: JSON.stringify({ provider: "openrouter", apiKey: "sk-or-v1-security-test-9999", model: "deepseek-v4-flash", whisperLanguage: "en", mode: "full" }),
   });
   const j1 = JSON.parse(save.body);
   chk("POST settings same-origin -> 200", save.status === 200 && j1.ok === true && j1.hasKey === true && j1.keyHint === "9999");
+  chk("mode salvata -> full", j1.mode === "full");
+  const kbFull = await request(port, "GET", "/api/kb");
+  chk("full: /api/kb -> 200", kbFull.status === 200);
   chk("risposta senza chiave completa", !save.body.includes("security-test-9999"));
   chk("settings.json scritto in modo atomico", fs.existsSync(settingsFile) && JSON.parse(fs.readFileSync(settingsFile, "utf8")).apiKey === "sk-or-v1-security-test-9999");
 

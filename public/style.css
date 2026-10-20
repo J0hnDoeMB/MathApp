@@ -3024,3 +3024,10 @@ body.theme-dark .settings-body select { background: #101822; color: var(--ink); 
 }
 .settings-diag b { color: var(--ink); }
 .settings-diag button { align-self: flex-start; }
+/* Modalità essenziale: superficie ridotta, niente studio extra. */
+body.mode-core #quizBtn,
+body.mode-core #reviewBtn,
+body.mode-core #kbBtn,
+body.mode-core #styleBtn,
+body.mode-core .tts-btn,
+body.mode-core .review-btn { display: none !important; }

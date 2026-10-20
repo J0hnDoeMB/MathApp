@@ -33,13 +33,12 @@ Each step is a mechanical extraction verified by `npm test`, the server/security
 
 ## Feature flags / lite mode
 
-The public app currently ships the full feature set. If the goal is a smaller public surface, add `settings.features` (default `core`):
+Implemented as `settings.mode` (`core` by default, `full` on request from Settings):
 
-```json
-{ "features": { "sympy": true, "whisper": true, "quiz": true, "review": true, "kb": true, "tts": true, "delegation": true, "vision": true } }
-```
+- **core**: chat + GeoGebra + SymPy + conversations + settings + backups. Adds no quiz/review/KB/style/TTS/delegation routes or tools.
+- **full**: adds quiz, review, KB, style/profile, TTS buttons and the `delega`/`ricorda` tools.
 
-Server endpoints and UI buttons check the flags; `core` enables chat + GeoGebra + conversations only. Advanced features stay available in the full build. This reduces the bug surface without maintaining two codebases.
+The server rejects disabled endpoints with `403` and filters the tool list; the UI hides the related buttons. `mode` is persisted in `settings.json` and exposed by `/api/settings` and `/api/diagnostics`.
 
 ## Provider abstraction
 
