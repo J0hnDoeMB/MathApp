@@ -233,7 +233,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (68 check: 22 test dei moduli + 4 del loop agente + 4 chat-service + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability e diagnostica); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (73 check: 22 test dei moduli + 4 del loop agente + 4 chat-service + 3 observability + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica e trace/request ID); `npm run test:py` per SymPy.
 - Smoke browser: `npm run test:ui` (15 check: UI, state store, command bus, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
@@ -251,7 +251,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali
 - `docs/SETUP-WINDOWS.md` — guida di installazione rapida
 - `docs/ARCHITECTURE.md` — mappa dei moduli e regole di dipendenza
-- `docs/CONTRACTS.md`, `docs/DATA-MODEL.md`, `docs/PERSISTENCE.md`, `docs/CAPABILITIES.md` — contratti, modello dati, persistenza e degrado
+- `docs/CONTRACTS.md`, `docs/DATA-MODEL.md`, `docs/PERSISTENCE.md`, `docs/CAPABILITIES.md`, `docs/OBSERVABILITY.md` — contratti, dati, persistenza, degrado e trace
 - `docs/QUALITY-GATE.md` — core vs extra, feature freeze e gate di qualità
 - `sympy_cli.py` — calcolo esatto
 - `transcribe.py` — trascrizione audio locale (worker persistente con modello caldo)

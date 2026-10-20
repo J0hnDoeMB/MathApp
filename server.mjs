@@ -8,6 +8,7 @@ import { maybePreloadWhisper } from "./lib/audio.mjs";
 import { serveStatic } from "./lib/http.mjs";
 import { handleApi, prepareApi } from "./routes/index.mjs";
 import { isOptionalApi } from "./lib/features.mjs";
+import { newId, trace } from "./lib/observability.mjs";
 
 const PORT = Number(process.env.MATHAPP_PORT) || 8790;
 const isFullMode = () => SETTINGS.mode === "full";
@@ -16,6 +17,13 @@ const isFullMode = () => SETTINGS.mode === "full";
 const server = http.createServer(async (req, res) => {
   try {
   const url = new URL(req.url, "http://127.0.0.1");
+  const reqId = newId("req");
+  req.mathappId = reqId;
+  try { res.setHeader("X-Request-Id", reqId); } catch {}
+  const started = Date.now();
+  res.on("finish", () => {
+    if (url.pathname.startsWith("/api/")) trace("http", { id: reqId, method: req.method, path: url.pathname, status: res.statusCode, ms: Date.now() - started });
+  });
   const prep = await prepareApi(url.pathname, isFullMode());
   if (!prep.ok) {
     res.writeHead(500, { "Content-Type": "application/json" });
@@ -27,10 +35,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(403, { "Content-Type": "application/json", "Cache-Control": "no-store" });
     return res.end('{"ok":false,"err":"funzione non disponibile nella modalità essenziale"}');
   }
-  if (handleApi(req, res, url, { port: PORT, fullMode: isFullMode() })) return;
+  if (handleApi(req, res, url, { port: PORT, fullMode: isFullMode(), requestId: reqId })) return;
   serveStatic(res, url.pathname);
   } catch (e) {
-    logErr("http: " + (e && e.stack || e));
+    logErr("http [" + reqId + "]: " + (e && e.stack || e));
+    trace("http.error", { id: reqId, error: String(e && e.message || e) });
     if (!res.headersSent) {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "errore interno" }));

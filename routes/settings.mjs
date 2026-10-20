@@ -4,6 +4,7 @@ import { MODELS, MODEL_VISION, VISION_FALLBACK, OR_MODEL_MAP } from "../lib/mode
 import { setWhisperLanguage } from "../lib/audio.mjs";
 import { normalizeLevel } from "../lib/levels.mjs";
 import { diagnostics } from "../lib/diagnostics.mjs";
+import { recent } from "../lib/observability.mjs";
 
 const isFullMode = () => SETTINGS.mode === "full";
 
@@ -13,6 +14,10 @@ if (req.method === "GET" && url.pathname === "/api/models") {
     const def = (SETTINGS.model && list.includes(SETTINGS.model)) ? SETTINGS.model : list[0];
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
     return res.end(JSON.stringify({ models: list, default: def, provider: providerName(), hasKey: keySource() !== "none", vision: MODEL_VISION, visionFallback: VISION_FALLBACK }));
+  }
+  if (req.method === "GET" && url.pathname === "/api/traces") {
+    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    return res.end(JSON.stringify({ items: recent(url.searchParams.get("limit") || 50) }));
   }
   if (req.method === "GET" && (url.pathname === "/api/diagnostics" || url.pathname === "/api/health")) {
     const d = diagnostics(ctx.port);

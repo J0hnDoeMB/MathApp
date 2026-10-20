@@ -2,6 +2,7 @@ settings.json
 data/
 backups/
 mathapp.log
+logs/
 .tools/
 node_modules/
 __pycache__/

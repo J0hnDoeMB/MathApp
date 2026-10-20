@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.19.0 - 2026-10-20
+
+### Added
+- Structured observability: JSONL trace in `logs/trace.jsonl` (rotation 2 MB), request IDs (`X-Request-Id`), chat and tool operation IDs/durations.
+- `GET /api/traces` for last events; no prompt/keys/user content stored.
+- `docs/OBSERVABILITY.md`.
+
+### Tests
+- `npm test`: **73 checks** (22 module + 4 agent + 4 chat-service + 3 observability + 40 security/session); UI 15; GeoGebra 5; Python 29.
+
 ## v1.18.0 - 2026-10-20
 
 ### Added

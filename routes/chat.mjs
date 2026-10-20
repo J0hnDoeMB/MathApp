@@ -88,10 +88,10 @@ if (req.method === "POST" && url.pathname === "/api/geogebra-result") {
         }
       };
       try {
-        await executeChat({ body, send, isGone: () => clientGone, signal: abortController.signal });
+        await executeChat({ body, send, isGone: () => clientGone, signal: abortController.signal, requestId: ctx.requestId });
       } catch (e) {
         if (!abortController.signal.aborted && !clientGone && !res.destroyed) {
-          logErr("chat ERR: " + (e && e.message || e));
+          logErr("chat ERR [" + (ctx.requestId || "-") + "]: " + (e && e.message || e));
           send("error", { message: String(e && e.message || e) });
         }
       }

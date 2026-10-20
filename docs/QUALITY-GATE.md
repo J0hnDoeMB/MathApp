@@ -25,7 +25,7 @@ Gli extra restano dietro il gate core/full e, per la UI, dietro il loader `publi
 
 ## Gate di qualità
 
-1. `npm test` verde: **68 check** (22 moduli, 4 agente, 4 chat-service, 38 security/sessione).
+1. `npm test` verde: **73 check** (22 moduli, 4 agente, 4 chat-service, 3 observability, 40 security/sessione).
 2. `npm run test:ui` verde: **15 check** browser.
 3. `npm run test:geo` verde: **5 check** GeoGebra.
 4. `npm run test:py` verde: **29 test** SymPy.

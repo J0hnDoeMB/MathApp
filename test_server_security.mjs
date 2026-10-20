@@ -67,6 +67,7 @@ try {
   const s0 = await request(port, "GET", "/api/settings");
   const j0 = JSON.parse(s0.body);
   chk("GET /api/settings -> provider openrouter senza chiave", j0.ok === true && j0.provider === "openrouter" && j0.hasKey === false);
+  chk("X-Request-Id presente", /^req_/.test(String(s0.headers["x-request-id"] || "")));
   chk("default mode -> core", j0.mode === "core");
   chk("default level -> auto", j0.level === "auto");
   const kbCore = await request(port, "GET", "/api/kb");
@@ -83,6 +84,8 @@ try {
   chk("diagnostics: capabilities", dj.capabilities && dj.capabilities.chat.available === true && typeof dj.coreOk === "boolean");
   const health = await request(port, "GET", "/api/health");
   chk("GET /api/health -> 200", health.status === 200 && JSON.parse(health.body).dataDirOk === true);
+  const traces = await request(port, "GET", "/api/traces?limit=5");
+  chk("GET /api/traces -> 200", traces.status === 200 && Array.isArray(JSON.parse(traces.body).items));
 
   const evil = await request(port, "POST", "/api/settings", { origin: "https://evil.example", headers: { "Content-Type": "application/json" }, body: "{}" });
   chk("POST cross-origin -> 403", evil.status === 403);

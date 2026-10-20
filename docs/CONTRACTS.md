@@ -78,6 +78,15 @@ documents: { extractText }
 ```
 Implementation: `lib/adapters.mjs`, validated by `lib/ports.mjs`. The concrete integrations remain in `lib/llm/sympy/geogebra/audio/documents`.
 
+### Observability
+```text
+newId(prefix)
+trace(event, data)
+startOperation(name, meta) -> { id, end(extra) }
+recent(limit)
+```
+Implementation: `lib/observability.mjs`; request IDs and chat/tool operation durations go to `logs/trace.jsonl`. No prompt/keys/user content.
+
 ### Capabilities
 ```text
 capabilityReport() -> { ok, capabilities: { chat, provider, storage, math, documents, audio, geogebra, tts, fullFeatures } }
