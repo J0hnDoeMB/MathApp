@@ -32,6 +32,8 @@ jobs:
           node --check test_agent.mjs
           node --check test_chat_service.mjs
           node --check test_observability.mjs
+          node --check test_provider_fallback.mjs
+          node --check test_session_corrupt.mjs
           node --check test_modules.mjs
       - uses: actions/setup-python@v5
         with:
@@ -44,6 +46,8 @@ jobs:
           node test_agent.mjs
           node test_chat_service.mjs
           node test_observability.mjs
+          node test_provider_fallback.mjs
+          node test_session_corrupt.mjs
           node test_flashparse.mjs
           node test_quizparse.mjs
           node test_server_security.mjs

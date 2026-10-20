@@ -95,7 +95,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 73 checks (22 module + 4 agent + 4 chat-service + 3 observability + 40 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, atomic JSON/quarantine, state persistence/revision, feature routes, capabilities/diagnostics, request IDs/traces).
+- `npm test`: 79 checks (22 module + 4 agent + 4 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 40 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, atomic JSON/quarantine, state persistence/revision, feature routes, capabilities/diagnostics, request IDs/traces).
 - `npm run test:ui`: 15 browser smoke checks (UI, state store, command bus, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.20.0 - 2026-10-20
+
+### Added
+- Provider fallback test: OpenCode 401 -> OpenRouter with mocked fetch.
+- Session corruption test: corrupt JSON quarantined, read null, list skips it.
+- `npm test` now covers these critical failure paths.
+
+### Tests
+- `npm test`: **79 checks** (22 module + 4 agent + 4 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 40 security/session); UI 15; GeoGebra 5; Python 29.
+
 ## v1.19.0 - 2026-10-20
 
 ### Added
