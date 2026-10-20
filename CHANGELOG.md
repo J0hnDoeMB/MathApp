@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6.0 - 2026-10-20
+
+### Changed
+- Phase 2 feature modules: routes split into `backup`, `kb`, `profile`, `review`, `study`, `compute`; SM-2 in `lib/review.mjs`, flashcard/quiz prompts and generation in `lib/study.mjs`, optional-API gate in `lib/features.mjs`.
+- No new UI features: only isolation, contracts and tests for existing didactic features.
+
+### Tests
+- `npm test`: **52 checks** (15 module + 4 agent + 33 security/session, including core/full isolation).
+- `npm run test:ui` (7), `npm run test:geo` (5), Python (29).
+
 ## v1.5.4 - 2026-10-20
 
 ### Added

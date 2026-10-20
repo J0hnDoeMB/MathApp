@@ -71,6 +71,10 @@ try {
   chk("default level -> auto", j0.level === "auto");
   const kbCore = await request(port, "GET", "/api/kb");
   chk("core: /api/kb -> 403", kbCore.status === 403);
+  chk("core: /api/profile -> 403", (await request(port, "GET", "/api/profile")).status === 403);
+  chk("core: /api/review -> 403", (await request(port, "GET", "/api/review")).status === 403);
+  chk("core: /api/quiz -> 403", (await request(port, "POST", "/api/quiz")).status === 403);
+  chk("core: /api/flashcards -> 403", (await request(port, "POST", "/api/flashcards")).status === 403);
 
   const diag = await request(port, "GET", "/api/diagnostics");
   const dj = JSON.parse(diag.body);
@@ -105,6 +109,11 @@ try {
   chk("POST /api/profile -> 200", prof.status === 200 && JSON.parse(prof.body).ok === true);
   const review = await request(port, "POST", "/api/review", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ convId: "smoke", title: "Derivata", text: "La derivata di x^2 e' 2x" }) });
   chk("POST /api/review -> 200", review.status === 200 && JSON.parse(review.body).ok === true);
+  const revList = JSON.parse((await request(port, "GET", "/api/review")).body).items;
+  const revItem = revList.find((r) => r.text === "La derivata di x^2 e' 2x");
+  const grade = await request(port, "POST", "/api/review/grade", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: revItem && revItem.id, q: "facile" }) });
+  const graded = JSON.parse(grade.body).item || {};
+  chk("POST /api/review/grade -> SM-2", grade.status === 200 && graded.interval === 3 && graded.lastGrade === "facile");
   const quizDry = await request(port, "POST", "/api/quiz", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dry: true, topic: "derivate", n: 3 }) });
   chk("POST /api/quiz dry -> 200", quizDry.status === 200 && JSON.parse(quizDry.body).dry === true);
   if (dj.sympy) {

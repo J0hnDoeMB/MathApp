@@ -49,7 +49,7 @@ Il **livello di dettaglio** (Auto, Sintetico, Dettagliato, Approfondito) si sceg
 Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esatti**. Se la risposta contiene matematica ma non ha usato SymPy, compare un avviso: il badge è volutamente onesto, perché il calcolo esatto non garantisce che il testo lo riporti correttamente.
 
 ## Architettura
-`server.mjs` è il guscio HTTP (sicurezza, router, statici, avvio, ~60 righe); le API stanno in `routes/` (settings, library, conversations, chat) e i servizi di dominio in `lib/`: `agent`, `prompts`, `tools`, `sympy`, `geogebra`, `documents`, `audio`, `kb`, `profile`, `storage`, `levels`. Le dipendenze vanno solo verso il basso (`server → routes → servizi → storage/config`), senza import circolari. Mappa completa e contratti in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); direzione e fasi in [`docs/ROADMAP.md`](docs/ROADMAP.md); release policy in [`docs/RELEASE.md`](docs/RELEASE.md); onboarding tecnico in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
+`server.mjs` è il guscio HTTP (sicurezza, router, statici, avvio, ~60 righe); le API stanno in `routes/` (settings, backup, kb, profile, review, study, compute, conversations, chat) e i servizi di dominio in `lib/`: `agent`, `prompts`, `tools`, `sympy`, `geogebra`, `documents`, `audio`, `kb`, `profile`, `review`, `study`, `features`, `storage`, `levels`. Le dipendenze vanno solo verso il basso (`server → routes → servizi → storage/config`), senza import circolari. Mappa completa e contratti in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); direzione e fasi in [`docs/ROADMAP.md`](docs/ROADMAP.md); release policy in [`docs/RELEASE.md`](docs/RELEASE.md); onboarding tecnico in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 
 ## Diagnostica
 
@@ -233,7 +233,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (42 check: 10 test dei moduli + 4 del loop agente + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, persistenza e route libreria); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (52 check: 15 test dei moduli + 4 del loop agente + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, persistenza e route feature); `npm run test:py` per SymPy.
 - Smoke browser: `npm run test:ui` (7 check: nuova chat, ripristino sessione/view, UI); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
@@ -242,7 +242,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 
 ## File
 - `server.mjs` — guscio HTTP: sicurezza, router, statici, avvio
-- `routes/` — API settings, library, conversations, chat
+- `routes/` — API settings, backup, kb, profile, review, study, compute, conversations, chat
 - `test_ui_smoke.mjs` — smoke browser (nuova chat, restore, view)
 - `setup.cmd`, `setup.ps1` — setup Windows: Node portatile, Python/SymPy opzionali
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali

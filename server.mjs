@@ -6,6 +6,7 @@ import { scheduleBackups } from "./lib/storage.mjs";
 import { maybePreloadWhisper } from "./lib/audio.mjs";
 import { serveStatic } from "./lib/http.mjs";
 import { handleApi } from "./routes/index.mjs";
+import { isOptionalApi } from "./lib/features.mjs";
 
 const PORT = Number(process.env.MATHAPP_PORT) || 8790;
 const isFullMode = () => SETTINGS.mode === "full";
@@ -36,7 +37,7 @@ const server = http.createServer((req, res) => {
     });
   }
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) maybePreloadWhisper();
-  if (!isFullMode() && (url.pathname === "/api/quiz" || url.pathname === "/api/flashcards" || url.pathname === "/api/profile" || url.pathname.startsWith("/api/kb") || url.pathname.startsWith("/api/review"))) {
+  if (!isFullMode() && isOptionalApi(url.pathname)) {
     res.writeHead(403, { "Content-Type": "application/json", "Cache-Control": "no-store" });
     return res.end('{"ok":false,"err":"funzione non disponibile nella modalità essenziale"}');
   }

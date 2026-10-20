@@ -17,7 +17,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | Module | Responsibility | Depends on |
 |---|---|---|
 | `server.mjs` | security, router, static files, startup | routes |
-| `routes/*.mjs` | API groups: settings, library, conversations, chat | lib services |
+| `routes/*.mjs` | API groups: settings, backup, kb, profile, review, study, compute, conversations, chat | lib services |
 | `lib/config.mjs` | settings file, paths, provider/key resolution, capability detection | Node only |
 | `lib/models.mjs` | model catalog, OpenRouter mapping, specialists | config |
 | `lib/llm.mjs` | one OpenAI-compatible client (streaming/non-streaming/vision) | config, models, log |
@@ -31,6 +31,9 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/audio.mjs` | persistent Whisper worker, audio cache, language changes | config, log, util |
 | `lib/kb.mjs` | attachment index, chunks and BM25-lite search | storage, log |
 | `lib/profile.mjs` | style-memory CRUD and prompt selection | storage, log |
+| `lib/review.mjs` | SM-2 scheduling | storage |
+| `lib/study.mjs` | flashcard/quiz prompts, model call and parsing | llm, parsers |
+| `lib/features.mjs` | optional API gate (core/full) | none |
 | `lib/storage.mjs` | conversations, review file, backups | config, log |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
@@ -49,7 +52,7 @@ Dependency direction: `server -> agent -> tools/services -> storage/config`. Low
 ## What changed in the refactor
 
 - `server.mjs` dropped from **~1,688 lines / 92 KB** to **~60 lines / 3 KB**.
-- API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
+- API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, review, study, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
 - Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
 - `test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
 
@@ -80,7 +83,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 42 checks (10 module + 4 agent + parsers + 28 security/session: CSRF, body limit, traversal, settings API, state persistence/revision, library routes).
+- `npm test`: 52 checks (15 module + 4 agent + parsers + 33 security/session: CSRF, body limit, traversal, core/full, settings API, state persistence/revision, feature routes).
 - `npm run test:ui`: 7 browser smoke checks (new chat, session restore, view, UI); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

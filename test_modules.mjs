@@ -7,6 +7,9 @@ import { cachePut } from "./lib/util.mjs";
 import { isAudio } from "./lib/audio.mjs";
 import { TOOLS, toolsFor } from "./lib/tools.mjs";
 import { systemFor } from "./lib/prompts.mjs";
+import { isOptionalApi } from "./lib/features.mjs";
+import { gradeReview } from "./lib/review.mjs";
+import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
 
 let ok = 0, fail = 0;
 function chk(name, fn) {
@@ -86,6 +89,47 @@ chk("tools: schema con parametri minimi", () => {
 chk("levels: auto e approfondito", () => {
   assert.match(levelRule("auto"), /LIVELLO \(auto\)/);
   assert.match(levelRule("approfondito"), /controesempi/);
+});
+
+chk("features: gate core", () => {
+  assert.equal(isOptionalApi("/api/kb"), true);
+  assert.equal(isOptionalApi("/api/kb/doc"), true);
+  assert.equal(isOptionalApi("/api/review/grade"), true);
+  assert.equal(isOptionalApi("/api/quiz"), true);
+  assert.equal(isOptionalApi("/api/chat"), false);
+  assert.equal(isOptionalApi("/api/backup"), false);
+});
+
+chk("review: SM-2 facile/difficile", () => {
+  const it = { reps: 0, ease: 2.5, interval: 0, lapses: 0, t: 1 };
+  gradeReview(it, "facile", 1000);
+  assert.equal(it.reps, 1);
+  assert.equal(it.interval, 3);
+  assert.equal(it.due, 1000 + 3 * 86400000);
+  assert.equal(it.lastGrade, "facile");
+  gradeReview(it, "difficile", 2000);
+  assert.equal(it.reps, 0);
+  assert.equal(it.interval, 0);
+  assert.equal(it.lapses, 1);
+  assert.equal(it.due, 2000 + 10 * 60 * 1000);
+});
+
+chk("study: prompt deterministici", () => {
+  assert.match(flashcardPrompt("testo", 5), /fino a 5 flashcard/);
+  assert.match(quizPrompt("derivate", 4), /4 domande/);
+});
+
+const fakeCards = async () => ({ text: '[{"d":"Quanto fa 1+1?","r":"2"}]' });
+const fakeQuiz = async () => ({ text: '[{"d":"Derivata di x^2?","opts":["x","2x","x^2","2"],"ok":1,"why":"regola"}]' });
+const cards = await generateFlashcards({ text: "testo abbastanza lungo", n: 3, model: "fake", callModel: fakeCards });
+chk("study: flashcard con modello finto", () => {
+  assert.equal(cards.cards.length, 1);
+  assert.equal(cards.cards[0].r, "2");
+});
+const quiz = await generateQuiz({ topic: "derivate", n: 3, model: "fake", callModel: fakeQuiz });
+chk("study: quiz con modello finto", () => {
+  assert.equal(quiz.questions.length, 1);
+  assert.equal(quiz.questions[0].ok, 1);
 });
 
 console.log("----");

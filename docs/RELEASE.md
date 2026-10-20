@@ -8,7 +8,7 @@
 
 ## Checklist di release
 
-1. `npm test` verde (42 check), `npm run test:ui` verde (7 check), `npm run test:geo` verde (5 check) e `npm run test:py` verde.
+1. `npm test` verde (52 check), `npm run test:ui` verde (7 check), `npm run test:geo` verde (5 check) e `npm run test:py` verde.
 2. `node test_server_cancel.mjs` e i test UI disponibili verdi.
 3. `docs/ARCHITECTURE.md` e `CHANGELOG.md` aggiornati.
 4. Nessun segreto, `settings.json`, `data/`, `.tools/` o path personale nel commit.
