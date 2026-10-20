@@ -5,6 +5,8 @@ import { kbLoad, kbChunks } from "../lib/kb.mjs";
 import { readReview, writeReview } from "../lib/storage.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "../lib/study.mjs";
 
+export const feature = "study";
+
 export function handle(req, res, url) {
   // flashcard generate dagli appunti (finiscono nel Ripasso con scadenza subito)
   if (req.method === "POST" && url.pathname === "/api/flashcards") {

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.11.0 - 2026-10-20
+
+### Added
+- Optional route plugins loaded on demand: `prepareApi` loads kb/profile/review/study only when mode is full; core routes remain static.
+- Plugin contract: each optional route exports `feature` and `handle`; the loader validates id and reports load failures without crashing.
+
+### Tests
+- `npm test`: **62 checks** (19 module + 4 agent + 4 chat-service + 35 security/session); UI 8; GeoGebra 5.
+
 ## v1.10.0 - 2026-10-20
 
 ### Changed

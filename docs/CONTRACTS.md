@@ -61,6 +61,13 @@ updateTags(id, tag, action) -> { status, ok, tags?, error? }
 ```
 Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
 
+### FeaturePlugin
+```text
+export const feature = "kb"
+export function handle(req, res, url, ctx) -> boolean
+```
+Optional modules are loaded only in full mode by `routes/index.mjs`; a load failure returns `500` and does not crash the server.
+
 ### ClientState
 ```text
 MathAppState.domain / MathAppState.ui
@@ -97,5 +104,5 @@ Implementazione: `lib/storage.mjs`.
 
 ## Gap noti
 
-- Lo stato UI/domain è ancora nel grande `public/app.js`; la separazione eventi UI → application è il prossimo lavoro del layer Presentation.
-- Non c'è ancora un plugin loader per feature opzionali: il gate è centralizzato ma i moduli sono statici.
+- Lo stato UI/domain è in `public/state.js`, ma `app.js` è ancora un classico script: l'event model UI → application è il prossimo lavoro del layer Presentation.
+- I plugin backend sono caricati on-demand; il codice UI delle feature opzionali è ancora nel bundle unico di `app.js`.

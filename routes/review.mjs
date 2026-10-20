@@ -3,6 +3,8 @@ import crypto from "node:crypto";
 import { readReview, writeReview, revNorm } from "../lib/storage.mjs";
 import { gradeReview } from "../lib/review.mjs";
 
+export const feature = "review";
+
 export function handle(req, res, url) {
 if (req.method === "POST" && url.pathname === "/api/review/grade") {
     let b = "";

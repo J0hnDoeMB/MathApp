@@ -1,6 +1,8 @@
 // Memoria di stile.
 import { profLoad, profSave, profAdd } from "../lib/profile.mjs";
 
+export const feature = "profile";
+
 export function handle(req, res, url) {
 if (url.pathname === "/api/profile") {
     if (req.method === "GET") {

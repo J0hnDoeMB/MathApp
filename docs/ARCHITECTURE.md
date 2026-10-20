@@ -17,7 +17,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | Module | Responsibility | Depends on |
 |---|---|---|
 | `server.mjs` | security, router, static files, startup | routes |
-| `routes/*.mjs` | API groups: settings, backup, kb, profile, review, study, compute, conversations, chat | lib services |
+| `routes/*.mjs` | core API groups + optional plugins (kb/profile/review/study) loaded on demand | lib services |
 | `lib/config.mjs` | settings file, paths, provider/key resolution, capability detection | Node only |
 | `lib/models.mjs` | model catalog, OpenRouter mapping, specialists | config |
 | `lib/llm.mjs` | one OpenAI-compatible client (streaming/non-streaming/vision) | config, models, log |
@@ -27,6 +27,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/agent.mjs` | agent loop, escalation, delegation, verification counts | llm, tools, prompts, sympy, geogebra, profile |
 | `lib/chat-service.mjs` | chat orchestration: vision, attachments, KB, agent, save | models, llm, documents, kb, agent, session-store |
 | `lib/security.mjs` | CSRF and body-cap request guard | config |
+| `routes/index.mjs` | core route dispatch + lazy plugin loader | routes, features |
 | `lib/sympy.mjs` | exact math child process, timeout/output/concurrency limits | util |
 | `lib/geogebra.mjs` | GeoGebra bridge and browser confirmations | session-store, log |
 | `lib/documents.mjs` | PDF/text extraction and upstream message building | audio, util |
@@ -35,7 +36,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/profile.mjs` | style-memory CRUD and prompt selection | storage, log |
 | `lib/review.mjs` | SM-2 scheduling | storage |
 | `lib/study.mjs` | flashcard/quiz prompts, model call and parsing | llm, parsers |
-| `lib/features.mjs` | optional API gate (core/full) | none |
+| `lib/features.mjs` | optional API gate + plugin registry (id, prefixes, module) | none |
 | `lib/session-store.mjs` | session repository: read/write, state merge, history, tags | storage, schema, models, log |
 | `lib/schema.mjs` | data validation, limits and migrations | none |
 | `lib/storage.mjs` | data paths, review file, backups | config, log |
@@ -56,7 +57,7 @@ Dependency direction: `server -> routes/agent -> domain/integration -> infrastru
 
 ## What changed in the refactor
 
-- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~43 lines / 3 KB**.
+- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~58 lines / 4 KB**.
 - API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, review, study, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
 - Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
 - `test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
@@ -88,7 +89,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 61 checks (18 module + 4 agent + 4 chat-service + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
+- `npm test`: 62 checks (19 module + 4 agent + 4 chat-service + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
 - `npm run test:ui`: 8 browser smoke checks (UI, state store, new chat, session restore, view); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

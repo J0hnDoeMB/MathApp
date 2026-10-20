@@ -7,7 +7,7 @@ import { cachePut } from "./lib/util.mjs";
 import { isAudio } from "./lib/audio.mjs";
 import { TOOLS, toolsFor } from "./lib/tools.mjs";
 import { systemFor } from "./lib/prompts.mjs";
-import { isOptionalApi } from "./lib/features.mjs";
+import { featureForPath, isOptionalApi } from "./lib/features.mjs";
 import { gradeReview } from "./lib/review.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
 import { SCHEMA_VERSION, migrateSession, validateState } from "./lib/schema.mjs";
@@ -92,8 +92,18 @@ chk("levels: auto e approfondito", () => {
   assert.match(levelRule("approfondito"), /controesempi/);
 });
 
+const pluginMods = await Promise.all(["./routes/kb.mjs", "./routes/profile.mjs", "./routes/review.mjs", "./routes/study.mjs"].map((p) => import(p)));
+chk("plugins: contratto feature/handle", () => {
+  assert.deepEqual(pluginMods.map((m) => m.feature), ["kb", "profile", "review", "study"]);
+  assert.equal(pluginMods.every((m) => typeof m.handle === "function"), true);
+});
+
 chk("features: gate core", () => {
   assert.equal(isOptionalApi("/api/kb"), true);
+  assert.equal(featureForPath("/api/kb/doc").id, "kb");
+  assert.equal(featureForPath("/api/quiz").id, "study");
+  assert.equal(featureForPath("/api/review/grade").id, "review");
+  assert.equal(featureForPath("/api/chat"), null);
   assert.equal(isOptionalApi("/api/kb/doc"), true);
   assert.equal(isOptionalApi("/api/review/grade"), true);
   assert.equal(isOptionalApi("/api/quiz"), true);

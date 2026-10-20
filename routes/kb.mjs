@@ -6,6 +6,8 @@ import { audioToText, isAudio } from "../lib/audio.mjs";
 import { docToText } from "../lib/documents.mjs";
 import { logErr } from "../lib/log.mjs";
 
+export const feature = "kb";
+
 export function handle(req, res, url) {
 if (req.method === "POST" && url.pathname === "/api/kb/use") {
     let b = "";
