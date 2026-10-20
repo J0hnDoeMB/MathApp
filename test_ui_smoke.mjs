@@ -144,14 +144,14 @@ try {
     quiz: typeof window.__quiz,
     script: [...document.scripts].some((s) => s.src.includes("/features/quiz.js")),
   }));
-  chk("core: plugin UI non caricati", Array.isArray(lazyCore.plugins) && !lazyCore.plugins.includes("quiz") && !lazyCore.plugins.includes("review") && !lazyCore.plugins.includes("tts") && !lazyCore.plugins.includes("kb") && lazyCore.quiz === "undefined" && !lazyCore.script);
+  chk("core: plugin UI non caricati", Array.isArray(lazyCore.plugins) && !lazyCore.plugins.includes("quiz") && !lazyCore.plugins.includes("review") && !lazyCore.plugins.includes("tts") && !lazyCore.plugins.includes("kb") && !lazyCore.plugins.includes("style") && lazyCore.quiz === "undefined" && !lazyCore.script);
 
   const toFull = await request(port, "POST", "/api/settings", { mode: "full" });
   chk("setup full", toFull.status === 200);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => !!window.__quiz && ["review", "tts", "kb"].every((id) => window.MathAppPlugins.has(id)), { timeout: 15000 });
-  const lazyFull = await page.evaluate(() => ({ plugins: window.MathAppPlugins.loaded(), script: [...document.scripts].some((s) => s.src.includes("/features/quiz.js")), review: !!MathAppPlugins.api("review"), tts: !!MathAppPlugins.api("tts"), kb: !!MathAppPlugins.api("kb") }));
-  chk("full: plugin UI caricati", lazyFull.plugins.includes("quiz") && lazyFull.plugins.includes("review") && lazyFull.plugins.includes("tts") && lazyFull.plugins.includes("kb") && lazyFull.script && lazyFull.review && lazyFull.tts && lazyFull.kb);
+  await page.waitForFunction(() => !!window.__quiz && ["review", "tts", "kb", "style"].every((id) => window.MathAppPlugins.has(id)), { timeout: 15000 });
+  const lazyFull = await page.evaluate(() => ({ plugins: window.MathAppPlugins.loaded(), script: [...document.scripts].some((s) => s.src.includes("/features/quiz.js")), review: !!MathAppPlugins.api("review"), tts: !!MathAppPlugins.api("tts"), kb: !!MathAppPlugins.api("kb"), style: !!MathAppPlugins.api("style") }));
+  chk("full: plugin UI caricati", lazyFull.plugins.includes("quiz") && lazyFull.plugins.includes("review") && lazyFull.plugins.includes("tts") && lazyFull.plugins.includes("kb") && lazyFull.plugins.includes("style") && lazyFull.script && lazyFull.review && lazyFull.tts && lazyFull.kb && lazyFull.style);
   await page.click("#reviewBtn");
   await page.waitForFunction(() => !document.querySelector("#reviewDrawer").hidden, { timeout: 5000 });
   chk("full: drawer Ripasso", true);
@@ -160,6 +160,10 @@ try {
   await page.waitForFunction(() => !document.querySelector("#kbDrawer").hidden, { timeout: 5000 });
   chk("full: drawer Appunti", true);
   await page.click("#kbClose");
+  await page.click("#styleBtn");
+  await page.waitForFunction(() => !document.querySelector("#styleDrawer").hidden, { timeout: 5000 });
+  chk("full: drawer Stile", true);
+  await page.click("#styleClose");
 
   chk("nessun errore JS dell'app", pageErrors.length === 0);
   if (pageErrors.length) console.error(pageErrors.slice(0, 4).join("\n"));

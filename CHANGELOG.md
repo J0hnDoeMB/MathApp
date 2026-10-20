@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.14.0 - 2026-10-20
+
+### Changed
+- Style/profile UI moved to `public/features/style.js`; core loads no style code.
+- Plugin loader now covers quiz/review/tts/kb/style; `app.js` down to ~2,640 lines.
+
+### Tests
+- `npm test`: 62 checks; UI smoke: **14 checks** (style drawer included); GeoGebra: 5.
+
 ## v1.13.0 - 2026-10-20
 
 ### Changed

@@ -2346,47 +2346,6 @@ function renderSources(bubble, data, answer) {
   bubble.appendChild(box);
 }
 
-// ---------- stile imparato (memoria dell'IA) ----------
-async function refreshStyle() {
-  const list = $("#styleList");
-  try {
-    const j = await (await fetch("/api/profile")).json();
-    if (!j.items.length) {
-      list.innerHTML = '<div class="hist-empty">Ancora nulla.<br>L\'IA impara quando la correggi sullo stile, oppure aggiungi tu una preferenza qui sopra.</div>';
-      return;
-    }
-    list.innerHTML = "";
-    for (const c of j.items) {
-      const row = document.createElement("div"); row.className = "rev-item";
-      const t = document.createElement("div"); t.className = "t";
-      const b = document.createElement("b"); b.textContent = c.testo;
-      const s = document.createElement("span");
-      s.textContent = (c.source === "IA" ? "imparata dall'IA" : "aggiunta da te") + " · riletta " + (c.hits || 0) + " volte";
-      t.append(b, s);
-      const del = mkBtn("Elimina", async (ev) => {
-        ev.stopPropagation();
-        await fetch("/api/profile?id=" + encodeURIComponent(c.id), { method: "DELETE" });
-        refreshStyle();
-      }, "hist-del");
-      row.append(t, del);
-      list.appendChild(row);
-    }
-  } catch { list.innerHTML = '<div class="hist-empty">Memoria non disponibile.</div>'; }
-}
-
-async function addStyle() {
-  const v = $("#styleInput").value.trim();
-  if (!v) return;
-  const r = await fetch("/api/profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ testo: v }) });
-  if (r.ok) { $("#styleInput").value = ""; refreshStyle(); flash("preferenza salvata: la rileggerò prima di rispondere"); }
-  else flash("preferenza troppo corta");
-}
-
-$("#styleBtn").addEventListener("click", () => { const d = $("#styleDrawer"); d.hidden = !d.hidden; if (!d.hidden) refreshStyle(); });
-$("#styleClose").addEventListener("click", () => { $("#styleDrawer").hidden = true; });
-$("#styleAdd").addEventListener("click", addStyle);
-$("#styleInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addStyle(); } });
-
 // ---------- dettatura vocale (trascrizione locale con Whisper) ----------
 let mediaRec = null, recChunks = [], recTimer = null, recStart = 0, recBusy = false;
 
@@ -2587,7 +2546,7 @@ async function loadSettings() {
   const modeSel = $("#setMode"); if (modeSel) modeSel.value = d.mode || "core";
   const levelSel = $("#setLevel"); if (levelSel) levelSel.value = d.level || "auto";
   if ((d.mode || "core") === "full" && window.MathAppPlugins) {
-    for (const id of ["quiz", "review", "tts", "kb"]) window.MathAppPlugins.load(id).catch((e) => console.warn("[MathApp] " + id + " plugin", e));
+    for (const id of ["quiz", "review", "tts", "kb", "style"]) window.MathAppPlugins.load(id).catch((e) => console.warn("[MathApp] " + id + " plugin", e));
   }
   const banner = $("#setupBanner"); if (banner) banner.hidden = !!d.hasKey;
   const prov = $("#setProvider"); if (prov) prov.value = d.provider || "openrouter";

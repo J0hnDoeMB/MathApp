@@ -63,7 +63,7 @@ Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
 
 ### ClientFeaturePlugin
 ```text
-MathAppPlugins.register("quiz", init) // also review, tts, kb
+MathAppPlugins.register("quiz", init) // also review, tts, kb, style
 init(MathAppApp) // app = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64FromBlob, refreshReviewBadge, state }
 ```
 The loader injects `/features/<id>.js` only when needed; core mode never downloads optional UI.

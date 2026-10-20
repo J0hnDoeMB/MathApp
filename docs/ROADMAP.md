@@ -37,7 +37,7 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] migrare i call site di `app.js` a `MathAppState` (accessori rimossi)
 - [x] plugin loader backend per feature opzionali (kb/profile/review/study on-demand)
 - [x] lazy loading UI: loader + quiz
-- [x] migrare review/KB/TTS al loader UI
+- [x] migrare review/KB/TTS/stile al loader UI
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
 
