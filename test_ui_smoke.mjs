@@ -120,7 +120,12 @@ try {
   }));
   chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string" && !store.legacy);
   const commands = await page.evaluate(() => window.MathAppState.commands());
-  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore"].every((c) => commands.includes(c)));
+  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore", "settings.toggle", "settings.save", "view.mode", "chat.stop", "chat.regenerate"].every((c) => commands.includes(c)));
+
+  await page.evaluate(() => window.MathAppState.dispatch("settings.open"));
+  await page.waitForFunction(() => !document.querySelector("#settingsDrawer").hidden, { timeout: 5000 });
+  chk("command settings.open", true);
+  await page.click("#settingsClose");
 
   const idBefore = await page.evaluate(() => localStorage.getItem("mathapp.conv"));
   await page.click("#newChat");

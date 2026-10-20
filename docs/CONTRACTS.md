@@ -124,7 +124,7 @@ on(event, fn) / emit(event, value) / snapshot()
 MathAppState.handle(name, fn)
 MathAppState.dispatch(name, payload) -> Promise
 ```
-Commands: `session.new`, `chat.send`, `session.restore`. UI events call dispatch; application handlers mutate state.
+Commands: `session.new`, `chat.send`, `session.restore`, `settings.open`, `settings.toggle`, `settings.save`, `settings.clearKey`, `view.mode`, `chat.stop`, `chat.regenerate`. UI events call dispatch; application handlers mutate state.
 Implementation: `public/state.js`. `app.js` uses `MathAppState` directly; no legacy global state.
 
 ### ChatOrchestrator

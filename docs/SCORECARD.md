@@ -6,7 +6,7 @@ Current state (v1.21.0):
 |---|---|
 | Build/CI | green, branch protected |
 | Node checks | 79 |
-| UI smoke | 15 |
+| UI smoke | 16 |
 | GeoGebra smoke | 5 |
 | Python tests | 29 |
 | Math eval cases | 17 |

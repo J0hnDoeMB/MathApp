@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.22.0 - 2026-10-20
+
+### Changed
+- Command bus extended to core UI actions: settings open/toggle/save/clear key, view mode, chat stop/regenerate.
+- UI smoke now covers the command list and `settings.open`.
+
+### Tests
+- `npm test`: 79 checks; UI smoke: **16 checks**; GeoGebra 5; eval 17; Python 29.
+
 ## v1.21.0 - 2026-10-20
 
 ### Added

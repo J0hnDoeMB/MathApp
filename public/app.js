@@ -2260,7 +2260,7 @@ $("#themeBtn").addEventListener("click", () => {
 });
 
 // mentre l'IA risponde il pulsante Invia è "Ferma": clic = interrompi (senza inviare)
-$("#send").addEventListener("click", (e) => { if (appState.ui.streaming) { e.preventDefault(); stopStreaming(); } });
+$("#send").addEventListener("click", (e) => { if (appState.ui.streaming) { e.preventDefault(); MathAppState.dispatch("chat.stop").catch((err) => console.warn("[MathApp] chat.stop", err)); } });
 
 // ---------- ripasso (scadenze SM-2 + export Anki) ----------
 const itDue = (it) => (typeof it.due === "number" ? it.due : (Number(it.t) || 0));
@@ -2513,7 +2513,7 @@ window.addEventListener("keydown", (e) => {
   if (ctrl && !inField && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) { e.preventDefault(); boardRedo(); return; }
   if (ctrl && e.key.toLowerCase() === "k") { e.preventDefault(); setMode("figure"); inputEl.focus(); return; }
   if (e.altKey && e.key.toLowerCase() === "n") { e.preventDefault(); $("#newChat").click(); return; }
-  if (e.altKey && e.key.toLowerCase() === "r") { e.preventDefault(); regenerate(); return; }
+  if (e.altKey && e.key.toLowerCase() === "r") { e.preventDefault(); MathAppState.dispatch("chat.regenerate").catch((err) => console.warn("[MathApp] chat.regenerate", err)); return; }
   if (e.key === "ArrowUp" && document.activeElement === inputEl && !inputEl.value.trim()) {
     const u = [...appState.domain.messages].reverse().find((m) => m.role === "user");
     if (u) { e.preventDefault(); inputEl.value = u.content; }
@@ -2611,11 +2611,19 @@ function initSettingsUI() {
     inputEl.value = q.dataset.q;
     inputEl.focus();
   });
-  $("#settingsBtn").addEventListener("click", () => { d.hidden = !d.hidden; if (!d.hidden) loadSettings(); });
+  MathAppState.handle("settings.open", async () => { const el = $("#settingsDrawer"); if (!el) return false; el.hidden = false; await loadSettings(); return true; });
+MathAppState.handle("settings.toggle", async () => { const el = $("#settingsDrawer"); if (!el) return false; el.hidden = !el.hidden; if (!el.hidden) await loadSettings(); return !el.hidden; });
+MathAppState.handle("settings.save", (payload) => saveSettings(payload || {}));
+MathAppState.handle("settings.clearKey", () => saveSettings({ clearKey: true }));
+MathAppState.handle("view.mode", ({ mode }) => setMode(mode === "algebra" ? "algebra" : "figure"));
+MathAppState.handle("chat.stop", () => stopStreaming());
+MathAppState.handle("chat.regenerate", () => regenerate());
+
+$("#settingsBtn").addEventListener("click", () => { MathAppState.dispatch("settings.toggle").catch((e) => console.warn("[MathApp] settings.toggle", e)); });
   $("#settingsClose").addEventListener("click", () => { d.hidden = true; });
-  const so = $("#setupOpen"); if (so) so.addEventListener("click", () => { d.hidden = false; loadSettings(); });
-  $("#settingsSave").addEventListener("click", () => saveSettings());
-  $("#settingsClearKey").addEventListener("click", () => saveSettings({ clearKey: true }));
+  const so = $("#setupOpen"); if (so) so.addEventListener("click", () => { MathAppState.dispatch("settings.open").catch((e) => console.warn("[MathApp] settings.open", e)); });
+  $("#settingsSave").addEventListener("click", () => { MathAppState.dispatch("settings.save").catch((e) => console.warn("[MathApp] settings.save", e)); });
+  $("#settingsClearKey").addEventListener("click", () => { MathAppState.dispatch("settings.clearKey").catch((e) => console.warn("[MathApp] settings.clearKey", e)); });
   const dr = $("#diagRefresh"); if (dr) dr.addEventListener("click", () => { loadDiagnostics(); });
 }
 
