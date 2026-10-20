@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.13.0 - 2026-10-20
+
+### Changed
+- Review, TTS and KB UI moved to lazy plugins (`public/features/review.js`, `tts.js`, `kb.js`); core mode loads none of them.
+- Plugin loader returns each plugin API; review/TTS/KB expose refresh/add/speak/stop as appropriate.
+- `app.js` dropped to ~2,680 lines; quiz/review/TTS/KB are no longer in the core bundle.
+
+### Tests
+- `npm test`: 62 checks; UI smoke: **13 checks** (core no-load, full load + drawers); GeoGebra: 5.
+
 ## v1.12.0 - 2026-10-20
 
 ### Added

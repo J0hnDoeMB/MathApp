@@ -830,7 +830,7 @@ async function runTurn() {
           line.className = "notice";
           line.textContent = "ℹ " + data.text;
           bubble.appendChild(line); // le notizie utili restano sempre visibili
-          if (/Appunti/i.test(data.text) && !$("#kbDrawer").hidden) refreshKb(); // lista aggiornata se il pannello è aperto
+          if (/Appunti/i.test(data.text) && $("#kbDrawer") && !$("#kbDrawer").hidden && window.MathAppKb) window.MathAppKb.refresh(); // lista aggiornata se il pannello è aperto
         } else if (ev === "sympy_result") {
           const a2 = data.args || {};
           addCell(a2.operation, a2.expr || a2.vectors || a2.matrix || "", data.result, true);
@@ -2100,43 +2100,14 @@ async function copyText(t, msg) {
   catch { flash("copia non disponibile"); }
 }
 
-// ---------- lettura ad alta voce (voce del browser, senza rete) ----------
-let ttsBtn = null;
-function ttsClean(t) {
-  return String(t || "")
-    .replace(/```[\s\S]*?```/g, " (blocco di codice) ")
-    .replace(/\$\$[\s\S]*?\$\$/g, " formula ")
-    .replace(/\$[^$\n]*\$/g, " formula ")
-    .replace(/^#{1,6}\s*/gm, "")
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/[*_`>#]/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+// La lettura ad alta voce e' un plugin: qui restano solo gli stub usati dal core.
+let ttsApi = null;
+async function ensureTTS() {
+  if (!window.MathAppPlugins) return null;
+  ttsApi = await window.MathAppPlugins.load("tts");
+  return ttsApi;
 }
-
-function ttsStop() {
-  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch {}
-  if (ttsBtn) { ttsBtn.textContent = "🔊 Ascolta"; ttsBtn = null; }
-}
-
-function ttsSpeak(text, btn) {
-  if (!("speechSynthesis" in window)) { flash("il browser non supporta la lettura ad alta voce"); return; }
-  if (ttsBtn === btn) { ttsStop(); return; } // secondo clic: ferma
-  ttsStop();
-  const clean = ttsClean(text).slice(0, 12000);
-  if (!clean) return;
-  try {
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang = "it-IT";
-    const voices = speechSynthesis.getVoices() || [];
-    const it = voices.find((v) => /^it/i.test(v.lang || ""));
-    if (it) { try { u.voice = it; } catch {} } // alcune voci strane non sono assegnabili: si legge con quella di sistema
-    u.onend = () => { if (ttsBtn === btn) { btn.textContent = "🔊 Ascolta"; ttsBtn = null; } };
-    speechSynthesis.speak(u);
-    btn.textContent = "⏹ Ferma"; ttsBtn = btn;
-  } catch { flash("lettura non disponibile"); }
-}
-window.ttsSpeak = ttsSpeak;
+function ttsStop() { if (ttsApi) ttsApi.stop(); }
 
 function stopStreaming() { if (appState.ui.currentAbort) { try { appState.ui.currentAbort.abort(); } catch {} } ttsStop(); }
 
@@ -2208,24 +2179,24 @@ function addMsgActions(bubble, idx) {
   const bar = document.createElement("div"); bar.className = "msg-actions";
   bar.appendChild(mkBtn("⧉ Copia", () => copyText((appState.domain.messages[idx] || {}).content, "risposta copiata in Markdown")));
   if ((appState.domain.messages[idx] || {}).role === "assistant" && appState.domain.messages[idx].content) {
-    const tts = mkBtn("🔊 Ascolta", (ev) => ttsSpeak(appState.domain.messages[idx].content, ev.currentTarget));
+    const tts = mkBtn("Ascolta", async (ev) => {
+      const api = await ensureTTS();
+      if (!api) { flash("lettura non disponibile"); return; }
+      api.speak(appState.domain.messages[idx].content, ev.currentTarget);
+    });
     tts.classList.add("tts-btn");
     bar.appendChild(tts);
   }
   if (idx === appState.domain.messages.length - 1) bar.appendChild(mkBtn("↻ Rigenera", () => regenerate()));
-  const starBtn = mkBtn("★ Ripasso", async () => {
+  const starBtn = mkBtn("Ripasso", async () => {
     const firstUser = (appState.domain.messages.find((m) => m.role === "user") || {}).content || "Argomento";
     starBtn.disabled = true;
     try {
-      const r = await fetch("/api/review", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ convId: appState.domain.conversationId, title: firstUser, text: (appState.domain.messages[idx] || {}).content || "" }),
-      });
-      const j = await r.json().catch(() => ({}));
-      starBtn.textContent = "★ Salvato";
-      flash(j && j.existing ? "già nel Ripasso ★" : "aggiunto al Ripasso ★");
-      if (!$("#reviewDrawer").hidden) refreshReview();
-      refreshReviewBadge();
+      const review = await ensureReview();
+      if (!review) { starBtn.disabled = false; flash("Ripasso non disponibile"); return; }
+      const j = await review.add({ convId: appState.domain.conversationId, title: firstUser, text: (appState.domain.messages[idx] || {}).content || "" });
+      starBtn.textContent = "Salvato";
+      flash(j && j.existing ? "gia' nel Ripasso" : "aggiunto al Ripasso");
     } catch { starBtn.disabled = false; flash("non riuscito"); }
   });
   bar.appendChild(starBtn);
@@ -2289,115 +2260,14 @@ $("#send").addEventListener("click", (e) => { if (appState.ui.streaming) { e.pre
 const itDue = (it) => (typeof it.due === "number" ? it.due : (Number(it.t) || 0));
 const isDue = (it) => itDue(it) <= Date.now();
 
-async function refreshReviewBadge() {
-  const b = $("#reviewBadge");
-  if (!b) return;
-  try {
-    const j = await (await fetch("/api/review")).json();
-    const n = (j.items || []).filter(isDue).length;
-    b.textContent = String(n);
-    b.hidden = !n;
-  } catch { b.hidden = true; }
+let reviewApi = null;
+async function ensureReview() {
+  if (!window.MathAppPlugins) return null;
+  reviewApi = await window.MathAppPlugins.load("review");
+  return reviewApi;
 }
+function refreshReviewBadge() { if (reviewApi) reviewApi.refreshBadge(); }
 
-async function gradeReview(it, q) {
-  try {
-    const r = await (await fetch("/api/review/grade", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: it.id, q }) })).json();
-    if (!r.ok) { flash("ripasso: " + (r.error || "non riuscito")); return; }
-    const nu = r.item || {};
-    flash(q === "difficile" ? "la rivedrai fra 10 minuti" : "prossimo ripasso fra " + nu.interval + (nu.interval === 1 ? " giorno" : " giorni"));
-    refreshReview();
-    refreshReviewBadge();
-  } catch { flash("ripasso: errore di rete"); }
-}
-
-async function refreshReview() {
-  const list = $("#reviewList");
-  const counter = $("#reviewCount");
-  try {
-    const j = await (await fetch("/api/review")).json();
-    const items = (j.items || []).slice().sort((a, b) => itDue(a) - itDue(b));
-    const n = items.length;
-    const nDue = items.filter(isDue).length;
-    if (counter) counter.textContent = n === 0 ? "nessun argomento salvato" : (nDue ? nDue + " da ripassare oggi · " + n + " in tutto" : n + " in tutto · nessuno in scadenza");
-    const badge = $("#reviewBadge");
-    if (badge) { badge.textContent = String(nDue); badge.hidden = !nDue; }
-    if (!n) {
-      list.innerHTML = '<div class="hist-empty">Nessun argomento da ripassare.<br>Premi <b>★ Ripasso</b> sotto una risposta per ritrovarla qui.</div>';
-      return;
-    }
-    list.innerHTML = "";
-    for (const it of items) {
-      const due = isDue(it);
-      const row = document.createElement("div"); row.className = "rev-item" + (due ? " rev-due" : "");
-
-      const title = document.createElement("b"); title.className = "rev-title";
-      title.textContent = (it.type === "flashcard" ? "🃏 " : "") + (it.title || "Argomento").slice(0, 120);
-      const meta = document.createElement("i"); meta.className = "rev-meta";
-      meta.textContent = fmtDate(it.t) + (due ? " · da ripassare oggi" : " · prossimo ripasso " + new Date(itDue(it)).toLocaleDateString("it-IT", { day: "2-digit", month: "short" }) + (it.interval ? " (fra " + it.interval + (it.interval === 1 ? " giorno" : " giorni") + ")" : ""));
-      const text = document.createElement("div"); text.className = "rev-text";
-      renderMD(text, String(it.text || "").trim()); // formattata anche da chiusa: il taglio a 3 righe fa da anteprima
-
-      const actions = document.createElement("div"); actions.className = "rev-actions";
-      // valutazione: regola la prossima scadenza (difficile = torna fra 10 minuti)
-      actions.append(
-        mkBtn("😕 Difficile", () => gradeReview(it, "difficile"), "rev-g rev-g1"),
-        mkBtn("🙂 Media", () => gradeReview(it, "media"), "rev-g rev-g2"),
-        mkBtn("😎 Facile", () => gradeReview(it, "facile"), "rev-g rev-g3"),
-      );
-      if (it.convId && !String(it.convId).startsWith("kb:")) {
-        actions.append(mkBtn("Apri sessione", async () => {
-          $("#reviewDrawer").hidden = true;
-          await openConv(it.convId);
-        }, "rev-open"));
-      }
-      const expand = mkBtn("Mostra risposta", () => {
-        const open = !row.classList.contains("open");
-        row.classList.toggle("open", open);
-        expand.textContent = open ? "Nascondi risposta" : "Mostra risposta";
-      });
-      const del = mkBtn("Elimina", async (ev) => {
-        ev.stopPropagation();
-        if (!confirm("Togliere «" + String(it.title || "questo argomento").slice(0, 60) + "» dal Ripasso?")) return;
-        await fetch("/api/review?id=" + encodeURIComponent(it.id), { method: "DELETE" });
-        refreshReview();
-        refreshReviewBadge();
-      }, "hist-del");
-      actions.append(expand, del);
-
-      row.append(title, meta, text, actions);
-      list.appendChild(row);
-    }
-  } catch { list.innerHTML = '<div class="hist-empty">Ripasso non disponibile.</div>'; }
-}
-
-// export per Anki: CSV con separatore virgola, HTML attivo (LaTeX reso da Anki)
-function ankiCsv(items) {
-  const esc = (s) => '"' + String(s || "").replace(/"/g, '""').replace(/\r?\n/g, "<br>") + '"';
-  const lines = ["#separator:Comma", "#html:true"];
-  for (const it of items) lines.push([esc(it.title || "Argomento"), esc(it.text || "")].join(","));
-  return lines.join("\n");
-}
-window.buildAnkiCsv = ankiCsv; // usata anche dai test
-async function exportAnki() {
-  try {
-    const j = await (await fetch("/api/review")).json();
-    const items = j.items || [];
-    if (!items.length) { flash("niente da esportare nel Ripasso"); return; }
-    const blob = new Blob(["\ufeff" + ankiCsv(items)], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "mathapp-ripasso.csv";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    flash("CSV per Anki scaricato (" + items.length + (items.length === 1 ? " scheda" : " schede") + ")");
-  } catch { flash("export Anki: errore di rete"); }
-}
-$("#ankiBtn").addEventListener("click", exportAnki);
-
-$("#reviewBtn").addEventListener("click", () => { const d = $("#reviewDrawer"); d.hidden = !d.hidden; if (!d.hidden) refreshReview(); });
-$("#reviewClose").addEventListener("click", () => { $("#reviewDrawer").hidden = true; });
-
-// ---------- quiz: verifica a risposta multipla ----------
 // ---------- ricerca nella cronologia ----------
 let histTimer = null;
 $("#historySearch").addEventListener("input", () => { clearTimeout(histTimer); histTimer = setTimeout(refreshHistory, 250); });
@@ -2475,132 +2345,6 @@ function renderSources(bubble, data, answer) {
   }
   bubble.appendChild(box);
 }
-
-// ---------- pannello Appunti (rete concettuale) ----------
-// caricamento diretto di appunti nella sezione Appunti
-$("#kbUpload").addEventListener("click", () => $("#kbFile").click());
-$("#kbFile").addEventListener("change", (e) => { kbCarica(Array.from(e.target.files || [])); e.target.value = ""; });
-(() => {
-  const d = $("#kbDrawer");
-  d.addEventListener("dragover", (e) => { e.preventDefault(); d.classList.add("drop-target"); });
-  d.addEventListener("dragleave", () => d.classList.remove("drop-target"));
-  d.addEventListener("drop", (e) => {
-    e.preventDefault(); d.classList.remove("drop-target");
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) kbCarica(Array.from(e.dataTransfer.files));
-  });
-})();
-
-async function kbCarica(files) {
-  if (!files.length) return;
-  const st = $("#kbStatus");
-  let ok = 0;
-  for (const f of files) {
-    if (f.size > 40 * 1024 * 1024) { st.textContent = "«" + f.name + "» troppo grande (max 40 MB)"; continue; }
-    st.textContent = "elaboro «" + f.name + "»…";
-    try {
-      const b64 = await b64FromBlob(f);
-      const r = await fetch("/api/kb/add", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: f.name, mime: f.type || "application/octet-stream", b64 }) });
-      const j = await r.json();
-      if (j.ok) { ok++; st.textContent = "«" + f.name + "» aggiunto (" + (j.doc.chunks || 0) + " blocchi)"; }
-      else st.textContent = "«" + f.name + "»: " + (j.error || "non leggibile");
-    } catch (err) { st.textContent = "«" + f.name + "»: errore " + err.message; }
-  }
-  refreshKb();
-  if (ok) setTimeout(() => { const s = $("#kbStatus"); if (s) s.textContent = ""; }, 3000);
-}
-
-async function refreshKb() {
-  const list = $("#kbList");
-  try {
-    const j = await (await fetch("/api/kb")).json();
-    if (!j.docs.length) {
-      list.innerHTML = '<div class="hist-empty">Nessun appunto ancora.<br>Premi «Carica appunti» oppure allega un file in chat.</div>';
-      $("#kbViewer").hidden = true;
-      return;
-    }
-    list.innerHTML = "";
-    for (const d of j.docs) {
-      const row = document.createElement("div"); row.className = "kb-item";
-      const t = document.createElement("div"); t.className = "t";
-      const b = document.createElement("b"); b.textContent = d.name;
-      const s = document.createElement("span");
-      const parti = [fmtDate(d.addedAt)];
-      if (d.chunks) parti.push(d.chunks + " blocchi");
-      if (d.chars) parti.push(Math.round(d.chars / 1000) + "k caratteri");
-      if (d.file) parti.push(Math.round(d.file.size / 1024) + " KB");
-      s.textContent = parti.join(" · ");
-      t.append(b, s);
-      row.append(t);
-      if (d.file) {
-        const open = document.createElement("a");
-        open.className = "kb-open";
-        open.href = "/api/kb/file?id=" + encodeURIComponent(d.id);
-        open.target = "_blank"; open.rel = "noopener"; open.textContent = "Apri";
-        open.addEventListener("click", (ev) => ev.stopPropagation()); // FIX: non aprire anche il testo
-        row.append(open);
-      }
-      if (d.chunks) {
-        row.append(mkBtn("🃏 Flashcard", async (ev) => {
-          ev.stopPropagation();
-          const b = ev.currentTarget;
-          b.disabled = true; const old = b.textContent; b.textContent = "🃏 creo…";
-          try {
-            const r = await (await fetch("/api/flashcards", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ docId: d.id }) })).json();
-            flash(r.ok ? ("Ripasso: +" + r.added + " flashcard" + (r.parsed > r.added ? " (" + (r.parsed - r.added) + " già presenti)" : "")) : ("flashcard: " + (r.error || "non riuscite")));
-            if (r.ok) refreshReviewBadge();
-          } catch { flash("flashcard: errore di rete"); }
-          b.disabled = false; b.textContent = old;
-        }, "kb-flash"));
-      }
-      row.append(mkBtn("Elimina", async (ev) => {
-        ev.stopPropagation();
-        if (!confirm("Togliere «" + d.name + "» dagli appunti?\nIl file viene spostato nel cestino (recuperabile), le citazioni non compariranno più.")) return;
-        await fetch("/api/kb/doc?id=" + encodeURIComponent(d.id), { method: "DELETE" });
-        const v = $("#kbViewer");
-        if (v.dataset.doc === d.id) { v.hidden = true; v.dataset.doc = ""; }
-        refreshKb();
-      }, "hist-del"));
-      row.addEventListener("click", () => openKbDoc(d));
-      list.appendChild(row);
-    }
-  } catch { list.innerHTML = '<div class="hist-empty">Rete concettuale non disponibile.</div>'; }
-}
-
-async function openKbDoc(doc) {
-  const v = $("#kbViewer");
-  v.hidden = false; v.dataset.doc = doc.id;
-  v.innerHTML = '<p class="kb-chunk">carico…</p>';
-  try {
-    const j = await (await fetch("/api/kb/doc?id=" + encodeURIComponent(doc.id))).json();
-    if (v.dataset.doc !== doc.id) return; // nel frattempo hai aperto altro
-    v.innerHTML = "";
-    const bar = document.createElement("div"); bar.className = "kb-viewer-head";
-    const head = document.createElement("div"); head.className = "sources-head";
-    head.textContent = doc.name + " — " + (j.chunks || []).length + " blocchi";
-    bar.append(head, mkBtn("Chiudi", () => { v.hidden = true; v.dataset.doc = ""; }, "kb-open"));
-    v.appendChild(bar);
-    if (!j.chunks || !j.chunks.length) {
-      const e = document.createElement("p"); e.className = "kb-chunk";
-      e.textContent = "Nessun testo indicizzato (es. immagine o PDF scansionato). Il file è comunque archiviato e apribile con «Apri».";
-      v.appendChild(e);
-      return;
-    }
-    for (const c of j.chunks.slice(0, 80)) {
-      const el = document.createElement("div"); el.className = "kb-chunk";
-      if (c.page) { const pg = document.createElement("span"); pg.className = "pg"; pg.textContent = "pagina " + c.page; el.appendChild(pg); }
-      el.appendChild(document.createTextNode(c.text));
-      v.appendChild(el);
-    }
-    if (j.chunks.length > 80) {
-      const m = document.createElement("p"); m.className = "kb-chunk";
-      m.textContent = "…altri " + (j.chunks.length - 80) + " blocchi non mostrati (usa «Apri» per il file completo).";
-      v.appendChild(m);
-    }
-  } catch { if (v.dataset.doc === doc.id) v.innerHTML = '<p class="kb-chunk">errore nel caricamento</p>'; }
-}
-
-$("#kbBtn").addEventListener("click", () => { const d = $("#kbDrawer"); d.hidden = !d.hidden; if (!d.hidden) refreshKb(); });
-$("#kbClose").addEventListener("click", () => { $("#kbDrawer").hidden = true; });
 
 // ---------- stile imparato (memoria dell'IA) ----------
 async function refreshStyle() {
@@ -2843,7 +2587,7 @@ async function loadSettings() {
   const modeSel = $("#setMode"); if (modeSel) modeSel.value = d.mode || "core";
   const levelSel = $("#setLevel"); if (levelSel) levelSel.value = d.level || "auto";
   if ((d.mode || "core") === "full" && window.MathAppPlugins) {
-    window.MathAppPlugins.load("quiz").catch((e) => console.warn("[MathApp] quiz plugin", e));
+    for (const id of ["quiz", "review", "tts", "kb"]) window.MathAppPlugins.load(id).catch((e) => console.warn("[MathApp] " + id + " plugin", e));
   }
   const banner = $("#setupBanner"); if (banner) banner.hidden = !!d.hasKey;
   const prov = $("#setProvider"); if (prov) prov.value = d.provider || "openrouter";
@@ -2912,7 +2656,7 @@ function initSettingsUI() {
 
 initSettingsUI();
 
-window.MathAppApp = { $, flash, refreshReviewBadge, state: appState };
+window.MathAppApp = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64FromBlob, refreshReviewBadge, state: appState };
 
 async function boot() {
   initGGB();

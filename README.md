@@ -234,7 +234,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
 - Test rapidi senza server: `npm test` (62 check: 19 test dei moduli + 4 del loop agente + 4 chat-service + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, persistenza e route feature); `npm run test:py` per SymPy.
-- Smoke browser: `npm run test:ui` (11 check: UI, state store, lazy quiz core/full, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
+- Smoke browser: `npm run test:ui` (13 check: UI, state store, lazy plugin core/full, drawer Ripasso/Appunti, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test_xss.mjs`, `node test_conversation_restore.mjs`, `node test_conversation_switch.mjs`, `node test_geogebra_state.mjs`, `node test_geogebra_3d.mjs`, `node test_layout.mjs`, `node test_tutor.mjs`, `node test_review.mjs`, `node test_algebra_ui.mjs`, `node test_vista.mjs` e `node test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.
@@ -245,7 +245,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `routes/` — API settings, backup, kb, profile, review, study, compute, conversations, chat
 - `lib/chat-service.mjs`, `lib/security.mjs` — orchestrazione chat e guardie HTTP
 - `public/state.js` — store client domain/UI con eventi
-- `public/features.js` — loader plugin UI; `public/features/quiz.js` — quiz lazy
+- `public/features.js` — loader plugin UI; `public/features/{quiz,review,tts,kb}.js` — feature lazy
 - `test_ui_smoke.mjs` — smoke browser (nuova chat, restore, view)
 - `setup.cmd`, `setup.ps1` — setup Windows: Node portatile, Python/SymPy opzionali
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali

@@ -4,6 +4,7 @@
   const registry = new Map();
   const loaded = new Set();
   const loading = new Map();
+  const apis = new Map();
 
   function register(id, init) {
     registry.set(id, init);
@@ -20,9 +21,10 @@
         const init = registry.get(id);
         if (typeof init !== "function") return reject(new Error("plugin UI senza init: " + id));
         try {
-          init(window.MathAppApp);
+          const api = init(window.MathAppApp);
+          apis.set(id, api);
           loaded.add(id);
-          resolve(window.MathAppApp);
+          resolve(api);
         } catch (e) { reject(e); }
       };
       s.onerror = () => reject(new Error("plugin UI non caricato: " + id));
@@ -37,5 +39,6 @@
     load,
     has: (id) => loaded.has(id),
     loaded: () => [...loaded],
+    api: (id) => apis.get(id),
   };
 })();
