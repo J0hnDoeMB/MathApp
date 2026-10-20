@@ -23,6 +23,8 @@ jobs:
           node --check server.mjs
           node --check public/app.js
           node --check public/state.js
+          node --check public/features.js
+          Get-ChildItem public/features -Filter *.js | ForEach-Object { node --check $_.FullName }
           Get-ChildItem lib -Filter *.mjs | ForEach-Object { node --check $_.FullName }
           Get-ChildItem routes -Filter *.mjs | ForEach-Object { node --check $_.FullName }
           node --check test_ui_smoke.mjs

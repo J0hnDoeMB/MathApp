@@ -9,6 +9,7 @@ try { puppeteer = createRequire(import.meta.url)("puppeteer"); }
 catch { const alt = process.env.MATHAPP_PUPPETEER; if (!alt) throw new Error("Puppeteer non installato: esegui npm i -D puppeteer oppure imposta MATHAPP_PUPPETEER."); puppeteer = createRequire(alt)("puppeteer"); }
 
 const BASE = "http://127.0.0.1:8790";
+await fetch(BASE + "/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "full" }) });
 const CONV = "quiz-test-ui";
 const WAIT = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -40,7 +41,7 @@ try {
     r.continue();
   });
   await page.goto(BASE + "/", { waitUntil: "domcontentloaded", timeout: 60000 });
-  await page.waitForFunction(() => !!window.__ggb && !booting && !conversationLoading, { timeout: 60000 });
+  await page.waitForFunction(() => !!window.__ggb && !!window.__quiz && !window.MathAppState.ui.booting && !window.MathAppState.ui.conversationLoading, { timeout: 60000 });
 
   // 0) pulizia di eventuali residui dai run precedenti
   for (const it of await reviewItems()) await fetch(BASE + "/api/review?id=" + encodeURIComponent(it.id), { method: "DELETE" });

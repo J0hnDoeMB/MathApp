@@ -138,6 +138,21 @@ try {
   }));
   chk("ripristino sessione: cella", restored.cells === 1 && restored.expr.includes("x^2"));
   chk("ripristino sessione: view", restored.xmin === "-5");
+
+  const lazyCore = await page.evaluate(() => ({
+    plugins: window.MathAppPlugins ? window.MathAppPlugins.loaded() : [],
+    quiz: typeof window.__quiz,
+    script: [...document.scripts].some((s) => s.src.includes("/features/quiz.js")),
+  }));
+  chk("core: plugin quiz non caricato", Array.isArray(lazyCore.plugins) && !lazyCore.plugins.includes("quiz") && lazyCore.quiz === "undefined" && !lazyCore.script);
+
+  const toFull = await request(port, "POST", "/api/settings", { mode: "full" });
+  chk("setup full", toFull.status === 200);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => !!window.__quiz, { timeout: 15000 });
+  const lazyFull = await page.evaluate(() => ({ plugins: window.MathAppPlugins.loaded(), script: [...document.scripts].some((s) => s.src.includes("/features/quiz.js")) }));
+  chk("full: plugin quiz caricato", lazyFull.plugins.includes("quiz") && lazyFull.script);
+
   chk("nessun errore JS dell'app", pageErrors.length === 0);
   if (pageErrors.length) console.error(pageErrors.slice(0, 4).join("\n"));
 } finally {

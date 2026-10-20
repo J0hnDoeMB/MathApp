@@ -42,7 +42,7 @@ try {
     r.continue();
   });
   await page.goto("http://127.0.0.1:8790/", { waitUntil: "domcontentloaded", timeout: 60000 });
-  await page.waitForFunction(() => !!window.__ggb && !booting && !conversationLoading, { timeout: 60000 });
+  await page.waitForFunction(() => !!window.__ggb && !window.MathAppState.ui.booting && !window.MathAppState.ui.conversationLoading, { timeout: 60000 });
   await page.waitForFunction(() => document.querySelectorAll(".msg.assistant .msg-actions button").length > 0, { timeout: 15000 });
 
   // 1) pulizia del testo: niente markdown/latex grezzo nella voce

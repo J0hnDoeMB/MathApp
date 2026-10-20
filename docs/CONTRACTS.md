@@ -61,6 +61,13 @@ updateTags(id, tag, action) -> { status, ok, tags?, error? }
 ```
 Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
 
+### ClientFeaturePlugin
+```text
+MathAppPlugins.register("quiz", init)
+init(MathAppApp) // app = { $, flash, refreshReviewBadge, state }
+```
+The loader injects `/features/<id>.js` only when needed; core mode never downloads optional UI.
+
 ### FeaturePlugin
 ```text
 export const feature = "kb"

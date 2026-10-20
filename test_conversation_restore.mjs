@@ -99,7 +99,7 @@ try {
 
   await page.goto("http://127.0.0.1:8790/", { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForFunction(() => typeof window.openConv === "function" && !!window.__ggb, { timeout: 30000 });
-  await page.waitForFunction(() => typeof booting !== "undefined" && booting === false, { timeout: 30000 });
+  await page.waitForFunction(() => window.MathAppState && window.MathAppState.ui.booting === false, { timeout: 30000 });
   await page.evaluate(() => window.openConv("history-probe"));
 
   const state = await page.evaluate(() => ({

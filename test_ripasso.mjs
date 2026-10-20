@@ -60,7 +60,7 @@ try {
       r.continue();
     });
     await page.goto(BASE + "/", { waitUntil: "domcontentloaded", timeout: 60000 });
-    await page.waitForFunction(() => !!window.__ggb && !booting && !conversationLoading, { timeout: 60000 });
+    await page.waitForFunction(() => !!window.__ggb && !window.MathAppState.ui.booting && !window.MathAppState.ui.conversationLoading, { timeout: 60000 });
     await page.waitForFunction(() => !document.querySelector("#reviewBadge").hidden, { timeout: 10000 });
 
     let s = await page.evaluate(() => ({ badge: document.querySelector("#reviewBadge").textContent }));

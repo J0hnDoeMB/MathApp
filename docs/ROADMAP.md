@@ -36,7 +36,8 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] store client domain/UI (`public/state.js`) con eventi
 - [x] migrare i call site di `app.js` a `MathAppState` (accessori rimossi)
 - [x] plugin loader backend per feature opzionali (kb/profile/review/study on-demand)
-- [ ] lazy loading del codice UI delle feature opzionali
+- [x] lazy loading UI: loader + quiz
+- [ ] migrare review/KB/TTS al loader UI
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.12.0 - 2026-10-20
+
+### Added
+- Client feature plugin loader (`public/features.js`) and lazy quiz UI (`public/features/quiz.js`). The quiz script is loaded only in full mode; core mode never requests it.
+- Plugin contract: `MathAppPlugins.register(id, init)`, init receives `MathAppApp` (`, `flash`, `refreshReviewBadge`, state).
+
+### Tests
+- `npm test`: 62 checks; UI smoke: **11 checks** (including core no-load and full load); GeoGebra: 5.
+
 ## v1.11.0 - 2026-10-20
 
 ### Added

@@ -22,7 +22,7 @@ try {
     r.continue();
   });
   await page.goto("http://127.0.0.1:8790/", { waitUntil: "domcontentloaded", timeout: 60000 });
-  await page.waitForFunction(() => !!window.__ggb && !booting && !conversationLoading, { timeout: 60000 });
+  await page.waitForFunction(() => !!window.__ggb && !window.MathAppState.ui.booting && !window.MathAppState.ui.conversationLoading, { timeout: 60000 });
   await new Promise((r) => setTimeout(r, 500));
 
   // 1) costruzione sulla lavagna (come la scheda "Esegui" di una figura)
