@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.8.0 - 2026-10-20
+
+### Changed
+- Chat flow extracted from `routes/chat.mjs` into `lib/chat-service.mjs` (vision fallback, attachments, KB, agent, session save); route is now HTTP/SSE only.
+- CSRF/body-cap guard extracted into `lib/security.mjs`; `server.mjs` is a ~42-line shell.
+- Chat orchestrator test with fake dependencies; no network.
+
+### Tests
+- `npm test`: **61 checks** (18 module + 4 agent + 4 chat-service + 35 security/session).
+- UI 7, GeoGebra 5, Python 29.
+
 ## v1.7.0 - 2026-10-20
 
 ### Changed

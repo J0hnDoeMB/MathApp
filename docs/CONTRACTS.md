@@ -7,10 +7,10 @@ Contratti tra i boundary. Le implementazioni possono cambiare (OpenRouter, OpenC
 | Layer | Dove | Responsabilità |
 |---|---|---|
 | Presentation | `public/` | UI, pannelli, stato client, eventi utente |
-| Application | `routes/`, `lib/agent.mjs` | orchestrazione richieste, chat flow, tool loop |
+| Application | `routes/`, `lib/chat-service.mjs`, `lib/agent.mjs` | orchestrazione richieste, chat flow, tool loop |
 | Domain | `lib/session-store`, `review`, `study`, `kb`, `profile`, `levels`, `features` | regole del prodotto |
 | Integration | `lib/llm`, `sympy`, `geogebra`, `audio`, `documents` | adapter verso servizi esterni |
-| Infrastructure | `lib/storage`, `config`, `schema`, `log`, `http` | filesystem, JSON, impostazioni, sicurezza di base |
+| Infrastructure | `lib/storage`, `config`, `schema`, `log`, `http`, `security` | filesystem, JSON, impostazioni, guardie HTTP |
 
 `server.mjs` compone: sicurezza → `routes/` → statici.
 
@@ -60,6 +60,18 @@ delete(id) -> void
 updateTags(id, tag, action) -> { status, ok, tags?, error? }
 ```
 Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
+
+### ChatOrchestrator
+```text
+executeChat({ body, send, isGone, signal, deps? }) -> { cancelled, finalText, convId, usedModel }
+```
+Implementation: `lib/chat-service.mjs`. `deps` is a test seam; the route owns HTTP/SSE only.
+
+### RequestGuard
+```text
+guardRequest(req, res) -> boolean
+```
+Implementation: `lib/security.mjs` (CSRF + body cap).
 
 ### StorageService
 ```text

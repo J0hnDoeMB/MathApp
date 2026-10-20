@@ -23,16 +23,18 @@ Obiettivo: core chat + algebra + grafo + sessione affidabili.
 
 **Exit criteria:** tutti i check verdi, nessuna regressione nota su chat/sessione/stato, branch `main` protetto, nessuna feature B nel core.
 
-## Fase 2 — Funzioni didattiche
+## Fase 2 — Funzioni didattiche (in corso)
 
-Solo dopo la fase 1, come **feature modules** con contratti espliciti:
+Feature modules con contratti espliciti, senza nuove UI in questa fase:
 
-- quiz e flashcard
-- ripasso/SM-2
-- appunti e citazioni documentali
-- dettatura/TTS
-- upload e pipeline documenti
-- backup/restore
+- [x] route split: backup, kb, profile, review, study, compute
+- [x] SM-2 in `lib/review.mjs` + test
+- [x] prompt/generazione flashcard e quiz in `lib/study.mjs` + test con modello finto
+- [x] gate core/full in `lib/features.mjs` + test
+- [x] session repository (`lib/session-store.mjs`) e schema/migrazioni (`lib/schema.mjs`)
+- [x] chat orchestrator (`lib/chat-service.mjs`) e security guard (`lib/security.mjs`)
+- [ ] separazione stato UI/domain in `public/app.js`
+- [ ] plugin loader per feature opzionali
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
 

@@ -27,6 +27,7 @@ jobs:
           node --check test_ui_smoke.mjs
           node --check test_geogebra_smoke.mjs
           node --check test_agent.mjs
+          node --check test_chat_service.mjs
           node --check test_modules.mjs
       - uses: actions/setup-python@v5
         with:
@@ -37,6 +38,7 @@ jobs:
         run: |
           node test_modules.mjs
           node test_agent.mjs
+          node test_chat_service.mjs
           node test_flashparse.mjs
           node test_quizparse.mjs
           node test_server_security.mjs

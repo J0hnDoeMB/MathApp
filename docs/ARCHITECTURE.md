@@ -25,6 +25,8 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/prompts.mjs` | system prompt, LaTeX/didactic rules, level rule | levels |
 | `lib/tools.mjs` | tool schemas and core/full filtering | none |
 | `lib/agent.mjs` | agent loop, escalation, delegation, verification counts | llm, tools, prompts, sympy, geogebra, profile |
+| `lib/chat-service.mjs` | chat orchestration: vision, attachments, KB, agent, save | models, llm, documents, kb, agent, session-store |
+| `lib/security.mjs` | CSRF and body-cap request guard | config |
 | `lib/sympy.mjs` | exact math child process, timeout/output/concurrency limits | util |
 | `lib/geogebra.mjs` | GeoGebra bridge and browser confirmations | session-store, log |
 | `lib/documents.mjs` | PDF/text extraction and upstream message building | audio, util |
@@ -53,7 +55,7 @@ Dependency direction: `server -> routes/agent -> domain/integration -> infrastru
 
 ## What changed in the refactor
 
-- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~60 lines / 3 KB**.
+- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~43 lines / 3 KB**.
 - API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, review, study, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
 - Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
 - `test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
@@ -85,7 +87,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 57 checks (18 module + 4 agent + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
+- `npm test`: 61 checks (18 module + 4 agent + 4 chat-service + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
 - `npm run test:ui`: 7 browser smoke checks (new chat, session restore, view, UI); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
