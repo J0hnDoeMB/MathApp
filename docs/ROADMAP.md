@@ -38,6 +38,8 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] plugin loader backend per feature opzionali (kb/profile/review/study on-demand)
 - [x] lazy loading UI: loader + quiz
 - [x] migrare review/KB/TTS/stile al loader UI
+- [x] command bus per session.new/chat.send/session.restore
+- [ ] event model per tutti i flussi UI → application
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
 

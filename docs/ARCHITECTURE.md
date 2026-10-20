@@ -41,7 +41,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/schema.mjs` | data validation, limits and migrations | none |
 | `lib/storage.mjs` | data paths, review file, backups | config, log |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
-| `public/state.js` | client domain/UI store and events | browser only |
+| `public/state.js` | client domain/UI store, command bus and events | browser only |
 | `public/features.js`, `public/features/*.js` | lazy optional UI plugins (quiz, review, TTS, KB, style) | `MathAppApp` API |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
 
@@ -91,7 +91,7 @@ External I/O is isolated in `lib/llm.mjs`:
 ## Testing
 
 - `npm test`: 62 checks (19 module + 4 agent + 4 chat-service + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
-- `npm run test:ui`: 14 browser smoke checks (UI, state store, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core + Edge.
+- `npm run test:ui`: 15 browser smoke checks (UI, state store, command bus, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test_server_cancel.mjs`: cancellation and state revisions.

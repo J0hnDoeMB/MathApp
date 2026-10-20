@@ -119,6 +119,8 @@ try {
     legacy: "messages" in window || "conversationId" in window,
   }));
   chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string" && !store.legacy);
+  const commands = await page.evaluate(() => window.MathAppState.commands());
+  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore"].every((c) => commands.includes(c)));
 
   const idBefore = await page.evaluate(() => localStorage.getItem("mathapp.conv"));
   await page.click("#newChat");

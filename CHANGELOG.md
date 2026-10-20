@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.15.0 - 2026-10-20
+
+### Added
+- Client command bus: `MathAppState.handle(name, fn)` and `dispatch(name, payload)`; flows `session.new`, `chat.send` and `session.restore` now go through the application boundary.
+- UI smoke checks the registered commands.
+
+### Tests
+- `npm test`: 62 checks; UI smoke: **15 checks**; GeoGebra: 5.
+
 ## v1.14.0 - 2026-10-20
 
 ### Changed

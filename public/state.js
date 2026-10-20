@@ -36,6 +36,7 @@
   };
 
   const listeners = new Map();
+  const commands = new Map();
   function on(event, fn) {
     if (!listeners.has(event)) listeners.set(event, new Set());
     listeners.get(event).add(fn);
@@ -46,11 +47,23 @@
       try { fn(value, event); } catch (e) { console.warn("[MathAppState]", e); }
     }
   }
+  function handle(name, fn) { commands.set(name, fn); }
+  async function dispatch(name, payload) {
+    const fn = commands.get(name);
+    if (typeof fn !== "function") throw new Error("comando non registrato: " + name);
+    emit("command:" + name, payload);
+    const result = await fn(payload || {});
+    emit("command:done:" + name, result);
+    return result;
+  }
   window.MathAppState = {
     domain,
     ui,
     on,
     emit,
+    handle,
+    dispatch,
+    commands: () => [...commands.keys()],
     snapshot: () => ({ domain: { ...domain }, ui: { ...ui } }),
   };
 })();

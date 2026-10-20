@@ -80,6 +80,13 @@ Optional modules are loaded only in full mode by `routes/index.mjs`; a load fail
 MathAppState.domain / MathAppState.ui
 on(event, fn) / emit(event, value) / snapshot()
 ```
+
+### ClientCommandBus
+```text
+MathAppState.handle(name, fn)
+MathAppState.dispatch(name, payload) -> Promise
+```
+Commands: `session.new`, `chat.send`, `session.restore`. UI events call dispatch; application handlers mutate state.
 Implementation: `public/state.js`. `app.js` uses `MathAppState` directly; no legacy global state.
 
 ### ChatOrchestrator

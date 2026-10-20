@@ -2019,13 +2019,17 @@ async function restoreSession() {
 }
 
 // ---------- UI ----------
-$("#composer").addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (appState.ui.streaming) { flash("attendi la risposta in corso… oppure interrompila con «Ferma»."); return; }
-  const t = inputEl.value.trim();
+async function sendCommand(payload) {
+  if (appState.ui.streaming) { flash("attendi la risposta in corso oppure interrompila con Ferma."); return; }
+  const t = String(payload && payload.text || "").trim();
   if (!t) return;
   inputEl.value = "";
-  send(t);
+  await send(t);
+}
+MathAppState.handle("chat.send", sendCommand);
+$("#composer").addEventListener("submit", (e) => {
+  e.preventDefault();
+  MathAppState.dispatch("chat.send", { text: inputEl.value }).catch((err) => console.warn("[MathApp] chat.send", err));
 });
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#composer").requestSubmit(); }
@@ -2066,8 +2070,8 @@ inputEl.addEventListener("paste", (e) => {
   });
   window.addEventListener("mouseup", () => { dragging = false; document.body.style.userSelect = ""; });
 })();
-$("#newChat").addEventListener("click", () => {
-  const generation = invalidateConversationWork();
+async function newChatCommand() {
+const generation = invalidateConversationWork();
   ttsStop();
   appState.domain.messages = []; appState.domain.sessionId = crypto.randomUUID(); appState.domain.conversationId = crypto.randomUUID();
   chatEl.replaceChildren(); calcCells.replaceChildren(); appState.domain.cellData = [];
@@ -2085,7 +2089,9 @@ $("#newChat").addEventListener("click", () => {
   setViewPanel(false);
   statusEl.textContent = "nuova chat";
   setTimeout(() => (statusEl.textContent = ""), 1200);
-});
+}
+MathAppState.handle("session.new", newChatCommand);
+$("#newChat").addEventListener("click", () => MathAppState.dispatch("session.new").catch((err) => console.warn("[MathApp] session.new", err)));
 
 // ---------- strumenti di studio ----------
 function mkBtn(label, fn, cls) {
@@ -2615,6 +2621,8 @@ function initSettingsUI() {
 
 initSettingsUI();
 
+MathAppState.handle("session.restore", () => restoreSession());
+
 window.MathAppApp = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64FromBlob, refreshReviewBadge, state: appState };
 
 async function boot() {
@@ -2630,7 +2638,7 @@ async function boot() {
     modelEl.addEventListener("change", () => (appState.domain.currentModel = modelEl.value));
   } catch { modelEl.innerHTML = `<option>${appState.domain.currentModel}</option>`; }
   await loadSettings();
-  await restoreSession();
+  await MathAppState.dispatch("session.restore");
   try { if (!localStorage.getItem("mathapp.conv")) localStorage.setItem("mathapp.conv", appState.domain.conversationId); } catch {}
   appState.ui.booting = false;
   refreshReviewBadge();
