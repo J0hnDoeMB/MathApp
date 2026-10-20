@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.18.0 - 2026-10-20
+
+### Added
+- Explicit adapter ports (`lib/ports.mjs`, `lib/adapters.mjs`) for LLM, math, graph, audio and documents.
+- Capabilities model (`lib/capabilities.mjs`) with required/optional status and fallback; exposed by `/api/diagnostics` and `/api/health`.
+- `docs/CAPABILITIES.md` (degraded mode matrix).
+
+### Tests
+- `npm test`: **68 checks** (22 module + 4 agent + 4 chat-service + 38 security/session); UI 15; GeoGebra 5; Python 29.
+
 ## v1.17.0 - 2026-10-20
 
 ### Added

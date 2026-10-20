@@ -80,6 +80,7 @@ try {
   const dj = JSON.parse(diag.body);
   chk("GET /api/diagnostics -> 200", diag.status === 200 && dj.ok === true && typeof dj.node === "string" && typeof dj.python !== "undefined");
   chk("diagnostics: storage/port", dj.dataDirOk === true && dj.backupDirOk === true && typeof dj.port === "number");
+  chk("diagnostics: capabilities", dj.capabilities && dj.capabilities.chat.available === true && typeof dj.coreOk === "boolean");
   const health = await request(port, "GET", "/api/health");
   chk("GET /api/health -> 200", health.status === 200 && JSON.parse(health.body).dataDirOk === true);
 

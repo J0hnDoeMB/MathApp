@@ -39,7 +39,9 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/features.mjs` | optional API gate + plugin registry (id, prefixes, module) | none |
 | `lib/session-store.mjs` | session repository: read/write, state merge, history, tags | storage, schema, models, log |
 | `lib/schema.mjs` | data validation, limits and migrations | none |
-| `lib/diagnostics.mjs` | runtime/storage/provider diagnostics for API and launcher | config, storage, levels |
+| `lib/ports.mjs`, `lib/adapters.mjs` | external port contracts and concrete adapter container | integration services |
+| `lib/capabilities.mjs` | required/optional capability status and degraded fallback | config, storage, fs-check |
+| `lib/diagnostics.mjs` | runtime/storage/provider diagnostics for API and launcher | config, storage, levels, capabilities |
 | `lib/json-store.mjs` | atomic JSON read/write, corruption quarantine | log |
 | `lib/storage.mjs` | data paths, review file, backups | config, log, json-store |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
@@ -92,7 +94,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 65 checks (20 module + 4 agent + 4 chat-service + parsers + 37 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, atomic JSON/quarantine, state persistence/revision, feature routes, diagnostics).
+- `npm test`: 68 checks (22 module + 4 agent + 4 chat-service + parsers + 38 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, atomic JSON/quarantine, state persistence/revision, feature routes, capabilities/diagnostics).
 - `npm run test:ui`: 15 browser smoke checks (UI, state store, command bus, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

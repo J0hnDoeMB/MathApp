@@ -68,6 +68,22 @@ init(MathAppApp) // app = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64Fro
 ```
 The loader injects `/features/<id>.js` only when needed; core mode never downloads optional UI.
 
+### Adapter ports
+```text
+llm: { stream, generate, vision }
+math: { compute }
+graph: { run, edit, resolve }
+audio: { transcribe }
+documents: { extractText }
+```
+Implementation: `lib/adapters.mjs`, validated by `lib/ports.mjs`. The concrete integrations remain in `lib/llm/sympy/geogebra/audio/documents`.
+
+### Capabilities
+```text
+capabilityReport() -> { ok, capabilities: { chat, provider, storage, math, documents, audio, geogebra, tts, fullFeatures } }
+```
+Implementation: `lib/capabilities.mjs`; exposed by diagnostics.
+
 ### JsonStore
 ```text
 readJson(file, fallback) -> value

@@ -15,6 +15,9 @@ import { gradeReview } from "./lib/review.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
 import { SCHEMA_VERSION, migrateSession, validateState } from "./lib/schema.mjs";
 import { readJson, writeJsonAtomic } from "./lib/json-store.mjs";
+import { adapters } from "./lib/adapters.mjs";
+import { assertPorts } from "./lib/ports.mjs";
+import { capabilityReport } from "./lib/capabilities.mjs";
 
 let ok = 0, fail = 0;
 function chk(name, fn) {
@@ -181,6 +184,19 @@ chk("json-store: scrittura atomica e quarantena", () => {
     assert.equal(fs.readdirSync(dir).some((f) => f.includes(".corrupt-")), true);
     assert.equal(readJson(path.join(dir, "missing.json"), { missing: true }).missing, true);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+chk("adapters: porte complete", () => {
+  assert.equal(assertPorts(adapters), true);
+});
+
+chk("capabilities: core e optional", () => {
+  const r = capabilityReport();
+  assert.equal(typeof r.ok, "boolean");
+  assert.equal(r.capabilities.chat.available, true);
+  assert.equal(typeof r.capabilities.storage.available, "boolean");
+  assert.equal(typeof r.capabilities.math.available, "boolean");
+  assert.equal(typeof r.capabilities.provider.fallback, "string");
 });
 
 console.log("----");
