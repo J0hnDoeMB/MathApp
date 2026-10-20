@@ -244,7 +244,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `server.mjs` — guscio HTTP: sicurezza, router, statici, avvio
 - `routes/` — API settings, backup, kb, profile, review, study, compute, conversations, chat
 - `lib/chat-service.mjs`, `lib/security.mjs` — orchestrazione chat e guardie HTTP
-- `public/state.js` — store client domain/UI con eventi e accessori di compatibilità
+- `public/state.js` — store client domain/UI con eventi
 - `test_ui_smoke.mjs` — smoke browser (nuova chat, restore, view)
 - `setup.cmd`, `setup.ps1` — setup Windows: Node portatile, Python/SymPy opzionali
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali

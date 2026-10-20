@@ -116,8 +116,9 @@ try {
     domain: window.MathAppState && typeof window.MathAppState.domain === "object",
     ui: window.MathAppState && typeof window.MathAppState.ui === "object",
     conversationId: window.MathAppState && window.MathAppState.domain.conversationId,
+    legacy: "messages" in window || "conversationId" in window,
   }));
-  chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string");
+  chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string" && !store.legacy);
 
   const idBefore = await page.evaluate(() => localStorage.getItem("mathapp.conv"));
   await page.click("#newChat");

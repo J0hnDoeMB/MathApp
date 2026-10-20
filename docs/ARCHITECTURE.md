@@ -40,7 +40,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/schema.mjs` | data validation, limits and migrations | none |
 | `lib/storage.mjs` | data paths, review file, backups | config, log |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
-| `public/state.js` | client domain/UI store, events and compatibility accessors | browser only |
+| `public/state.js` | client domain/UI store and events | browser only |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
 
 Dependency direction: `server -> routes/agent -> domain/integration -> infrastructure`. Lower layers never import `server.mjs` or `public/`. Data entities and limits are in [`DATA-MODEL.md`](DATA-MODEL.md); ports and layer map in [`CONTRACTS.md`](CONTRACTS.md).

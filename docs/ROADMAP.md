@@ -33,8 +33,8 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] gate core/full in `lib/features.mjs` + test
 - [x] session repository (`lib/session-store.mjs`) e schema/migrazioni (`lib/schema.mjs`)
 - [x] chat orchestrator (`lib/chat-service.mjs`) e security guard (`lib/security.mjs`)
-- [x] store client domain/UI (`public/state.js`) con eventi e compatibilità
-- [ ] migrare i call site di `app.js` da accessori a `MathAppState`
+- [x] store client domain/UI (`public/state.js`) con eventi
+- [x] migrare i call site di `app.js` a `MathAppState` (accessori rimossi)
 - [ ] plugin loader per feature opzionali
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.

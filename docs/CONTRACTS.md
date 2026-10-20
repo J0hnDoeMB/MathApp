@@ -66,7 +66,7 @@ Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
 MathAppState.domain / MathAppState.ui
 on(event, fn) / emit(event, value) / snapshot()
 ```
-Implementation: `public/state.js`. `app.js` still uses compatibility accessors for existing globals; new code must use `MathAppState`.
+Implementation: `public/state.js`. `app.js` uses `MathAppState` directly; no legacy global state.
 
 ### ChatOrchestrator
 ```text

@@ -123,7 +123,7 @@ try {
       hasModes: !!box.querySelector(".explain-modes"),
       body: box.querySelector(".explain-body").textContent,
       leaked: box.querySelector(".explain-body").textContent.includes("RAGIONAMENTO-SEGRETO"),
-      persisted: ((cellData[cellData.length - 1].spiega || {}).text || "").includes("differenza di quadrati"),
+      persisted: ((MathAppState.domain.cellData[MathAppState.domain.cellData.length - 1].spiega || {}).text || "").includes("differenza di quadrati"),
     };
   });
   assert.equal(s.title, "Spiegazione");

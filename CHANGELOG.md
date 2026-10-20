@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.10.0 - 2026-10-20
+
+### Changed
+- Client state migration completed: `app.js` uses `MathAppState.domain/ui` directly; compatibility global accessors were removed (UI smoke asserts they are absent).
+- `public/state.js` is the single client state source, with events and snapshot.
+
+### Tests
+- `npm test`: 61 checks; UI smoke: 8; GeoGebra: 5.
+
 ## v1.9.0 - 2026-10-20
 
 ### Changed

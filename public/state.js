@@ -1,7 +1,6 @@
-// Stato client: domain e UI separati, con eventi e accessori di compatibilita'.
-// app.js e' ancora un classico script: gli accessori permettono di migrare i
-// punti di lettura/scrittura senza un big-bang. I nuovi codice deve usare
-// MathAppState.domain / MathAppState.ui.
+// Stato client: domain e UI separati, con eventi.
+// app.js usa direttamente MathAppState.domain / MathAppState.ui: nessun
+// globale di stato viene esposto come accessorio.
 (function () {
   const storedConv = (() => { try { return localStorage.getItem("mathapp.conv"); } catch { return null; } })();
   const revision = (() => { try { return Number(localStorage.getItem("mathapp.stateRevision")) || 0; } catch { return 0; } })();
@@ -47,19 +46,6 @@
       try { fn(value, event); } catch (e) { console.warn("[MathAppState]", e); }
     }
   }
-  function bind(target, group, names) {
-    for (const name of names) {
-      Object.defineProperty(window, name, {
-        configurable: true,
-        enumerable: false,
-        get: () => target[name],
-        set: (value) => { target[name] = value; emit(group + ":" + name, value); },
-      });
-    }
-  }
-  bind(domain, "domain", Object.keys(domain));
-  bind(ui, "ui", Object.keys(ui));
-
   window.MathAppState = {
     domain,
     ui,

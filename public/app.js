@@ -1,4 +1,5 @@
 // MathApp front-end: chat con streaming + KaTeX + GeoGebra pilotato dall'IA.
+const appState = window.MathAppState;
 const $ = (s) => document.querySelector(s);
 const chatEl = $("#chat"), inputEl = $("#input"), sendBtn = $("#send");
 const statusEl = $("#status"), modelEl = $("#model"), mainEl = $("#main");
@@ -11,16 +12,16 @@ let ggbWorkQueue = Promise.resolve();
 function enqueueGgbWork(expectedGeneration, work) {
   const task = ggbWorkQueue.catch(() => {}).then(async () => {
     await ggbReadyPromise;
-    if (expectedGeneration !== conversationGeneration) return false;
+    if (expectedGeneration !== appState.domain.conversationGeneration) return false;
     return await work();
   });
   ggbWorkQueue = task.catch((e) => { console.warn("[MathApp] operazione GeoGebra fallita", e); return false; });
   return task;
 }
 
-function queueGgbClear(expectedGeneration = conversationGeneration) {
+function queueGgbClear(expectedGeneration = appState.domain.conversationGeneration) {
   return enqueueGgbWork(expectedGeneration, () => {
-    if (expectedGeneration !== conversationGeneration) return false;
+    if (expectedGeneration !== appState.domain.conversationGeneration) return false;
     try { ggbApplet.newConstruction(); applyGgbTheme(); return true; }
     catch (e) { console.warn("[MathApp] pulizia GeoGebra fallita", e); return false; }
   });
@@ -116,9 +117,9 @@ function ggbStyleCall(cmd) {
   }
 }
 
-async function applyCommands(commands, expectedGeneration = conversationGeneration) {
+async function applyCommands(commands, expectedGeneration = appState.domain.conversationGeneration) {
   await ggbReadyPromise;
-  if (expectedGeneration !== conversationGeneration) return [];
+  if (expectedGeneration !== appState.domain.conversationGeneration) return [];
   const results = [];
   for (const c of (Array.isArray(commands) ? commands : [])) {
     const styleCall = ggbStyleCall(c);
@@ -191,24 +192,24 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 function refreshFigureList() {
   const sel = $("#figSel");
   if (!sel) return;
-  if (!figures.length) { sel.disabled = true; sel.innerHTML = '<option value="">nessuna costruzione</option>'; return; }
+  if (!appState.domain.figures.length) { sel.disabled = true; sel.innerHTML = '<option value="">nessuna costruzione</option>'; return; }
   sel.disabled = false;
-  sel.innerHTML = '<option value="">Costruzioni (' + figures.length + ')</option>' +
-    figures.map((f, i) => '<option value="' + escapeHtml(f.fid) + '">' + (i + 1) + ". " + (f.view === "3d" ? "[3D] " : "") + escapeHtml(f.title || "figura") + "</option>").join("");
+  sel.innerHTML = '<option value="">Costruzioni (' + appState.domain.figures.length + ')</option>' +
+    appState.domain.figures.map((f, i) => '<option value="' + escapeHtml(f.fid) + '">' + (i + 1) + ". " + (f.view === "3d" ? "[3D] " : "") + escapeHtml(f.title || "figura") + "</option>").join("");
 }
 
-async function runFigure(fig, mode, expectedGeneration = conversationGeneration) {
+async function runFigure(fig, mode, expectedGeneration = appState.domain.conversationGeneration) {
   await ggbReadyPromise;
-  if (expectedGeneration !== conversationGeneration || conversationLoading) return { okN: 0, total: (fig.commands || []).length };
+  if (expectedGeneration !== appState.domain.conversationGeneration || appState.ui.conversationLoading) return { okN: 0, total: (fig.commands || []).length };
   setView3d(fig.view === "3d", expectedGeneration); // la figura vive nella sua vista
   if (mode === "replace") { try { ggbApplet.newConstruction(); applyGgbTheme(); } catch {} }
   pushUndoPoint(); // annulla = toglie questa costruzione dalla lavagna
   const res = await applyCommands(fig.commands, expectedGeneration);
   pushUndoPoint(); // …e ripeti = la rimette
-  if (expectedGeneration !== conversationGeneration) return { okN: 0, total: (fig.commands || []).length };
+  if (expectedGeneration !== appState.domain.conversationGeneration) return { okN: 0, total: (fig.commands || []).length };
   const okN = res.filter((r) => r.ok).length;
   refreshFigureList();
-  if (expectedGeneration === conversationGeneration) saveState();
+  if (expectedGeneration === appState.domain.conversationGeneration) saveState();
   return { okN, total: res.length };
 }
 
@@ -257,7 +258,7 @@ function setView3dAngles(angles) {
 }
 
 function resetView3d() {
-  if (!ggb3d) return;
+  if (!appState.domain.ggb3d) return;
   if (setView3dAngles(VIEW3D_STD)) flash("vista 3D riportata allo standard");
 }
 $("#view3dReset").addEventListener("click", resetView3d);
@@ -271,7 +272,7 @@ let ggbPointerOver = false, view3dWatchLast = null, view3dWatchStable = null, vi
   host.addEventListener("pointerenter", () => { ggbPointerOver = true; });
   host.addEventListener("pointerleave", () => { ggbPointerOver = false; });
   setInterval(() => {
-    if (!ggbReady || !ggb3d) return;
+    if (!ggbReady || !appState.domain.ggb3d) return;
     let ang = null;
     try {
       const m = ggbApplet.getXML().match(/<coordSystem[^>]*xAngle="([^"]+)" zAngle="([^"]+)"/);
@@ -294,23 +295,23 @@ let ggbPointerOver = false, view3dWatchLast = null, view3dWatchStable = null, vi
 function updateViewButton() {
   const b = $("#view3d");
   if (b) {
-    b.classList.toggle("is-on", ggb3d);
-    b.setAttribute("aria-pressed", String(ggb3d));
-    b.title = ggb3d ? "Torna alla vista 2D" : "Mostra la vista 3D (solidi, superfici, funzioni di due variabili)";
+    b.classList.toggle("is-on", appState.domain.ggb3d);
+    b.setAttribute("aria-pressed", String(appState.domain.ggb3d));
+    b.title = appState.domain.ggb3d ? "Torna alla vista 2D" : "Mostra la vista 3D (solidi, superfici, funzioni di due variabili)";
   }
   const r = $("#view3dReset");
-  if (r) r.hidden = !ggb3d;
+  if (r) r.hidden = !appState.domain.ggb3d;
 }
-function setView3d(on, expectedGeneration = conversationGeneration) {
+function setView3d(on, expectedGeneration = appState.domain.conversationGeneration) {
   on = !!on;
-  if (expectedGeneration !== conversationGeneration) return;
-  if (ggbReady && on !== ggb3d) {
+  if (expectedGeneration !== appState.domain.conversationGeneration) return;
+  if (ggbReady && on !== appState.domain.ggb3d) {
     try { ggbApplet.setPerspective(on ? "+T" : "-T"); } catch (e) { console.warn("[MathApp] vista 3D non applicata", e); }
   }
-  ggb3d = on;
+  appState.domain.ggb3d = on;
   updateViewButton();
 }
-$("#view3d").addEventListener("click", () => { setView3d(!ggb3d); saveState(); });
+$("#view3d").addEventListener("click", () => { setView3d(!appState.domain.ggb3d); saveState(); });
 updateViewButton();
 
 // ---------- finestra del grafico: vista 2D personalizzata ----------
@@ -324,43 +325,43 @@ function viewFinite(v) {
 const fmtViewNum = (v) => (Number.isFinite(v) ? String(Math.round(v * 1e6) / 1e6) : "");
 
 function viewFromBoard() {
-  if (!ggbReady) return viewCache;
+  if (!ggbReady) return appState.domain.viewCache;
   try {
     const block = (ggbApplet.getXML().match(/<euclidianView>[\s\S]*?<\/euclidianView>/) || [""])[0];
-    if (!block) return viewCache;
+    if (!block) return appState.domain.viewCache;
     const tag = (re) => (block.match(re) || [""])[0];
     const num = (t, name) => { const m = String(t).match(new RegExp("\\b" + name + '="([^"]+)"')); return m ? parseFloat(m[1]) : NaN; };
     const flag = (t, name) => { const m = String(t).match(new RegExp("\\b" + name + '="([^"]+)"')); return m ? m[1] === "true" : null; };
     const sizeTag = tag(/<size [^>]*>/), csTag = tag(/<coordSystem [^>]*>/), evTag = tag(/<evSettings [^>]*>/);
     const W = num(sizeTag, "width"), H = num(sizeTag, "height");
     const x0 = num(csTag, "xZero"), y0 = num(csTag, "yZero"), sx = num(csTag, "scale"), sy = num(csTag, "yscale");
-    if (![W, H, x0, y0, sx, sy].every(Number.isFinite) || sx <= 0 || sy <= 0) return viewCache;
+    if (![W, H, x0, y0, sx, sy].every(Number.isFinite) || sx <= 0 || sy <= 0) return appState.domain.viewCache;
     const rec = {
       xmin: -x0 / sx, xmax: (W - x0) / sx,
       ymin: (y0 - H) / sy, ymax: y0 / sy,
       axes: flag(evTag, "axes"), grid: flag(evTag, "grid"),
     };
-    if (viewFinite(rec)) { viewCache = rec; return rec; }
-    return viewCache;
-  } catch { return viewCache; }
+    if (viewFinite(rec)) { appState.domain.viewCache = rec; return rec; }
+    return appState.domain.viewCache;
+  } catch { return appState.domain.viewCache; }
 }
 
 function applyViewToBoard(rec) {
-  if (!ggbReady || ggb3d || !viewFinite(rec)) return false;
+  if (!ggbReady || appState.domain.ggb3d || !viewFinite(rec)) return false;
   let done = false;
   try { ggbApplet.setCoordSystem(rec.xmin, rec.xmax, rec.ymin, rec.ymax); done = true; } catch (e) { console.warn("[MathApp] setCoordSystem non riuscito", e); }
   if (!done) {
     try { ggbApplet.evalCommand("ZoomIn(" + fmtViewNum(rec.xmin) + "," + fmtViewNum(rec.ymin) + "," + fmtViewNum(rec.xmax) + "," + fmtViewNum(rec.ymax) + ")"); done = true; } catch {}
   }
   if (!done) return false;
-  viewCache = rec; // anche a lavagna nascosta la finestra applicata è quella giusta
+  appState.domain.viewCache = rec; // anche a lavagna nascosta la finestra applicata è quella giusta
   try { if (typeof rec.axes === "boolean" && ggbApplet.setAxesVisible) ggbApplet.setAxesVisible(rec.axes, rec.axes); } catch {}
   try { if (typeof rec.grid === "boolean" && ggbApplet.setGridVisible) ggbApplet.setGridVisible(rec.grid); } catch {}
   return true;
 }
 
 function viewPanelSync() {
-  const cur = viewFromBoard() || viewCustom;
+  const cur = viewFromBoard() || appState.domain.viewCustom;
   const base = cur || { xmin: -10, xmax: 10, ymin: -10, ymax: 10 };
   const set = (id, v) => { const el = $(id); if (el) el.value = fmtViewNum(v); };
   set("#vxmin", base.xmin); set("#vxmax", base.xmax); set("#vymin", base.ymin); set("#vymax", base.ymax);
@@ -370,9 +371,9 @@ function viewPanelSync() {
 }
 
 function applyView(rec, persist) {
-  if (ggb3d) { flash("la finestra vale per il piano 2D: prima esci dalla vista 3D"); return false; }
+  if (appState.domain.ggb3d) { flash("la finestra vale per il piano 2D: prima esci dalla vista 3D"); return false; }
   if (!applyViewToBoard(rec)) { flash("finestra non applicata"); return false; }
-  viewCustom = rec;
+  appState.domain.viewCustom = rec;
   viewPanelSync();
   if (persist !== false) saveState();
   return true;
@@ -407,8 +408,8 @@ if (viewPanel) {
 
 // ---------- "Adatta": inquadra funzioni e punti notevoli ----------
 function latestDrawCell() {
-  for (let i = cellData.length - 1; i >= 0; i--) {
-    const c = cellData[i];
+  for (let i = appState.domain.cellData.length - 1; i >= 0; i--) {
+    const c = appState.domain.cellData[i];
     if (c && c.res && c.res.draw) return c.res;
   }
   return null;
@@ -416,7 +417,7 @@ function latestDrawCell() {
 
 function collectFitPoints() {
   const pts = [];
-  const lastFig = figures[figures.length - 1];
+  const lastFig = appState.domain.figures[appState.domain.figures.length - 1];
   if (lastFig) for (const c of lastFig.commands) {
     const m = String(c).match(/^\s*[A-Za-z][\w']*\s*=\s*\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*[,)]/);
     if (m) pts.push({ x: parseFloat(m[1]), y: parseFloat(m[2]) });
@@ -439,10 +440,10 @@ function sampleFnY(name, x) {
 }
 
 function fitToContent(opts) {
-  if (!ggbReady || ggb3d) return false;
+  if (!ggbReady || appState.domain.ggb3d) return false;
   const pts = collectFitPoints().concat((opts && opts.points) || []);
   const fns = ((opts && opts.functions) || []).slice();
-  const lastFig = figures[figures.length - 1];
+  const lastFig = appState.domain.figures[appState.domain.figures.length - 1];
   if (lastFig) for (const c of lastFig.commands) {
     const m = String(c).match(/^\s*([A-Za-z]\w*)\s*\(x\)\s*=/);
     if (m) fns.push(m[1]);
@@ -481,7 +482,7 @@ function fitToContent(opts) {
   if (!(ymax > ymin)) { ymin = ys[0]; ymax = ys[ys.length - 1]; }
   if (ymax - ymin < 1e-9) { const c1 = (ymin + ymax) / 2 || 0; ymin = c1 - 2; ymax = c1 + 2; }
   const padY = 0.1 * (ymax - ymin);
-  const base = viewCustom || cur || { axes: true, grid: false };
+  const base = appState.domain.viewCustom || cur || { axes: true, grid: false };
   return applyView({ xmin, xmax, ymin: ymin - padY, ymax: ymax + padY, axes: base.axes !== false, grid: base.grid === true });
 }
 
@@ -546,22 +547,22 @@ $("#saveFig").addEventListener("click", async () => {
 });
 
 $("#clearFigs").addEventListener("click", () => {
-  if (streaming || conversationLoading) { flash("attendi il caricamento o la risposta in corso…"); return; }
-  if (!figures.length) { flash("nessuna costruzione da svuotare"); return; }
-  figures = []; figSeq = 0;
+  if (appState.ui.streaming || appState.ui.conversationLoading) { flash("attendi il caricamento o la risposta in corso…"); return; }
+  if (!appState.domain.figures.length) { flash("nessuna costruzione da svuotare"); return; }
+  appState.domain.figures = []; appState.domain.figSeq = 0;
   for (const c of [...chatEl.querySelectorAll(".ggb-card")]) c.remove();
   refreshFigureList();
-  const generation = conversationGeneration;
-  queueGgbClear(generation).then(() => { if (generation === conversationGeneration) saveState(); });
+  const generation = appState.domain.conversationGeneration;
+  queueGgbClear(generation).then(() => { if (generation === appState.domain.conversationGeneration) saveState(); });
   flash("costruzioni svuotate");
 });
 
 $("#figSel").addEventListener("change", async (e) => {
   const fid = e.target.value;
   e.target.value = "";
-  if (conversationLoading) { flash("attendi il caricamento dell'argomento…"); return; }
+  if (appState.ui.conversationLoading) { flash("attendi il caricamento dell'argomento…"); return; }
   if (!fid) return;
-  const fig = figures.find((f) => f.fid === fid);
+  const fig = appState.domain.figures.find((f) => f.fid === fid);
   if (!fig) return;
   const card = document.querySelector('.ggb-card[data-fid="' + fid + '"]');
   const st = card ? card.querySelector(".ggb-state") : null;
@@ -571,9 +572,9 @@ $("#figSel").addEventListener("change", async (e) => {
 });
 
 // modifica geometria esistente via API GeoGebra
-async function execEdits(callId, ops, expectedGeneration = conversationGeneration) {
+async function execEdits(callId, ops, expectedGeneration = appState.domain.conversationGeneration) {
   await ggbReadyPromise;
-  if (expectedGeneration !== conversationGeneration) return;
+  if (expectedGeneration !== appState.domain.conversationGeneration) return;
   pushUndoPoint(); // annulla = riconduce la lavagna a prima di questa modifica
   const results = [];
   for (const o of ops) {
@@ -703,7 +704,7 @@ function renderMD(el, text) {
 const jumpBtn = $("#jumpBtn");
 const atBottom = () => chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight < 80;
 function stick(force) {
-  if (force || autoFollow) {
+  if (force || appState.ui.autoFollow) {
     chatEl.scrollTop = chatEl.scrollHeight;
     if (jumpBtn) jumpBtn.hidden = true;
   } else if (jumpBtn) {
@@ -711,10 +712,10 @@ function stick(force) {
   }
 }
 chatEl.addEventListener("scroll", () => {
-  autoFollow = atBottom();
-  if (autoFollow && jumpBtn) jumpBtn.hidden = true;
+  appState.ui.autoFollow = atBottom();
+  if (appState.ui.autoFollow && jumpBtn) jumpBtn.hidden = true;
 });
-if (jumpBtn) jumpBtn.addEventListener("click", () => { autoFollow = true; stick(true); });
+if (jumpBtn) jumpBtn.addEventListener("click", () => { appState.ui.autoFollow = true; stick(true); });
 
 function addMsg(role) {
   const w = $("#chatWelcome"); if (w) w.hidden = true;
@@ -741,25 +742,25 @@ function makeUserBubble(text, atts) {
 }
 
 async function send(text) {
-  if (streaming || conversationLoading) return;
-  const atts = pending.slice();
-  pending = []; renderChips();
+  if (appState.ui.streaming || appState.ui.conversationLoading) return;
+  const atts = appState.ui.pending.slice();
+  appState.ui.pending = []; renderChips();
   const um = { role: "user", content: text };
   if (atts.length) um.attachments = atts;
-  messages.push(um);
+  appState.domain.messages.push(um);
   const b = makeUserBubble(text, atts);
-  b.dataset.idx = messages.length - 1;
+  b.dataset.idx = appState.domain.messages.length - 1;
   try { localStorage.removeItem("mathapp.empty"); } catch {}
-  autoFollow = true; stick(true);
+  appState.ui.autoFollow = true; stick(true);
   await runTurn();
 }
 
 async function runTurn() {
-  if (streaming || conversationLoading) return;
-  const turnGeneration = conversationGeneration;
+  if (appState.ui.streaming || appState.ui.conversationLoading) return;
+  const turnGeneration = appState.domain.conversationGeneration;
   const turnAbort = new AbortController();
-  streaming = true; setSendStop(true); statusEl.textContent = "sta pensando…";
-  currentAbort = turnAbort;
+  appState.ui.streaming = true; setSendStop(true); statusEl.textContent = "sta pensando…";
+  appState.ui.currentAbort = turnAbort;
   const bubble = addMsg("assistant");
   const think = document.createElement("div"); think.className = "thinking"; think.style.display = "none";
   bubble.appendChild(think);
@@ -782,7 +783,7 @@ async function runTurn() {
   let acc = "", reasoning = "", lastRender = 0, queued = false, finished = false;
   const rerender = () => {
     queued = false; lastRender = Date.now();
-    if (finished || turnGeneration !== conversationGeneration) return; // niente render tardivi o su un'altra chat
+    if (finished || turnGeneration !== appState.domain.conversationGeneration) return; // niente render tardivi o su un'altra chat
     renderMD(body, acc);
     stick();
   };
@@ -791,7 +792,7 @@ async function runTurn() {
     const res = await fetch("/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       signal: turnAbort.signal,
-      body: JSON.stringify({ messages, model: currentModel, sessionId, conversationId, mode, tutorMode: tutorMode || (stepMode ? "step" : null), dark: document.body.classList.contains("theme-dark") }),
+      body: JSON.stringify({ messages: appState.domain.messages, model: appState.domain.currentModel, sessionId: appState.domain.sessionId, conversationId: appState.domain.conversationId, mode: appState.domain.mode, tutorMode: appState.domain.tutorMode || (appState.domain.stepMode ? "step" : null), dark: document.body.classList.contains("theme-dark") }),
     });
     if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 300));
     const reader = res.body.getReader();
@@ -799,7 +800,7 @@ async function runTurn() {
     let buf = "";
     while (true) {
       const { done, value } = await reader.read();
-      if (turnGeneration !== conversationGeneration) {
+      if (turnGeneration !== appState.domain.conversationGeneration) {
         try { await reader.cancel(); } catch {}
         return;
       }
@@ -852,17 +853,17 @@ async function runTurn() {
             bubble.appendChild(v);
           }
         } else if (ev === "sources") {
-          pendingSources = data; // mostrato a fine risposta, e solo se davvero ripreso
+          appState.ui.pendingSources = data; // mostrato a fine risposta, e solo se davvero ripreso
         } else if (ev === "usage") {
-          usageTot.prompt += data.prompt || 0;
-          usageTot.completion += data.completion || 0;
-          usageTot.total += data.total || 0;
+          appState.ui.usageTot.prompt += data.prompt || 0;
+          appState.ui.usageTot.completion += data.completion || 0;
+          appState.ui.usageTot.total += data.total || 0;
           const u = $("#usage");
-          if (u) u.textContent = "tok " + usageTot.total.toLocaleString("it-IT");
+          if (u) u.textContent = "tok " + appState.ui.usageTot.total.toLocaleString("it-IT");
         } else if (ev === "geogebra") {
           const cmds = data.commands || [];
-          const fig = { fid: data.fid || crypto.randomUUID(), title: data.title || ("Figura " + (++figSeq)), commands: cmds.slice(), msgIdx: null, view: data.view === "3d" ? "3d" : "2d" };
-          figures.push(fig);
+          const fig = { fid: data.fid || crypto.randomUUID(), title: data.title || ("Figura " + (++appState.domain.figSeq)), commands: cmds.slice(), msgIdx: null, view: data.view === "3d" ? "3d" : "2d" };
+          appState.domain.figures.push(fig);
           const line = document.createElement("div");
           line.appendChild(document.createTextNode("📐 Costruzione "));
           const title = document.createElement("b");
@@ -874,7 +875,7 @@ async function runTurn() {
           // va SUBITO sul grafico (cosi' la spiegazione corrisponde); la scheda resta per modificarla o rieseguirla
           const md = data.mode === "add" ? "add" : "replace";
           runFigure(fig, md, turnGeneration).then((r) => {
-            if (turnGeneration !== conversationGeneration) return;
+            if (turnGeneration !== appState.domain.conversationGeneration) return;
             postGgbResult(data.callId, { okN: r.okN, total: r.total, mode: md });
             const st = card.querySelector(".ggb-state");
             if (st) st.textContent = (md === "add" ? "aggiunta" : "eseguita") + " (" + r.okN + "/" + r.total + ")";
@@ -896,36 +897,36 @@ async function runTurn() {
       }
     }
   } catch (e) {
-    if (turnGeneration !== conversationGeneration) return;
+    if (turnGeneration !== appState.domain.conversationGeneration) return;
     if (e && e.name === "AbortError") { acc += "\n\n*— interrotto —*"; }
     else { body.classList.add("err"); acc += "\n\n**Errore:** " + e.message; }
   }
-  if (turnGeneration !== conversationGeneration) return;
+  if (turnGeneration !== appState.domain.conversationGeneration) return;
   finished = true;
   renderMD(body, acc);
   think.style.display = "none";
-  messages.push({ role: "assistant", content: acc });
-  bubble.dataset.idx = messages.length - 1;
+  appState.domain.messages.push({ role: "assistant", content: acc });
+  bubble.dataset.idx = appState.domain.messages.length - 1;
   const myIdx = Number(bubble.dataset.idx);
-  for (const f of figures) if (f.msgIdx == null) f.msgIdx = myIdx;
-  if (stepMode) applySteps(bubble, body);
+  for (const f of appState.domain.figures) if (f.msgIdx == null) f.msgIdx = myIdx;
+  if (appState.domain.stepMode) applySteps(bubble, body);
   ensureFigureCards();
   placeFigureCards(bubble, body);
-  renderSources(bubble, pendingSources, acc);
-  pendingSources = null;
+  renderSources(bubble, appState.ui.pendingSources, acc);
+  appState.ui.pendingSources = null;
   addMsgActions(bubble, myIdx);
   saveState();
-  streaming = false; setSendStop(false);
-  if (currentAbort === turnAbort) currentAbort = null;
+  appState.ui.streaming = false; setSendStop(false);
+  if (appState.ui.currentAbort === turnAbort) appState.ui.currentAbort = null;
   statusEl.textContent = "";
   stick();
 }
 
 // ---------- modifica di un messaggio già inviato ----------
 function startEdit(bubble) {
-  if (streaming || conversationLoading) { flash("attendi il caricamento o la risposta in corso…"); return; }
+  if (appState.ui.streaming || appState.ui.conversationLoading) { flash("attendi il caricamento o la risposta in corso…"); return; }
   const idx = Number(bubble.dataset.idx);
-  const msg = messages[idx];
+  const msg = appState.domain.messages[idx];
   if (!msg || msg.role !== "user") return;
   if (bubble.querySelector(".msg-edit")) return;
 
@@ -1017,14 +1018,14 @@ async function editAndResend(idx, newText, atts) {
   for (const el of [...chatEl.querySelectorAll("[data-idx]")]) {
     if (Number(el.dataset.idx) >= idx) el.remove();
   }
-  for (const f of figures) if (f.msgIdx != null && f.msgIdx >= idx) f.msgIdx = null; // riattacco dopo
-  messages = messages.slice(0, idx);
+  for (const f of appState.domain.figures) if (f.msgIdx != null && f.msgIdx >= idx) f.msgIdx = null; // riattacco dopo
+  appState.domain.messages = appState.domain.messages.slice(0, idx);
   const um = { role: "user", content: newText };
   if (atts && atts.length) um.attachments = atts.slice();
-  messages.push(um);
+  appState.domain.messages.push(um);
   const b = makeUserBubble(newText, atts);
   b.dataset.idx = idx;
-  autoFollow = true; stick(true);
+  appState.ui.autoFollow = true; stick(true);
   await runTurn();
   flash("risposta rigenerata");
 }
@@ -1039,9 +1040,9 @@ function renderMathInto(el) {
 }
 
 function setMode(m, allowDuringLoad = false) {
-  if (conversationLoading && !allowDuringLoad) return;
-  mode = m === "algebra" ? "algebra" : "figure";
-  const isAlg = mode === "algebra";
+  if (appState.ui.conversationLoading && !allowDuringLoad) return;
+  appState.domain.mode = m === "algebra" ? "algebra" : "figure";
+  const isAlg = appState.domain.mode === "algebra";
   const active = (sel, on) => { const el = $(sel); el.classList.toggle("is-active", on); el.setAttribute("aria-pressed", String(on)); };
   active("#modeFigure", !isAlg);
   active("#modeAlgebra", isAlg);
@@ -1119,9 +1120,9 @@ calcExpr.addEventListener("keydown", (e) => {
 });
 
 function addCell(op, expr, res, fromAI, record, index) {
-  if (record !== false) { cellData.push({ op, expr, res, ai: !!fromAI }); index = cellData.length - 1; saveState(); }
-  const n = (Number.isInteger(index) ? index : Math.max(0, cellData.length - 1)) + 1;
-  const dataObj = record !== false ? cellData[cellData.length - 1] : (Number.isInteger(index) ? cellData[index] : null);
+  if (record !== false) { appState.domain.cellData.push({ op, expr, res, ai: !!fromAI }); index = appState.domain.cellData.length - 1; saveState(); }
+  const n = (Number.isInteger(index) ? index : Math.max(0, appState.domain.cellData.length - 1)) + 1;
+  const dataObj = record !== false ? appState.domain.cellData[appState.domain.cellData.length - 1] : (Number.isInteger(index) ? appState.domain.cellData[index] : null);
 
   const cell = document.createElement("div");
   cell.className = "cell" + (fromAI ? " cell-ai" : "");
@@ -1211,21 +1212,21 @@ function addCell(op, expr, res, fromAI, record, index) {
 // ---------- disegno dei referti: lo studio di funzione e i vettori ----------
 // Crea la figura sulla lavagna (sostituisce quella presente) e inquadra il risultato.
 async function runCustomConstruction(cmds, three, fitOpts) {
-  const generation = conversationGeneration;
+  const generation = appState.domain.conversationGeneration;
   let okN = 0;
   await enqueueGgbWork(generation, async () => {
-    if (generation !== conversationGeneration) return false;
+    if (generation !== appState.domain.conversationGeneration) return false;
     setView3d(!!three, generation);
     try { ggbApplet.newConstruction(); applyGgbTheme(); } catch {}
     pushUndoPoint();
     const results = await applyCommands(cmds, generation);
-    if (generation !== conversationGeneration) return false;
+    if (generation !== appState.domain.conversationGeneration) return false;
     okN = results.filter((r) => r.ok).length;
     if (!three && fitOpts) fitToContent(fitOpts);
     pushUndoPoint();
     return true;
   });
-  if (generation !== conversationGeneration) return okN;
+  if (generation !== appState.domain.conversationGeneration) return okN;
   saveState();
   if (okN < cmds.length) flash("disegno eseguito in parte (" + okN + "/" + cmds.length + " comandi)");
   return okN;
@@ -1323,18 +1324,18 @@ function drawVectorsCell(res, mode) {
 // ---------- strumenti rapidi sulla lavagna: area e tangente ----------
 // AGGIUNGONO alla lavagna corrente (non azzerano il disegno).
 async function addToBoard(cmds, fitOpts) {
-  const generation = conversationGeneration;
+  const generation = appState.domain.conversationGeneration;
   let results = [];
   await enqueueGgbWork(generation, async () => {
-    if (generation !== conversationGeneration) return false;
+    if (generation !== appState.domain.conversationGeneration) return false;
     pushUndoPoint();
     results = await applyCommands(cmds, generation);
-    if (generation !== conversationGeneration) return false;
+    if (generation !== appState.domain.conversationGeneration) return false;
     if (fitOpts) fitToContent(fitOpts);
     pushUndoPoint();
     return true;
   });
-  if (generation !== conversationGeneration) return results;
+  if (generation !== appState.domain.conversationGeneration) return results;
   saveState();
   const bad = results.filter((r) => !r.ok);
   if (bad.length) flash("strumento: " + bad.length + " comandi non riusciti su " + results.length);
@@ -1423,7 +1424,7 @@ $("#ftTangentAnim").addEventListener("click", async () => {
 // contatore del quaderno + stato vuoto con esempi da provare
 const calcEmpty = $("#calcEmpty");
 function refreshCalcEmpty() {
-  const n = cellData.length;
+  const n = appState.domain.cellData.length;
   if (calcEmpty) calcEmpty.hidden = n > 0;
   const counter = $("#calcCount");
   if (counter) counter.textContent = n === 0 ? "nessun calcolo" : n === 1 ? "1 calcolo" : n + " calcoli";
@@ -1512,7 +1513,7 @@ async function runExplain(box, dataObj) {
       body: JSON.stringify({
         op: dataObj.op, expr: dataObj.expr,
         result: explainResultText(dataObj.res), latex: explainResultLatex(dataObj.res),
-        model: currentModel,
+        model: appState.domain.currentModel,
       }),
     });
     if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
@@ -1691,24 +1692,24 @@ async function refreshHistory() {
 async function openConv(id) {
   const generation = invalidateConversationWork();
   const pendingWrites = stateWriteQueue;
-  conversationLoading = true;
+  appState.ui.conversationLoading = true;
   sendBtn.disabled = true;
   statusEl.textContent = "carico argomento…";
   try {
     await pendingWrites;
-    if (generation !== conversationGeneration) return;
+    if (generation !== appState.domain.conversationGeneration) return;
     const r = await fetch("/api/conversation?id=" + encodeURIComponent(id));
-    if (generation !== conversationGeneration) return;
+    if (generation !== appState.domain.conversationGeneration) return;
     if (!r.ok) { flash("argomento non disponibile"); return; }
     const c = await r.json();
-    if (generation !== conversationGeneration || !(await renderConversation(c, generation))) return;
+    if (generation !== appState.domain.conversationGeneration || !(await renderConversation(c, generation))) return;
     drawer.hidden = true;
     statusEl.textContent = "argomento ripreso";
     setTimeout(() => (statusEl.textContent = ""), 1500);
-  } catch { if (generation === conversationGeneration) flash("errore nel caricamento dell'argomento"); }
+  } catch { if (generation === appState.domain.conversationGeneration) flash("errore nel caricamento dell'argomento"); }
   finally {
-    if (generation === conversationGeneration) {
-      conversationLoading = false;
+    if (generation === appState.domain.conversationGeneration) {
+      appState.ui.conversationLoading = false;
       sendBtn.disabled = false;
       saveState();
     }
@@ -1768,18 +1769,18 @@ function readFile(file) {
 function renderChips() {
   const box = $("#attachChips");
   box.innerHTML = "";
-  box.hidden = pending.length === 0;
-  pending.forEach((a, i) => {
+  box.hidden = appState.ui.pending.length === 0;
+  appState.ui.pending.forEach((a, i) => {
     const c = document.createElement("span"); c.className = "chip";
     const b = document.createElement("b"); b.textContent = fileIcon(a) + " " + a.name;
     const s = document.createElement("span"); s.textContent = fmtSize(a.size);
     const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.title = "Rimuovi";
-    x.addEventListener("click", () => { pending.splice(i, 1); renderChips(); });
+    x.addEventListener("click", () => { appState.ui.pending.splice(i, 1); renderChips(); });
     c.append(b, s, x);
     box.appendChild(c);
   });
   // con una foto fra gli allegati: via rapida per farla risolvere passo passo
-  if (pending.some((a) => String(a.mime || "").startsWith("image/"))) {
+  if (appState.ui.pending.some((a) => String(a.mime || "").startsWith("image/"))) {
     const q = document.createElement("button");
     q.type = "button"; q.className = "chip-quick"; q.id = "photoQuick";
     q.textContent = "📷 Risolvi l'esercizio";
@@ -1796,10 +1797,10 @@ function flash(msg) { statusEl.textContent = msg; setTimeout(() => (statusEl.tex
 
 async function addFiles(list) {
   for (const f of Array.from(list || [])) {
-    if (pending.length >= MAX_FILES) { flash("massimo " + MAX_FILES + " allegati"); break; }
+    if (appState.ui.pending.length >= MAX_FILES) { flash("massimo " + MAX_FILES + " allegati"); break; }
     if (f.size > MAX_FILE) { flash("«" + f.name + "» troppo grande (max 4 MB)"); continue; }
     const a = await readFile(f);
-    if (a) pending.push(a);
+    if (a) appState.ui.pending.push(a);
   }
   renderChips();
 }
@@ -1819,9 +1820,9 @@ function snapshot() {
     try { if (ggbApplet.getAllObjectNames().length) ggb = ggbApplet.getBase64(); } catch {}
   }
   const storedRevision = (() => { try { return Number(localStorage.getItem("mathapp.stateRevision")) || 0; } catch { return 0; } })();
-  stateRevision = Math.max(Date.now(), stateRevision + 1, storedRevision + 1);
-  try { localStorage.setItem("mathapp.stateRevision", String(stateRevision)); } catch {}
-  return { id: conversationId, revision: stateRevision, ggb, cells: cellData, mode, figures, view3d: ggb3d, view: viewCustom };
+  appState.domain.stateRevision = Math.max(Date.now(), appState.domain.stateRevision + 1, storedRevision + 1);
+  try { localStorage.setItem("mathapp.stateRevision", String(appState.domain.stateRevision)); } catch {}
+  return { id: appState.domain.conversationId, revision: appState.domain.stateRevision, ggb, cells: appState.domain.cellData, mode: appState.domain.mode, figures: appState.domain.figures, view3d: appState.domain.ggb3d, view: appState.domain.viewCustom };
 }
 function writeState(state) {
   const write = stateWriteQueue.catch(() => {}).then(() =>
@@ -1831,7 +1832,7 @@ function writeState(state) {
   return write;
 }
 function saveState() {
-  if (booting || conversationLoading) return;
+  if (appState.ui.booting || appState.ui.conversationLoading) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
@@ -1841,7 +1842,7 @@ function saveState() {
 }
 
 function persistStateNow() {
-  if (booting) return;
+  if (appState.ui.booting) return;
   clearTimeout(saveTimer);
   saveTimer = null;
   try {
@@ -1852,57 +1853,57 @@ function persistStateNow() {
 }
 
 function invalidateConversationWork() {
-  const generation = ++conversationGeneration;
-  const wasLoading = conversationLoading;
-  const controller = currentAbort;
-  currentAbort = null;
+  const generation = ++appState.domain.conversationGeneration;
+  const wasLoading = appState.ui.conversationLoading;
+  const controller = appState.ui.currentAbort;
+  appState.ui.currentAbort = null;
   if (controller) { try { controller.abort(); } catch {} }
-  streaming = false;
-  conversationLoading = false;
+  appState.ui.streaming = false;
+  appState.ui.conversationLoading = false;
   clearTimeout(saveTimer);
   saveTimer = null;
   setSendStop(false);
   statusEl.textContent = "";
-  pendingSources = null;
+  appState.ui.pendingSources = null;
   if (!wasLoading) persistStateNow();
   return generation;
 }
 
 async function renderConversation(conv, generation) {
-  if (!conv || !conv.id || generation !== conversationGeneration) return false;
+  if (!conv || !conv.id || generation !== appState.domain.conversationGeneration) return false;
   ttsStop();
-  if (Number.isSafeInteger(conv.stateRevision)) stateRevision = Math.max(stateRevision, conv.stateRevision);
-  conversationId = String(conv.id);
-  sessionId = conversationId;
+  if (Number.isSafeInteger(conv.stateRevision)) appState.domain.stateRevision = Math.max(appState.domain.stateRevision, conv.stateRevision);
+  appState.domain.conversationId = String(conv.id);
+  appState.domain.sessionId = appState.domain.conversationId;
   try {
-    localStorage.setItem("mathapp.conv", conversationId);
+    localStorage.setItem("mathapp.conv", appState.domain.conversationId);
     localStorage.removeItem("mathapp.empty");
   } catch {}
 
-  messages = (Array.isArray(conv.messages) ? conv.messages : [])
+  appState.domain.messages = (Array.isArray(conv.messages) ? conv.messages : [])
     .filter((m) => m && (m.role === "user" || m.role === "assistant"))
     .map((m) => Object.assign({ role: m.role, content: m.content }, m.files && m.files.length ? { files: m.files } : {}));
   chatEl.replaceChildren();
-  for (let i = 0; i < messages.length; i++) {
+  for (let i = 0; i < appState.domain.messages.length; i++) {
     try {
-      const el = appendRendered(messages[i].role, messages[i].content, messages[i].files, i);
-      if (messages[i].role === "assistant") addMsgActions(el, i); // copia · ascolta · ripasso anche a chat riaperte
+      const el = appendRendered(appState.domain.messages[i].role, appState.domain.messages[i].content, appState.domain.messages[i].files, i);
+      if (appState.domain.messages[i].role === "assistant") addMsgActions(el, i); // copia · ascolta · ripasso anche a chat riaperte
     } catch (e) { console.warn("[MathApp] messaggio non ripristinato", e); }
   }
 
-  cellData = Array.isArray(conv.cells) ? conv.cells.slice(-200) : [];
+  appState.domain.cellData = Array.isArray(conv.cells) ? conv.cells.slice(-200) : [];
   calcCells.replaceChildren();
-  for (let i = 0; i < cellData.length; i++) {
+  for (let i = 0; i < appState.domain.cellData.length; i++) {
     try {
-      const cellEl = addCell(cellData[i].op, cellData[i].expr, cellData[i].res, cellData[i].ai, false, i);
-      if (cellEl && cellData[i].spiega && cellData[i].spiega.text) buildExplainBox(cellEl, cellData[i], cellData[i].spiega);
+      const cellEl = addCell(appState.domain.cellData[i].op, appState.domain.cellData[i].expr, appState.domain.cellData[i].res, appState.domain.cellData[i].ai, false, i);
+      if (cellEl && appState.domain.cellData[i].spiega && appState.domain.cellData[i].spiega.text) buildExplainBox(cellEl, appState.domain.cellData[i], appState.domain.cellData[i].spiega);
     } catch (e) { console.warn("[MathApp] cella non ripristinata", e); }
   }
   refreshCalcEmpty();
-  calcHistory = cellData.slice().reverse().map((c) => c.expr).filter(Boolean).slice(0, 20);
+  calcHistory = appState.domain.cellData.slice().reverse().map((c) => c.expr).filter(Boolean).slice(0, 20);
   calcHistIdx = -1;
 
-  figures = (Array.isArray(conv.figures) ? conv.figures : [])
+  appState.domain.figures = (Array.isArray(conv.figures) ? conv.figures : [])
     .filter((f) => f && f.fid != null)
     .slice(-60)
     .map((f) => ({
@@ -1912,27 +1913,27 @@ async function renderConversation(conv, generation) {
       msgIdx: Number.isInteger(f.msgIdx) ? f.msgIdx : null,
       view: f.view === "3d" ? "3d" : "2d",
     }));
-  figSeq = figures.length;
-  for (const f of figures) {
+  appState.domain.figSeq = appState.domain.figures.length;
+  for (const f of appState.domain.figures) {
     try {
       const host = f.msgIdx != null ? chatEl.querySelector('[data-idx="' + f.msgIdx + '"]') : null;
       renderFigureCard(host || chatEl, f, { collapsed: true });
     } catch (e) { console.warn("[MathApp] costruzione non ripristinata", e); }
   }
   refreshFigureList();
-  pending = [];
+  appState.ui.pending = [];
   renderChips();
-  pendingSources = null;
-  usageTot = { prompt: 0, completion: 0, total: 0 };
+  appState.ui.pendingSources = null;
+  appState.ui.usageTot = { prompt: 0, completion: 0, total: 0 };
   if ($("#usage")) $("#usage").textContent = "";
 
   try {
     const boardReady = await enqueueGgbWork(generation, async () => {
-      if (generation !== conversationGeneration) return false;
+      if (generation !== appState.domain.conversationGeneration) return false;
       let restored = false;
       if (typeof conv.ggb === "string" && conv.ggb) {
         restored = await setGgbBase64Async(conv.ggb);
-        if (generation !== conversationGeneration) return false;
+        if (generation !== appState.domain.conversationGeneration) return false;
         if (restored) applyGgbTheme();
       }
       if (!restored) {
@@ -1941,11 +1942,11 @@ async function renderConversation(conv, generation) {
       let nObj = 0;
       try { nObj = ggbApplet.getAllObjectNames().length; } catch {}
       if (!restored || !nObj) {
-        const last = figures[figures.length - 1];
+        const last = appState.domain.figures[appState.domain.figures.length - 1];
         if (last) {
           if (restored) ggbApplet.newConstruction();
           await applyCommands(last.commands, generation);
-          if (generation !== conversationGeneration) return false;
+          if (generation !== appState.domain.conversationGeneration) return false;
           console.info("[MathApp] figura ricostruita da:", last.title);
         }
       }
@@ -1954,32 +1955,32 @@ async function renderConversation(conv, generation) {
         const m = ggbApplet.getXML().match(/<coordSystem[^>]*xAngle="([^"]+)" zAngle="([^"]+)"/);
         if (m && Math.abs(parseFloat(m[2])) > 3600) setView3dAngles(VIEW3D_STD);
       } catch {}
-      return generation === conversationGeneration;
+      return generation === appState.domain.conversationGeneration;
     });
-    if (!boardReady || generation !== conversationGeneration) return false;
+    if (!boardReady || generation !== appState.domain.conversationGeneration) return false;
   } catch (e) { console.warn("[MathApp] ripristino figura", e); }
 
-  if (generation !== conversationGeneration) return false;
+  if (generation !== appState.domain.conversationGeneration) return false;
   setView3d(conv.view3d === true, generation); // ripristina la vista 3D se era attiva
-  viewCustom = null;
-  viewCache = null;
+  appState.domain.viewCustom = null;
+  appState.domain.viewCache = null;
   if (conv.view && typeof conv.view === "object") {
     const rec = { xmin: Number(conv.view.xmin), xmax: Number(conv.view.xmax), ymin: Number(conv.view.ymin), ymax: Number(conv.view.ymax), axes: conv.view.axes !== false, grid: conv.view.grid === true };
     if (viewFinite(rec)) {
-      viewCustom = rec;
-      if (!ggb3d) applyViewToBoard(rec);
+      appState.domain.viewCustom = rec;
+      if (!appState.domain.ggb3d) applyViewToBoard(rec);
     }
   }
   viewPanelSync();
   setMode(conv.mode === "algebra" ? "algebra" : "figure", true);
-  if (generation !== conversationGeneration) return false;
-  autoFollow = true;
+  if (generation !== appState.domain.conversationGeneration) return false;
+  appState.ui.autoFollow = true;
   stick(true);
   return true;
 }
 
 window.addEventListener("beforeunload", () => {
-  if (booting) return;
+  if (appState.ui.booting) return;
   try {
     const s = snapshot();
     navigator.sendBeacon("/api/conversation/state", new Blob([JSON.stringify(s)], { type: "application/json" }));
@@ -1987,40 +1988,40 @@ window.addEventListener("beforeunload", () => {
 });
 
 async function restoreSession() {
-  const generation = conversationGeneration;
+  const generation = appState.domain.conversationGeneration;
   const stored = (() => { try { return localStorage.getItem("mathapp.conv"); } catch { return null; } })();
   let conv = null;
   if (stored) {
     try {
       const r = await fetch("/api/conversation?id=" + encodeURIComponent(stored));
-      if (generation !== conversationGeneration) return;
+      if (generation !== appState.domain.conversationGeneration) return;
       if (r.ok) conv = await r.json();
       else console.warn("[MathApp] sessione salvata non trovata:", stored);
     } catch (e) { console.warn("[MathApp] lettura sessione fallita", e); }
   }
-  if (generation !== conversationGeneration) return;
+  if (generation !== appState.domain.conversationGeneration) return;
   if (!conv && stored && (() => { try { return localStorage.getItem("mathapp.empty") !== "1"; } catch { return true; } })()) {
     // rete di sicurezza: la sessione salvata non esiste piu' -> recupero la piu' recente
     try {
       const h = await (await fetch("/api/history")).json();
-      if (generation !== conversationGeneration) return;
+      if (generation !== appState.domain.conversationGeneration) return;
       if (h.items && h.items.length) {
         const r2 = await fetch("/api/conversation?id=" + encodeURIComponent(h.items[0].id));
-        if (generation !== conversationGeneration) return;
+        if (generation !== appState.domain.conversationGeneration) return;
         if (r2.ok) { conv = await r2.json(); flash("ripristinata la sessione più recente"); }
       }
     } catch (e) { console.warn("[MathApp] recupero sessione recente fallito", e); }
   }
   if (!conv) { try { localStorage.removeItem("mathapp.conv"); } catch {} return; }
-  if (generation !== conversationGeneration || !(await renderConversation(conv, generation))) return;
-  const n = messages.length + cellData.length + figures.length;
+  if (generation !== appState.domain.conversationGeneration || !(await renderConversation(conv, generation))) return;
+  const n = appState.domain.messages.length + appState.domain.cellData.length + appState.domain.figures.length;
   if (n) flash("sessione ripristinata (" + n + " elementi)");
 }
 
 // ---------- UI ----------
 $("#composer").addEventListener("submit", (e) => {
   e.preventDefault();
-  if (streaming) { flash("attendi la risposta in corso… oppure interrompila con «Ferma»."); return; }
+  if (appState.ui.streaming) { flash("attendi la risposta in corso… oppure interrompila con «Ferma»."); return; }
   const t = inputEl.value.trim();
   if (!t) return;
   inputEl.value = "";
@@ -2068,19 +2069,19 @@ inputEl.addEventListener("paste", (e) => {
 $("#newChat").addEventListener("click", () => {
   const generation = invalidateConversationWork();
   ttsStop();
-  messages = []; sessionId = crypto.randomUUID(); conversationId = crypto.randomUUID();
-  chatEl.replaceChildren(); calcCells.replaceChildren(); cellData = [];
+  appState.domain.messages = []; appState.domain.sessionId = crypto.randomUUID(); appState.domain.conversationId = crypto.randomUUID();
+  chatEl.replaceChildren(); calcCells.replaceChildren(); appState.domain.cellData = [];
   refreshCalcEmpty();
   const welcome = $("#chatWelcome"); if (welcome) welcome.hidden = false;
-  figures = []; figSeq = 0; refreshFigureList(); // BUG FIX: le costruzioni non si trascinano nella nuova chat
-  try { localStorage.setItem("mathapp.conv", conversationId); localStorage.setItem("mathapp.empty", "1"); } catch {}
-  pending = []; renderChips();
-  usageTot = { prompt: 0, completion: 0, total: 0 };
+  appState.domain.figures = []; appState.domain.figSeq = 0; refreshFigureList(); // BUG FIX: le costruzioni non si trascinano nella nuova chat
+  try { localStorage.setItem("mathapp.conv", appState.domain.conversationId); localStorage.setItem("mathapp.empty", "1"); } catch {}
+  appState.ui.pending = []; renderChips();
+  appState.ui.usageTot = { prompt: 0, completion: 0, total: 0 };
   if ($("#usage")) $("#usage").textContent = "";
   queueGgbClear(generation);
   setView3d(false, generation);
-  viewCustom = null;
-  viewCache = null;
+  appState.domain.viewCustom = null;
+  appState.domain.viewCache = null;
   setViewPanel(false);
   statusEl.textContent = "nuova chat";
   setTimeout(() => (statusEl.textContent = ""), 1200);
@@ -2137,7 +2138,7 @@ function ttsSpeak(text, btn) {
 }
 window.ttsSpeak = ttsSpeak;
 
-function stopStreaming() { if (currentAbort) { try { currentAbort.abort(); } catch {} } ttsStop(); }
+function stopStreaming() { if (appState.ui.currentAbort) { try { appState.ui.currentAbort.abort(); } catch {} } ttsStop(); }
 
 // Il pulsante Invia diventa "Ferma" mentre l'IA risponde: un clic interrompe la risposta.
 function setSendStop(on) {
@@ -2150,7 +2151,7 @@ function setSendStop(on) {
 
 // ogni costruzione DEVE avere la sua scheda in chat: se manca, la riattacco
 function ensureFigureCards() {
-  for (const f of figures) {
+  for (const f of appState.domain.figures) {
     if (chatEl.querySelector('.ggb-card[data-fid="' + f.fid + '"]')) continue;
     const host = f.msgIdx != null ? chatEl.querySelector('[data-idx="' + f.msgIdx + '"]') : null;
     renderFigureCard(host || chatEl, f, { collapsed: true });
@@ -2158,15 +2159,15 @@ function ensureFigureCards() {
 }
 
 async function regenerate() {
-  if (streaming || conversationLoading) { flash("attendi il caricamento o la risposta in corso…"); return; }
-  const last = messages[messages.length - 1];
+  if (appState.ui.streaming || appState.ui.conversationLoading) { flash("attendi il caricamento o la risposta in corso…"); return; }
+  const last = appState.domain.messages[appState.domain.messages.length - 1];
   if (!last || last.role !== "assistant") { flash("niente da rigenerare"); return; }
-  const idx = messages.length - 1;
-  messages.pop();
+  const idx = appState.domain.messages.length - 1;
+  appState.domain.messages.pop();
   const el = chatEl.querySelector('.msg.assistant[data-idx="' + idx + '"]');
   if (el) el.remove();
-  for (const f of figures) if (f.msgIdx === idx) f.msgIdx = null; // le schede verranno riattaccate
-  autoFollow = true; stick(true);
+  for (const f of appState.domain.figures) if (f.msgIdx === idx) f.msgIdx = null; // le schede verranno riattaccate
+  appState.ui.autoFollow = true; stick(true);
   await runTurn();
 }
 
@@ -2205,20 +2206,20 @@ function placeFigureCards(bubble, body) {
 function addMsgActions(bubble, idx) {
   if (bubble.querySelector(".msg-actions")) return;
   const bar = document.createElement("div"); bar.className = "msg-actions";
-  bar.appendChild(mkBtn("⧉ Copia", () => copyText((messages[idx] || {}).content, "risposta copiata in Markdown")));
-  if ((messages[idx] || {}).role === "assistant" && messages[idx].content) {
-    const tts = mkBtn("🔊 Ascolta", (ev) => ttsSpeak(messages[idx].content, ev.currentTarget));
+  bar.appendChild(mkBtn("⧉ Copia", () => copyText((appState.domain.messages[idx] || {}).content, "risposta copiata in Markdown")));
+  if ((appState.domain.messages[idx] || {}).role === "assistant" && appState.domain.messages[idx].content) {
+    const tts = mkBtn("🔊 Ascolta", (ev) => ttsSpeak(appState.domain.messages[idx].content, ev.currentTarget));
     tts.classList.add("tts-btn");
     bar.appendChild(tts);
   }
-  if (idx === messages.length - 1) bar.appendChild(mkBtn("↻ Rigenera", () => regenerate()));
+  if (idx === appState.domain.messages.length - 1) bar.appendChild(mkBtn("↻ Rigenera", () => regenerate()));
   const starBtn = mkBtn("★ Ripasso", async () => {
-    const firstUser = (messages.find((m) => m.role === "user") || {}).content || "Argomento";
+    const firstUser = (appState.domain.messages.find((m) => m.role === "user") || {}).content || "Argomento";
     starBtn.disabled = true;
     try {
       const r = await fetch("/api/review", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ convId: conversationId, title: firstUser, text: (messages[idx] || {}).content || "" }),
+        body: JSON.stringify({ convId: appState.domain.conversationId, title: firstUser, text: (appState.domain.messages[idx] || {}).content || "" }),
       });
       const j = await r.json().catch(() => ({}));
       starBtn.textContent = "★ Salvato";
@@ -2242,33 +2243,33 @@ chatEl.addEventListener("click", (e) => {
 
 // ---------- modalità didattiche (Esercitami / Passo-passo), si escludono a vicenda ----------
 function applyTutorMode(mode) {
-  tutorMode = mode === "socratic" ? "socratic" : null;
-  stepMode = mode === "step";
+  appState.domain.tutorMode = mode === "socratic" ? "socratic" : null;
+  appState.domain.stepMode = mode === "step";
   try {
-    localStorage.setItem("mathapp.socratic", tutorMode ? "1" : "");
-    localStorage.setItem("mathapp.step", stepMode ? "1" : "");
+    localStorage.setItem("mathapp.socratic", appState.domain.tutorMode ? "1" : "");
+    localStorage.setItem("mathapp.step", appState.domain.stepMode ? "1" : "");
   } catch {}
   const sb = $("#socraticBtn"), stb = $("#stepBtn");
-  if (sb) { sb.classList.toggle("is-active", !!tutorMode); sb.setAttribute("aria-pressed", String(!!tutorMode)); }
-  if (stb) { stb.classList.toggle("is-active", stepMode); stb.setAttribute("aria-pressed", String(stepMode)); }
+  if (sb) { sb.classList.toggle("is-active", !!appState.domain.tutorMode); sb.setAttribute("aria-pressed", String(!!appState.domain.tutorMode)); }
+  if (stb) { stb.classList.toggle("is-active", appState.domain.stepMode); stb.setAttribute("aria-pressed", String(appState.domain.stepMode)); }
   const hint = $("#modeHint");
   if (hint) {
-    hint.hidden = !tutorMode && !stepMode;
+    hint.hidden = !appState.domain.tutorMode && !appState.domain.stepMode;
     const label = hint.querySelector("span");
     if (label) {
-      label.textContent = tutorMode
+      label.textContent = appState.domain.tutorMode
         ? "🎓 Esercitami attivo: il tutor ti guida con domande, senza darti la soluzione."
         : "🪜 Passo-passo attivo: la risposta si rivela un blocco alla volta.";
     }
   }
 }
 $("#socraticBtn").addEventListener("click", () => {
-  const on = tutorMode !== "socratic";
+  const on = appState.domain.tutorMode !== "socratic";
   applyTutorMode(on ? "socratic" : null);
   flash(on ? "Esercitami: il tutor ti guida con domande" : "modalità spiegazione normale");
 });
 $("#stepBtn").addEventListener("click", () => {
-  const on = !stepMode;
+  const on = !appState.domain.stepMode;
   applyTutorMode(on ? "step" : null);
   flash(on ? "Passo-passo: le risposte si rivelano un passo alla volta" : "modalità spiegazione normale");
 });
@@ -2282,7 +2283,7 @@ $("#themeBtn").addEventListener("click", () => {
 });
 
 // mentre l'IA risponde il pulsante Invia è "Ferma": clic = interrompi (senza inviare)
-$("#send").addEventListener("click", (e) => { if (streaming) { e.preventDefault(); stopStreaming(); } });
+$("#send").addEventListener("click", (e) => { if (appState.ui.streaming) { e.preventDefault(); stopStreaming(); } });
 
 // ---------- ripasso (scadenze SM-2 + export Anki) ----------
 const itDue = (it) => (typeof it.due === "number" ? it.due : (Number(it.t) || 0));
@@ -2874,7 +2875,7 @@ $("#micBtn").addEventListener("click", toggleMic);
 // ---------- export ----------
 async function exportPdf() {
   const css = await fetch("/style.css").then((r) => r.text()).catch(() => "");
-  const title = ((messages.find((m) => m.role === "user") || {}).content || "Sessione MathApp").slice(0, 80);
+  const title = ((appState.domain.messages.find((m) => m.role === "user") || {}).content || "Sessione MathApp").slice(0, 80);
   const html = '<!doctype html><html lang="it"><head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title>'
     + '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">'
     + "<style>" + css + "\n@media print{.msg-actions,.step-ctl,.ggb-card,.edit-btn,.jump-btn{display:none!important}body{background:#fff}#main{padding:0}#chatpanel{border:none;box-shadow:none}}"
@@ -2890,9 +2891,9 @@ async function exportPdf() {
 // PDF del quaderno: le voci di calcolo in un foglio pronto da stampare.
 async function exportNotebookPdf() {
   const cells = $("#calcCells");
-  if (!cells || !cellData.length) { flash("il quaderno è vuoto: niente da esportare"); return; }
+  if (!cells || !appState.domain.cellData.length) { flash("il quaderno è vuoto: niente da esportare"); return; }
   const css = await fetch("/style.css").then((r) => r.text()).catch(() => "");
-  const title = ((messages.find((m) => m.role === "user") || {}).content || "Quaderno MathApp").slice(0, 80);
+  const title = ((appState.domain.messages.find((m) => m.role === "user") || {}).content || "Quaderno MathApp").slice(0, 80);
   const tmp = cells.cloneNode(true);
   [...tmp.children].reverse().forEach((c) => tmp.appendChild(c)); // dal primo calcolo all'ultimo
   const body = tmp.innerHTML.replace(/<details(?![\w-])/g, "<details open");
@@ -2910,16 +2911,16 @@ async function exportNotebookPdf() {
 }
 
 function exportMarkdown() {
-  const title = ((messages.find((m) => m.role === "user") || {}).content || "Sessione MathApp").slice(0, 100);
+  const title = ((appState.domain.messages.find((m) => m.role === "user") || {}).content || "Sessione MathApp").slice(0, 100);
   const lines = ["# " + title, "", "_Esportato il " + new Date().toLocaleString("it-IT") + "_", ""];
-  for (const m of messages) lines.push(m.role === "user" ? "## Domanda" : "## Risposta", "", m.content || "", "");
-  if (cellData.length) {
+  for (const m of appState.domain.messages) lines.push(m.role === "user" ? "## Domanda" : "## Risposta", "", m.content || "", "");
+  if (appState.domain.cellData.length) {
     lines.push("## Calcoli (quaderno)", "");
-    for (const c of cellData) lines.push("- `" + (c.op || "") + " " + (c.expr || "") + "` = `" + String((c.res && c.res.result) || "") + "`");
+    for (const c of appState.domain.cellData) lines.push("- `" + (c.op || "") + " " + (c.expr || "") + "` = `" + String((c.res && c.res.result) || "") + "`");
   }
-  if (figures.length) {
+  if (appState.domain.figures.length) {
     lines.push("", "## Costruzioni GeoGebra", "");
-    figures.forEach((f, i) => lines.push((i + 1) + ". **" + (f.title || "figura") + "** — " + (f.commands || []).length + " comandi"));
+    appState.domain.figures.forEach((f, i) => lines.push((i + 1) + ". **" + (f.title || "figura") + "** — " + (f.commands || []).length + " comandi"));
   }
   const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
   const a = document.createElement("a");
@@ -2935,7 +2936,7 @@ $("#calcPdf").addEventListener("click", () => exportNotebookPdf());
 
 // ---------- scorciatoie da tastiera ----------
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && streaming) { stopStreaming(); return; }
+  if (e.key === "Escape" && appState.ui.streaming) { stopStreaming(); return; }
   const ctrl = e.ctrlKey || e.metaKey;
   const inField = e.target && e.target.closest && e.target.closest("input, textarea, [contenteditable]");
   if (ctrl && !inField && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); boardUndo(); return; }
@@ -2944,7 +2945,7 @@ window.addEventListener("keydown", (e) => {
   if (e.altKey && e.key.toLowerCase() === "n") { e.preventDefault(); $("#newChat").click(); return; }
   if (e.altKey && e.key.toLowerCase() === "r") { e.preventDefault(); regenerate(); return; }
   if (e.key === "ArrowUp" && document.activeElement === inputEl && !inputEl.value.trim()) {
-    const u = [...messages].reverse().find((m) => m.role === "user");
+    const u = [...appState.domain.messages].reverse().find((m) => m.role === "user");
     if (u) { e.preventDefault(); inputEl.value = u.content; }
   }
 });
@@ -2974,8 +2975,8 @@ async function loadDiagnostics() {
 }
 
 async function loadSettings() {
-  try { const r = await fetch("/api/settings"); settingsData = await r.json(); } catch { settingsData = null; }
-  const d = settingsData;
+  try { const r = await fetch("/api/settings"); appState.ui.settingsData = await r.json(); } catch { appState.ui.settingsData = null; }
+  const d = appState.ui.settingsData;
   if (!d || !d.ok) return;
   applyMode(d.mode || "core");
   const modeSel = $("#setMode"); if (modeSel) modeSel.value = d.mode || "core";
@@ -3014,7 +3015,7 @@ async function saveSettings(extra) {
     const j = await r.json();
     if (!j.ok) { if (msg) msg.textContent = "Errore: " + (j.err || "salvataggio fallito"); return; }
     if (msg) msg.textContent = "Salvato.";
-    if (j.model) { currentModel = j.model; if (modelEl) modelEl.value = j.model; }
+    if (j.model) { appState.domain.currentModel = j.model; if (modelEl) modelEl.value = j.model; }
     if (j.mode) { applyMode(j.mode); const ms = $("#setMode"); if (ms) ms.value = j.mode; }
     if (j.level) { const ls = $("#setLevel"); if (ls) ls.value = j.level; }
     await loadSettings();
@@ -3022,8 +3023,8 @@ async function saveSettings(extra) {
       const mr = await fetch("/api/models"); const mj = await mr.json();
       const vis = mj.vision || {};
       modelEl.innerHTML = mj.models.map((m) => `<option value="${m}">${m}${vis[m] === false ? " (solo testo)" : ""}</option>`).join("");
-      currentModel = mj.default || currentModel;
-      modelEl.value = currentModel;
+      appState.domain.currentModel = mj.default || appState.domain.currentModel;
+      modelEl.value = appState.domain.currentModel;
     } catch {}
   } catch (e) { if (msg) msg.textContent = "Errore di rete"; }
 }
@@ -3056,13 +3057,13 @@ async function boot() {
     const r = await fetch("/api/models"); const j = await r.json();
     const vis = j.vision || {};
     modelEl.innerHTML = j.models.map((m) => `<option value="${m}">${m}${vis[m] === false ? " · solo testo" : ""}</option>`).join("");
-    currentModel = j.default || currentModel; modelEl.value = currentModel;
-    modelEl.addEventListener("change", () => (currentModel = modelEl.value));
-  } catch { modelEl.innerHTML = `<option>${currentModel}</option>`; }
+    appState.domain.currentModel = j.default || appState.domain.currentModel; modelEl.value = appState.domain.currentModel;
+    modelEl.addEventListener("change", () => (appState.domain.currentModel = modelEl.value));
+  } catch { modelEl.innerHTML = `<option>${appState.domain.currentModel}</option>`; }
   await loadSettings();
   await restoreSession();
-  try { if (!localStorage.getItem("mathapp.conv")) localStorage.setItem("mathapp.conv", conversationId); } catch {}
-  booting = false;
+  try { if (!localStorage.getItem("mathapp.conv")) localStorage.setItem("mathapp.conv", appState.domain.conversationId); } catch {}
+  appState.ui.booting = false;
   refreshReviewBadge();
 }
 window.addEventListener("DOMContentLoaded", boot);
