@@ -83,12 +83,14 @@ try {
   const save = await request(port, "POST", "/api/settings", {
     origin: base,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider: "openrouter", apiKey: "sk-or-v1-security-test-9999", model: "deepseek-v4-flash", whisperLanguage: "en", mode: "full", level: "universita" }),
+    body: JSON.stringify({ provider: "openrouter", apiKey: "sk-or-v1-security-test-9999", model: "deepseek-v4-flash", whisperLanguage: "en", mode: "full", level: "approfondito" }),
   });
   const j1 = JSON.parse(save.body);
   chk("POST settings same-origin -> 200", save.status === 200 && j1.ok === true && j1.hasKey === true && j1.keyHint === "9999");
   chk("mode salvata -> full", j1.mode === "full");
-  chk("level salvato -> universita", j1.level === "universita");
+  chk("level salvato -> approfondito", j1.level === "approfondito");
+  const legacy = await request(port, "POST", "/api/settings", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ level: "superiore" }) });
+  chk("legacy level -> dettagliato", legacy.status === 200 && JSON.parse(legacy.body).level === "dettagliato");
   const kbFull = await request(port, "GET", "/api/kb");
   chk("full: /api/kb -> 200", kbFull.status === 200);
   chk("risposta senza chiave completa", !save.body.includes("security-test-9999"));

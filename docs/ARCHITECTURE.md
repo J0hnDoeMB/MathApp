@@ -40,6 +40,8 @@ Implemented as `settings.mode` (`core` by default, `full` on request from Settin
 
 The server rejects disabled endpoints with `403` and filters the tool list; the UI hides the related buttons. `mode` is persisted in `settings.json` and exposed by `/api/settings` and `/api/diagnostics`.
 
+`settings.level` selects the detail level (`auto`, `breve`, `dettagliato`, `approfondito`) and is appended to the system prompt. The chat stream emits a `verification` event with the number of SymPy/GeoGebra tool calls, shown as a per-answer badge.
+
 ## Provider abstraction
 
 The fragile part is external I/O: keys, model names, quotas. The target is a single client with:

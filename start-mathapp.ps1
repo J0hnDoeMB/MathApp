@@ -11,6 +11,16 @@ $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSCommandPath
 $port = if ($env:MATHAPP_PORT) { [int]$env:MATHAPP_PORT } else { 8790 }
 
+# Node portatile scaricato da setup.ps1 in .tools (nessun admin, nessun PATH globale).
+$portableTools = Join-Path $root '.tools'
+if (Test-Path $portableTools) {
+  $portableNode = Get-ChildItem -Path $portableTools -Directory -Filter 'node-v*-win-x64' -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  if ($portableNode -and (Test-Path (Join-Path $portableNode.FullName 'node.exe'))) {
+    $env:Path = "$($portableNode.FullName);$env:Path"
+  }
+}
+
 function Line($label, $value) { "  {0,-12} {1}" -f ($label + ':'), $value }
 
 $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
@@ -65,7 +75,7 @@ Line 'API key' $keyText
 ''
 
 if (-not $nodeOk) {
-  'ERRORE: Node.js non trovato. Installa Node 18+ (consigliato 22+) e riprova.'
+  'ERRORE: Node.js non trovato. Esegui .\setup.ps1 (scarica Node portatile) oppure installa Node 18+ e riprova.'
   exit 1
 }
 if ($Check) { 'Controllo completato.'; exit 0 }

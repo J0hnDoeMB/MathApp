@@ -7,7 +7,15 @@ L'IA spiega a parole e in LaTeX; quando serve, disegna nell'applet GeoGebra che 
 
 ![MathApp - impostazioni API key](docs/settings.png)
 
-## Avvio
+## Avvio rapido (Windows)
+Doppio click su **`setup.cmd`** oppure, da PowerShell:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+.\start-mathapp.ps1
+```
+`setup.ps1` scarica Node.js LTS portatile in `.tools\` (nessun admin) e controlla l'ambiente. Per SymPy/PDF usa `.\setup.ps1 -Math`; per aggiungere anche la dettatura `.\setup.ps1 -Full`. Guida: [`docs/SETUP-WINDOWS.md`](docs/SETUP-WINDOWS.md).
+
+## Avvio manuale
 Doppio click su `start-mathapp.ps1` (oppure esegui in PowerShell):
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start-mathapp.ps1
@@ -36,7 +44,7 @@ Il **core è Node-only**: non serve Python per avviare, chattare, disegnare o sa
 
 La modalità predefinita è **Essenziale** (chat + GeoGebra + calcolo esatto + conversazioni). Quiz, ripasso, appunti, stile, TTS e delega si abilitano da **Impostazioni → Modalità → Completa**; gli endpoint e i tool relativi restano spenti finché non la attivi.
 
-Il **livello di spiegazione** (Auto, Scuola media, Scuola superiore, Università) si sceglie nelle stesse Impostazioni: cambia lessico e formalismo, non i contenuti. Il tutor spiega il perché dei passaggi e chiude con una breve domanda di controllo quando serve.
+Il **livello di dettaglio** (Auto, Sintetico, Dettagliato, Approfondito) si sceglie nelle stesse Impostazioni: cambia quanto spazio dare a passaggi, esempi e teoria, non i contenuti. Il tutor spiega il perché dei passaggi e chiude con una breve domanda di controllo quando serve.
 
 Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esatti**. Se la risposta contiene matematica ma non ha usato SymPy, compare un avviso: il badge è volutamente onesto, perché il calcolo esatto non garantisce che il testo lo riporti correttamente.
 
@@ -209,7 +217,8 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - Conversazioni, appunti e cronologia restano in `data/` sul PC.
 
 ## Requisiti
-- Node.js. Opzionali: Python + SymPy per il calcolo esatto, Whisper per la dettatura.
+- Node.js. Opzionali: Python + SymPy per il calcolo esatto, pypdf per i PDF, Whisper per la dettatura.
+- Su Windows `.\setup.ps1` scarica Node portatile e, con `-Math`/`-Full`, prepara le dipendenze Python.
 - Connessione internet (per l'IA e per GeoGebra/KaTeX da CDN).
 - La chiave API si configura in **Impostazioni** (salvata in `settings.json`) oppure, per compatibilita, si legge da `auth.json` di OpenCode; con OpenRouter basta incollare la chiave nelle Impostazioni.
 
@@ -221,7 +230,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (17 check: parser + security smoke con CSRF, body cap, path traversal, modalità core e API impostazioni); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (18 check: parser + security smoke con CSRF, body cap, path traversal, modalità core e API impostazioni); `npm run test:py` per SymPy.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test_xss.mjs`, `node test_conversation_restore.mjs`, `node test_conversation_switch.mjs`, `node test_geogebra_state.mjs`, `node test_geogebra_3d.mjs`, `node test_layout.mjs`, `node test_tutor.mjs`, `node test_review.mjs`, `node test_algebra_ui.mjs`, `node test_vista.mjs` e `node test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.
@@ -229,6 +238,9 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 
 ## File
 - `server.mjs` — server locale + loop agente + allegati + strumento visione
+- `setup.cmd`, `setup.ps1` — setup Windows: Node portatile, Python/SymPy opzionali
+- `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali
+- `docs/SETUP-WINDOWS.md` — guida di installazione rapida
 - `sympy_cli.py` — calcolo esatto
 - `transcribe.py` — trascrizione audio locale (worker persistente con modello caldo)
 - `test_sympy_cli.py`, `test_xss.mjs`, `test_conversation_restore.mjs`, `test_conversation_switch.mjs`, `test_geogebra_state.mjs`, `test_geogebra_3d.mjs`, `test_server_cancel.mjs`, `test_whisper.mjs`, `test_algebra_ui.mjs`, `test_layout.mjs`, `test_tutor.mjs`, `test_review.mjs`, `test_vista.mjs`, `test_analisi.mjs`, `test_lavagna.mjs`, `test_strumenti.mjs`, `test_tts.mjs`, `test_fasec.mjs`, `test_tags.mjs`, `test_ripasso.mjs`, `test_quiz.mjs`, `test_stop.mjs`, `test_flashparse.mjs`, `test_quizparse.mjs` — regressioni parser, XSS, sessioni/GeoGebra (anche 3D), server, trascrittore, quaderno, layout, modo tutor, ripasso, pannello Vista, laboratorio di analisi, lavagna, strumenti, dettatura, fasi C/D (dati, tag, quiz) e parser di flashcard/quiz

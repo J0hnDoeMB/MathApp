@@ -2,6 +2,7 @@ settings.json
 data/
 backups/
 mathapp.log
+.tools/
 __pycache__/
 *.bak
 *.bak-*

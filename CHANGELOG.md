@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.4.0 - 2026-10-19
+
+### Added
+- **Windows setup**: `setup.ps1` scarica Node.js LTS portatile in `.tools\` (nessun admin) e prepara l'ambiente; `-Math` aggiunge Python/SymPy/pypdf, `-Full` anche faster-whisper, `-Check` solo diagnostica.
+- `requirements.txt` / `requirements-whisper.txt` e guida [`docs/SETUP-WINDOWS.md`](docs/SETUP-WINDOWS.md).
+- `start-mathapp.ps1` rileva il Node portatile di `.tools\`.
+
+### Changed
+- Livelli di dettaglio al posto dei livelli scolastici: **Auto, Sintetico, Dettagliato, Approfondito** (i vecchi valori `base`/`superiore`/`universita` vengono migrati).
+
 ## v1.3.0 - 2026-10-19
 
 ### Added

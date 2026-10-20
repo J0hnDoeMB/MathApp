@@ -25,14 +25,19 @@ const WHISPER_IDLE_MS = Math.max(1000, Number(process.env.MATHAPP_WHISPER_IDLE_M
 // Modalità essenziale (default): chat + GeoGebra + SymPy + conversazioni.
 // Solo "full" abilita quiz, ripasso, appunti, stile, TTS e delega.
 const isFullMode = () => SETTINGS.mode === "full";
-const LEVELS = ["auto", "base", "superiore", "universita"];
+const LEVELS = ["auto", "breve", "dettagliato", "approfondito"];
+function normalizeLevel(l) {
+  const alias = { base: "breve", superiore: "dettagliato", universita: "approfondito" };
+  const v = alias[l] || l;
+  return LEVELS.includes(v) ? v : null;
+}
 function levelRule() {
-  const l = LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto";
+  const l = normalizeLevel(SETTINGS.level) || "auto";
   const rules = {
-    auto: "deduci il livello dal linguaggio e dal tipo di domanda; se e' ambiguo parti da un livello scolastico e offri l'approfondimento.",
-    base: "scuola media: frasi brevi, passaggi piccoli, pochi simboli alla volta; spiega ogni simbolo nuovo e usa esempi concreti.",
-    superiore: "scuola superiore: formalismo standard, passaggi giustificati, collegamenti a definizioni e teoremi.",
-    universita: "universita': linguaggio tecnico, ipotesi e rigore, notazione corretta; sintetico ma senza saltare passaggi logici.",
+    auto: "deduci il dettaglio richiesto dalla domanda; se non e' chiaro parti da una spiegazione completa ma senza digressioni.",
+    breve: "risposta sintetica: solo i passaggi essenziali, niente digressioni; una riga di contesto e il risultato.",
+    dettagliato: "spiega ogni passaggio e il perche'; aggiungi un esempio concreto quando aiuta; e' il livello piu' equilibrato.",
+    approfondito: "aggiungi definizioni, ipotesi, varianti, controesempi e collegamenti; puoi essere piu' lungo, ma resta ordinato e pertinente.",
   };
   return "\n- LIVELLO (" + l + "): " + rules[l];
 }
@@ -194,7 +199,7 @@ Regole:
 - STUDIO DI FUNZIONE: per il quadro completo usa sympy_compute con operation "studio" e expr "f(x)=x^2-3x+2" (accetta anche "y=..." o l'espressione nuda, es. "x^2-3x+2"). Ottieni un referto a sezioni (dominio, simmetrie, zeri, intersezione con l'asse y, segno, limiti, asintoti, derivate, monotonia, estremi, concavita', flessi) piu' i dati di disegno. Riassumi le voci importanti della richiesta invece di incollare tutto il referto; nel riquadro del calcolo l'utente ha i pulsanti "Disegna" (curva + punti notevoli + asintoti) e "Spiega".
 - VETTORI E SPAZI VETTORIALI: usa sympy_compute con operation dot | cross | norm | angle | projection | independence | gram_schmidt e vectors = lista di vettori, es. "[[1,2],[3,4]]" (una lista per ogni vettore; cross solo in R^3; gram_schmidt richiede vettori linearmente indipendenti). Il riquadro del calcolo mostra i pulsanti "Disegna" 2D/3D quando i vettori sono 2D o 3D.
 - Spiega in modo chiaro e graduale, come a lezione.
-- METODO DIDATTICO: spiega il PERCHE' di ogni passaggio, non solo il come; richiama un prerequisito solo se serve; adatta lessico e formalismo al livello dello studente; chiudi con una domanda di controllo breve quando aiuta davvero.
+- METODO DIDATTICO: spiega il PERCHE' di ogni passaggio, non solo il come; richiama un prerequisito solo se serve; adatta lessico e formalismo al livello di dettaglio scelto; chiudi con una domanda di controllo breve quando aiuta davvero.
 - CORREZIONE: se l'utente sbaglia, indica il punto esatto e il tipo di errore, poi guidalo a correggere; non limitarti a dare la soluzione.
 - ONESTA': se non puoi verificare un risultato con sympy_compute o non sei sicuro, dillo; non inventare passaggi o teoremi.`;
 
@@ -951,7 +956,7 @@ const server = http.createServer((req, res) => {
       python: d.python, sympy: d.sympy, whisper: d.whisper,
       provider: providerName(), model: SETTINGS.model || MODELS[0], hasKey: keySource() !== "none",
       mode: isFullMode() ? "full" : "core",
-      level: LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto"
+      level: normalizeLevel(SETTINGS.level) || "auto"
     }));
   }
   if (req.method === "GET" && url.pathname === "/api/settings") {
@@ -963,7 +968,7 @@ const server = http.createServer((req, res) => {
       keyHint: src === "none" ? "" : (currentKey() || "").slice(-4),
       backup: SETTINGS.backup !== false, backupHours: Number(SETTINGS.backupHours) || 24,
       mode: isFullMode() ? "full" : "core",
-      level: LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto"
+      level: normalizeLevel(SETTINGS.level) || "auto"
     }));
   }
   if (req.method === "POST" && url.pathname === "/api/settings") {
@@ -982,8 +987,9 @@ const server = http.createServer((req, res) => {
           SETTINGS.mode = j.mode;
         }
         if (j.level !== undefined) {
-          if (!LEVELS.includes(j.level)) throw new Error("livello non valido");
-          SETTINGS.level = j.level;
+          const lv = normalizeLevel(j.level);
+          if (!lv) throw new Error("livello non valido");
+          SETTINGS.level = lv;
         }
         if (j.provider !== undefined) {
           if (!["openrouter", "opencode"].includes(j.provider)) throw new Error("provider non valido");
@@ -1008,7 +1014,7 @@ const server = http.createServer((req, res) => {
         saveSettingsFile();
         const src = keySource();
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), mode: isFullMode() ? "full" : "core", level: LEVELS.includes(SETTINGS.level) ? SETTINGS.level : "auto" }));
+        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: WHISPER_LANG, hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), mode: isFullMode() ? "full" : "core", level: normalizeLevel(SETTINGS.level) || "auto" }));
       } catch (e) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, err: String(e.message || e) }));
