@@ -40,6 +40,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/schema.mjs` | data validation, limits and migrations | none |
 | `lib/storage.mjs` | data paths, review file, backups | config, log |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
+| `public/state.js` | client domain/UI store, events and compatibility accessors | browser only |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
 
 Dependency direction: `server -> routes/agent -> domain/integration -> infrastructure`. Lower layers never import `server.mjs` or `public/`. Data entities and limits are in [`DATA-MODEL.md`](DATA-MODEL.md); ports and layer map in [`CONTRACTS.md`](CONTRACTS.md).
@@ -88,7 +89,7 @@ External I/O is isolated in `lib/llm.mjs`:
 ## Testing
 
 - `npm test`: 61 checks (18 module + 4 agent + 4 chat-service + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
-- `npm run test:ui`: 7 browser smoke checks (new chat, session restore, view, UI); CI uses puppeteer-core + Edge.
+- `npm run test:ui`: 8 browser smoke checks (UI, state store, new chat, session restore, view); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test_server_cancel.mjs`: cancellation and state revisions.

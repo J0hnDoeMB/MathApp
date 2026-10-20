@@ -111,6 +111,13 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#settingsBtn", { timeout: 15000 });
   chk("UI caricata", await page.$("#chat") !== null && await page.$("#ggb") !== null);
+  const store = await page.evaluate(() => ({
+    exists: !!window.MathAppState,
+    domain: window.MathAppState && typeof window.MathAppState.domain === "object",
+    ui: window.MathAppState && typeof window.MathAppState.ui === "object",
+    conversationId: window.MathAppState && window.MathAppState.domain.conversationId,
+  }));
+  chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string");
 
   const idBefore = await page.evaluate(() => localStorage.getItem("mathapp.conv"));
   await page.click("#newChat");

@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.9.0 - 2026-10-20
+
+### Changed
+- Client state boundary: `public/state.js` now owns domain state (session, messages, cells, view, figures) and UI state (drawers/activity flags) with `on/emit/snapshot`.
+- `public/app.js` uses compatibility accessors for the existing globals; the single source of truth is `MathAppState`.
+- Browser smoke asserts the store exists and the domain conversation id is available.
+
+### Tests
+- `npm test`: 61 checks; UI smoke: **8 checks**; GeoGebra: 5.
+
 ## v1.8.0 - 2026-10-20
 
 ### Changed

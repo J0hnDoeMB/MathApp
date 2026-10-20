@@ -61,6 +61,13 @@ updateTags(id, tag, action) -> { status, ok, tags?, error? }
 ```
 Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
 
+### ClientState
+```text
+MathAppState.domain / MathAppState.ui
+on(event, fn) / emit(event, value) / snapshot()
+```
+Implementation: `public/state.js`. `app.js` still uses compatibility accessors for existing globals; new code must use `MathAppState`.
+
 ### ChatOrchestrator
 ```text
 executeChat({ body, send, isGone, signal, deps? }) -> { cancelled, finalText, convId, usedModel }

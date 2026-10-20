@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check server.mjs
           node --check public/app.js
+          node --check public/state.js
           Get-ChildItem lib -Filter *.mjs | ForEach-Object { node --check $_.FullName }
           Get-ChildItem routes -Filter *.mjs | ForEach-Object { node --check $_.FullName }
           node --check test_ui_smoke.mjs

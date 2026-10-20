@@ -3,22 +3,6 @@ const $ = (s) => document.querySelector(s);
 const chatEl = $("#chat"), inputEl = $("#input"), sendBtn = $("#send");
 const statusEl = $("#status"), modelEl = $("#model"), mainEl = $("#main");
 
-let messages = [];
-const storedConv = (() => { try { return localStorage.getItem("mathapp.conv"); } catch { return null; } })();
-let conversationId = storedConv || crypto.randomUUID();
-let sessionId = conversationId;
-let conversationGeneration = 0;
-let conversationLoading = false;
-let stateRevision = (() => { try { return Number(localStorage.getItem("mathapp.stateRevision")) || 0; } catch { return 0; } })();
-let cellData = [];
-let booting = true;
-let mode = "figure";
-let tutorMode = null;      // "socratic" | null
-let stepMode = false;      // rivelazione passo-passo
-let currentAbort = null;
-let pendingSources = null;
-let usageTot = { prompt: 0, completion: 0, total: 0 };
-let currentModel = "deepseek-v4.1-flash";
 let ggbApplet = null;
 let ggbReady = false;
 const ggbReadyPromise = new Promise((r) => { window.__ggbResolve = r; });
@@ -201,8 +185,6 @@ function postGgbResult(callId, results) {
 
 
 // ---------- costruzioni GeoGebra: salvate e riproducibili ----------
-let figures = [];
-let figSeq = 0;
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -257,7 +239,6 @@ function applyGgbTheme() {
 }
 
 // ---------- vista 2D / 3D della lavagna ----------
-let ggb3d = false;
 const VIEW3D_STD = { x: 20, z: -60 }; // orientamento standard della vista 3D
 
 // Riscrive l'orientamento della vista 3D nell'XML (gli oggetti restano).
@@ -335,8 +316,6 @@ updateViewButton();
 // ---------- finestra del grafico: vista 2D personalizzata ----------
 // La finestra [xmin,xmax]x[ymin,ymax] dell'applet si legge dall'XML (coordSystem + size)
 // e si applica con setCoordSystem; assi e griglia con le API dedicate.
-let viewCustom = null; // ultimo riquadro applicato {xmin,xmax,ymin,ymax,axes,grid}
-let viewCache = null; // ultima finestra letta bene (con la lavagna nascosta l'XML non ha la misura: si riusa questa)
 
 function viewFinite(v) {
   return !!v && [v.xmin, v.xmax, v.ymin, v.ymax].every((n) => Number.isFinite(n)) && v.xmin < v.xmax && v.ymin < v.ymax;
@@ -722,7 +701,6 @@ function renderMD(el, text) {
 // ---------- chat ----------
 // Auto-scroll rispettoso: se stai leggendo più in alto, non ti riporta giù.
 const jumpBtn = $("#jumpBtn");
-let autoFollow = true;
 const atBottom = () => chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight < 80;
 function stick(force) {
   if (force || autoFollow) {
@@ -747,7 +725,6 @@ function addMsg(role) {
   return d;
 }
 
-let streaming = false;
 
 function makeUserBubble(text, atts) {
   const d = addMsg("user");
@@ -1765,7 +1742,6 @@ $("#backupBtn").addEventListener("click", async () => {
 
 // ---------- allegati ----------
 const MAX_FILE = 8 * 1024 * 1024, MAX_FILES = 4;
-let pending = [];
 
 function fileIcon(a) {
   const mime = String(a.mime || ""), n = String(a.name || "");
@@ -2982,7 +2958,6 @@ function initPreferences() {
 }
 
 // ---------- impostazioni: API key e preferenze ----------
-let settingsData = null;
 
 function applyMode(mode) {
   document.body.classList.toggle("mode-core", mode !== "full");
