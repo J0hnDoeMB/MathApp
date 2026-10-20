@@ -68,6 +68,12 @@ init(MathAppApp) // app = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64Fro
 ```
 The loader injects `/features/<id>.js` only when needed; core mode never downloads optional UI.
 
+### Diagnostics
+```text
+diagnostics(port) -> { ok, node, python, sympy, whisper, provider, hasKey, dataDirOk, backupDirOk, port, mode, level }
+```
+Implementation: `lib/diagnostics.mjs`; exposed by `/api/diagnostics` and `/api/health`, mirrored by `start-mathapp.ps1 -Check`.
+
 ### FeaturePlugin
 ```text
 export const feature = "kb"

@@ -1,8 +1,9 @@
 // Route della configurazione e diagnostica.
-import { settings as SETTINGS, providerName, keySource, currentKey, detectOptional, saveSettingsFile } from "../lib/config.mjs";
+import { settings as SETTINGS, providerName, keySource, currentKey, saveSettingsFile } from "../lib/config.mjs";
 import { MODELS, MODEL_VISION, VISION_FALLBACK, OR_MODEL_MAP } from "../lib/models.mjs";
 import { setWhisperLanguage } from "../lib/audio.mjs";
 import { normalizeLevel } from "../lib/levels.mjs";
+import { diagnostics } from "../lib/diagnostics.mjs";
 
 const isFullMode = () => SETTINGS.mode === "full";
 
@@ -13,16 +14,10 @@ if (req.method === "GET" && url.pathname === "/api/models") {
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
     return res.end(JSON.stringify({ models: list, default: def, provider: providerName(), hasKey: keySource() !== "none", vision: MODEL_VISION, visionFallback: VISION_FALLBACK }));
   }
-  if (req.method === "GET" && url.pathname === "/api/diagnostics") {
-    const d = detectOptional();
+  if (req.method === "GET" && (url.pathname === "/api/diagnostics" || url.pathname === "/api/health")) {
+    const d = diagnostics(ctx.port);
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-    return res.end(JSON.stringify({
-      ok: true, node: process.version, platform: process.platform, port: ctx.port,
-      python: d.python, sympy: d.sympy, whisper: d.whisper,
-      provider: providerName(), model: SETTINGS.model || MODELS[0], hasKey: keySource() !== "none",
-      mode: isFullMode() ? "full" : "core",
-      level: normalizeLevel(SETTINGS.level) || "auto"
-    }));
+    return res.end(JSON.stringify(d));
   }
   if (req.method === "GET" && url.pathname === "/api/settings") {
     const src = keySource();

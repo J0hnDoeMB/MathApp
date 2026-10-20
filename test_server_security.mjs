@@ -79,6 +79,9 @@ try {
   const diag = await request(port, "GET", "/api/diagnostics");
   const dj = JSON.parse(diag.body);
   chk("GET /api/diagnostics -> 200", diag.status === 200 && dj.ok === true && typeof dj.node === "string" && typeof dj.python !== "undefined");
+  chk("diagnostics: storage/port", dj.dataDirOk === true && dj.backupDirOk === true && typeof dj.port === "number");
+  const health = await request(port, "GET", "/api/health");
+  chk("GET /api/health -> 200", health.status === 200 && JSON.parse(health.body).dataDirOk === true);
 
   const evil = await request(port, "POST", "/api/settings", { origin: "https://evil.example", headers: { "Content-Type": "application/json" }, body: "{}" });
   chk("POST cross-origin -> 403", evil.status === 403);

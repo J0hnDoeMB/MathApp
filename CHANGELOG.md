@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.16.0 - 2026-10-20
+
+### Added
+- Central diagnostics (`lib/diagnostics.mjs`, `GET /api/diagnostics|/api/health`): Node, Python/SymPy/Whisper, provider/key, data dir, backup dir, port, mode/level.
+- `start-mathapp.ps1 -Check` now verifies data/ and backups/ writability and shows mode/level.
+- `docs/QUALITY-GATE.md`: core vs extra, feature freeze and definition of done.
+
+### Tests
+- `npm test`: **64 checks** (19 module + 4 agent + 4 chat-service + 37 security/session); UI 15; GeoGebra 5; Python 29.
+
 ## v1.15.0 - 2026-10-20
 
 ### Added

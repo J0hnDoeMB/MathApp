@@ -2540,7 +2540,7 @@ async function loadDiagnostics() {
   try {
     const r = await fetch("/api/diagnostics");
     const d = await r.json();
-    el.textContent = "Node " + d.node + " · Python " + (d.python || "non installato") + " · SymPy " + (d.sympy || "non installato") + " · Whisper " + (d.whisper ? "ok" : "non installato") + " · Modo " + (d.mode === "full" ? "completo" : "essenziale");
+    el.textContent = "Node " + d.node + " | Python " + (d.python || "no") + " | SymPy " + (d.sympy || "no") + " | Whisper " + (d.whisper ? "ok" : "no") + " | provider " + d.provider + (d.hasKey ? " (key ok)" : " (no key)") + " | data " + (d.dataDirOk ? "ok" : "KO") + " | backup " + (d.backupDirOk ? "ok" : "KO") + " | porta " + d.port + " | modo " + (d.mode === "full" ? "completo" : "essenziale");
   } catch { el.textContent = "diagnostica non disponibile"; }
 }
 

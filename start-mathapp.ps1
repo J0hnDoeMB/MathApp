@@ -56,12 +56,36 @@ $hasSettingsKey = $settingsText -match '"apiKey"\s*:\s*"[^"]+"'
 $hasLegacyKey = $authText -match '"opencode-go"|"openrouter"'
 $hasKey = $hasSettingsKey -or $hasLegacyKey
 
+$mode = 'core'
+$level = 'auto'
+if ($settingsText) {
+  try {
+    $sj = $settingsText | ConvertFrom-Json
+    if ($sj.mode) { $mode = [string]$sj.mode }
+    if ($sj.level) { $level = [string]$sj.level }
+  } catch {}
+}
+function Test-WritableDir($dir) {
+  try {
+    $null = New-Item -ItemType Directory -Force -Path $dir
+    $probe = Join-Path $dir ('.write-probe-' + $PID)
+    [IO.File]::WriteAllText($probe, 'ok')
+    [IO.File]::Delete($probe)
+    return $true
+  } catch { return $false }
+}
+$dataOk = Test-WritableDir (Join-Path $root 'data')
+$backupOk = Test-WritableDir (Join-Path $root 'backups')
+
 $nodeText = if ($nodeOk) { "$nodeVer OK" } else { 'NON TROVATO (richiesto)' }
 $pyText = if ($pyVer) { "$pyVer (opzionale)" } else { 'non installato (opzionale)' }
 $sympyText = if ($sympyVer) { "$sympyVer OK (calcolo esatto)" } else { 'non disponibile (opzionale)' }
 $whisperText = if ($whisperOk) { 'OK (dettatura)' } else { 'non disponibile (opzionale)' }
 $portText = if ($listening) { "$port gia' in ascolto" } else { "$port libera" }
 $keyText = if ($hasKey) { 'configurata' } else { 'da inserire in Impostazioni' }
+$dataText = if ($dataOk) { 'OK' } else { 'NON SCRIVIBILE' }
+$backupText = if ($backupOk) { 'OK' } else { 'NON SCRIVIBILE' }
+$modeText = if ($mode -eq 'full') { 'completa' } else { 'essenziale' }
 
 'MathApp - controllo ambiente'
 Line 'Cartella' $root
@@ -71,11 +95,19 @@ Line 'SymPy' $sympyText
 Line 'Whisper' $whisperText
 Line 'Porta' $portText
 Line 'API key' $keyText
+Line 'Dati' $dataText
+Line 'Backup' $backupText
+Line 'Modo' $modeText
+Line 'Livello' $level
 '  Core: chat + GeoGebra + conversazioni funzionano con il solo Node.'
 ''
 
 if (-not $nodeOk) {
   'ERRORE: Node.js non trovato. Esegui .\setup.ps1 (scarica Node portatile) oppure installa Node 18+ e riprova.'
+  exit 1
+}
+if (-not $dataOk) {
+  'ERRORE: la cartella data/ non e'' scrivibile. Controlla i permessi della cartella dell''app.'
   exit 1
 }
 if ($Check) { 'Controllo completato.'; exit 0 }

@@ -53,8 +53,8 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 
 ## Diagnostica
 
-- `.\start-mathapp.ps1 -Check` mostra Node/Python/SymPy/Whisper, porta e chiave senza avviare il server.
-- In **Impostazioni → Funzionalità** vedi lo stato e puoi ricontrollare.
+- `.\start-mathapp.ps1 -Check` mostra Node/Python/SymPy/Whisper, provider, porta, data/backup scrivibili e modalità, senza avviare il server.
+- In **Impostazioni → Funzionalità** vedi lo stato e puoi ricontrollare; l'API espone `/api/diagnostics` (alias `/api/health`).
 - Problemi comuni: [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
 
 ## Come si usa
@@ -233,7 +233,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (62 check: 19 test dei moduli + 4 del loop agente + 4 chat-service + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, persistenza e route feature); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (64 check: 19 test dei moduli + 4 del loop agente + 4 chat-service + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, persistenza, route feature e diagnostica); `npm run test:py` per SymPy.
 - Smoke browser: `npm run test:ui` (15 check: UI, state store, command bus, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
@@ -252,6 +252,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `docs/SETUP-WINDOWS.md` — guida di installazione rapida
 - `docs/ARCHITECTURE.md` — mappa dei moduli e regole di dipendenza
 - `docs/CONTRACTS.md`, `docs/DATA-MODEL.md` — contratti dei layer/port e modello dati
+- `docs/QUALITY-GATE.md` — core vs extra, feature freeze e gate di qualità
 - `sympy_cli.py` — calcolo esatto
 - `transcribe.py` — trascrizione audio locale (worker persistente con modello caldo)
 - `test_sympy_cli.py`, `test_xss.mjs`, `test_conversation_restore.mjs`, `test_conversation_switch.mjs`, `test_geogebra_state.mjs`, `test_geogebra_3d.mjs`, `test_server_cancel.mjs`, `test_whisper.mjs`, `test_algebra_ui.mjs`, `test_layout.mjs`, `test_tutor.mjs`, `test_review.mjs`, `test_vista.mjs`, `test_analisi.mjs`, `test_lavagna.mjs`, `test_strumenti.mjs`, `test_tts.mjs`, `test_fasec.mjs`, `test_tags.mjs`, `test_ripasso.mjs`, `test_quiz.mjs`, `test_stop.mjs`, `test_flashparse.mjs`, `test_quizparse.mjs` — regressioni parser, XSS, sessioni/GeoGebra (anche 3D), server, trascrittore, quaderno, layout, modo tutor, ripasso, pannello Vista, laboratorio di analisi, lavagna, strumenti, dettatura, fasi C/D (dati, tag, quiz) e parser di flashcard/quiz
