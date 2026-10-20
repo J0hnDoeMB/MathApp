@@ -93,6 +93,9 @@ try {
   chk("legacy level -> dettagliato", legacy.status === 200 && JSON.parse(legacy.body).level === "dettagliato");
   const kbFull = await request(port, "GET", "/api/kb");
   chk("full: /api/kb -> 200", kbFull.status === 200);
+  const calc = await request(port, "POST", "/api/compute", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation: "diff", expr: "x^2" }) });
+  const calcJson = JSON.parse(calc.body);
+  chk("POST /api/compute -> SymPy esatto", calc.status === 200 && calcJson.ok === true && String(calcJson.result || "").includes("2"));
   chk("risposta senza chiave completa", !save.body.includes("security-test-9999"));
   chk("settings.json scritto in modo atomico", fs.existsSync(settingsFile) && JSON.parse(fs.readFileSync(settingsFile, "utf8")).apiKey === "sk-or-v1-security-test-9999");
 

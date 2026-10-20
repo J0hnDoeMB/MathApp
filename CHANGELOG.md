@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.0 - 2026-10-20
+
+### Changed
+- Architectural refactor: `server.mjs` is now the HTTP shell (~818 lines, from ~1,688) and domain services live in `lib/`: `storage`, `kb`, `profile`, `sympy`, `geogebra`, `documents`, `audio`, `prompts`, `tools`, `agent`, `levels`, `util`. Public HTTP behavior unchanged.
+- `docs/ARCHITECTURE.md` documents the module map, dependency direction and remaining route split.
+- `test_modules.mjs`: 10 direct checks for levels, prompts, tools, KB, SM-2, cache and audio types; `npm test` now runs 29 checks.
+- Detail levels are **Auto / Sintetico / Dettagliato / Approfondito** (no school levels); legacy values are migrated.
+
 ## v1.4.0 - 2026-10-19
 
 ### Added

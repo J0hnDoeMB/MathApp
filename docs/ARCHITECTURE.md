@@ -4,56 +4,73 @@
 
 MathApp is intentionally **Node-only at its core**:
 
-- `server.mjs` (HTTP, routes, chat orchestration) + `public/` (UI) + `lib/` (small shared parsers) run with Node and no npm dependencies.
+- `server.mjs` (HTTP/routes) + `public/` (UI) + `lib/` run with Node and no npm runtime dependencies.
 - `sympy_cli.py` (Python + SymPy) adds exact algebra; `transcribe.py` (Python + faster-whisper) adds dictation.
 - GeoGebra/KaTeX are loaded from CDNs by the browser. Without internet the rest of the app keeps working.
 
-This boundary is the main answer to setup fragility: a missing optional dependency must never block chat, GeoGebra or saved conversations. `/api/diagnostics` exposes the detected capabilities; the launcher and the Settings drawer show them.
+A missing optional dependency must never block chat, GeoGebra or saved conversations. `/api/diagnostics` exposes detected capabilities; the launcher and Settings show them.
 
-## Current shape
+## Module map (v1.5.0)
 
-`server.mjs` is now ~1,640 lines (from ~1,930). The stable parts have been extracted without behavior changes:
+`server.mjs` is the HTTP shell and composition root. Domain services live in `lib/` and do not import the server or touch `req`/`res`.
 
-- `lib/config.mjs` - paths, settings file (atomic writes), provider/key resolution, optional-dependency detection.
-- `lib/models.mjs` - model catalog, capabilities, OpenRouter mapping and specialists.
-- `lib/llm.mjs` - one client for OpenCode/OpenRouter (streaming, non-streaming, vision), retries and fallbacks.
-- `lib/log.mjs` - bounded error log.
+| Module | Responsibility | Depends on |
+|---|---|---|
+| `server.mjs` | routes, validation, SSE, orchestration, startup | all services |
+| `lib/config.mjs` | settings file, paths, provider/key resolution, capability detection | Node only |
+| `lib/models.mjs` | model catalog, OpenRouter mapping, specialists | config |
+| `lib/llm.mjs` | one OpenAI-compatible client (streaming/non-streaming/vision) | config, models, log |
+| `lib/levels.mjs` | detail levels (`auto`, `breve`, `dettagliato`, `approfondito`) | none |
+| `lib/prompts.mjs` | system prompt, LaTeX/didactic rules, level rule | levels |
+| `lib/tools.mjs` | tool schemas and core/full filtering | none |
+| `lib/agent.mjs` | agent loop, escalation, delegation, verification counts | llm, tools, prompts, sympy, geogebra, profile |
+| `lib/sympy.mjs` | exact math child process, timeout/output/concurrency limits | util |
+| `lib/geogebra.mjs` | GeoGebra bridge and browser confirmations | storage, log |
+| `lib/documents.mjs` | PDF/text extraction and upstream message building | audio, util |
+| `lib/audio.mjs` | persistent Whisper worker, audio cache, language changes | config, log, util |
+| `lib/kb.mjs` | attachment index, chunks and BM25-lite search | storage, log |
+| `lib/profile.mjs` | style-memory CRUD and prompt selection | storage, log |
+| `lib/storage.mjs` | conversations, review file, backups | config, log |
+| `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
+| `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
 
-Still in `server.mjs`: HTTP routes, chat orchestration/tool schemas, SymPy bridge, knowledge base, conversations/reviews and backups.
+Dependency direction: `server -> agent -> tools/services -> storage/config`. Lower layers never import `server.mjs` or `public/`.
 
-## Planned split (incremental, no behavior change)
+## What changed in the refactor
 
-1. ~~`lib/config.mjs` - runtime paths, settings file (atomic writes), provider/key resolution, capability detection.~~
-2. ~~`lib/models.mjs` + `lib/log.mjs` - catalog/capabilities and logging.~~
-3. ~~`lib/llm.mjs` - one OpenAI-compatible client (OpenRouter/OpenCode endpoints, model mapping, retries, timeouts, streaming, vision).~~
-4. Next: `lib/sympy-tools.mjs`, `lib/kb.mjs`, `lib/conversations.mjs`, `lib/backup.mjs`.
-5. `server.mjs` - routes, chat orchestration and startup only.
+- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~818 lines / 43 KB**.
+- Conversations/reviews/backups, KB, profile, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate modules.
+- Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
+- `test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
 
-Each step is a mechanical extraction verified by `npm test`, the server/security suite and `test_server_cancel.mjs`; the browser tests remain manual.
+## Remaining risks / next steps
+
+1. Route handlers still live in `server.mjs`. The next mechanical step is `routes/` modules (settings, files, kb/review, chat) with the same auth/body/CSRF helpers.
+2. External dependencies (AI providers, GeoGebra/KaTeX CDN, Whisper models) remain the main failure surface; keep capabilities explicit and fallbacks visible.
+3. Windows/PowerShell setup is convenient but platform-specific; the Node server itself stays portable.
+4. Browser/UI tests still require Puppeteer and a running app; adding a small smoke suite to CI is the next quality improvement.
 
 ## Feature flags / lite mode
 
-Implemented as `settings.mode` (`core` by default, `full` on request from Settings):
+`settings.mode` (`core` by default, `full` on request from Settings):
 
-- **core**: chat + GeoGebra + SymPy + conversations + settings + backups. Adds no quiz/review/KB/style/TTS/delegation routes or tools.
+- **core**: chat + GeoGebra + SymPy + conversations + settings + backups. No quiz/review/KB/style/TTS/delegation routes or tools.
 - **full**: adds quiz, review, KB, style/profile, TTS buttons and the `delega`/`ricorda` tools.
 
-The server rejects disabled endpoints with `403` and filters the tool list; the UI hides the related buttons. `mode` is persisted in `settings.json` and exposed by `/api/settings` and `/api/diagnostics`.
-
-`settings.level` selects the detail level (`auto`, `breve`, `dettagliato`, `approfondito`) and is appended to the system prompt. The chat stream emits a `verification` event with the number of SymPy/GeoGebra tool calls, shown as a per-answer badge.
+Disabled endpoints return `403`; the UI hides related buttons. `settings.level` selects the detail level and is appended to the system prompt. The chat stream emits a `verification` event with SymPy/GeoGebra tool-call counts, shown as a per-answer badge.
 
 ## Provider abstraction
 
-The fragile part is external I/O: keys, model names, quotas. The target is a single client with:
+External I/O is isolated in `lib/llm.mjs`:
 
-- configurable base URL/key/model (OpenRouter by default, OpenCode Go as an option);
-- request timeout + retry on 429/5xx, clear 401/403 messages;
-- one streaming parser and one non-streaming call path;
-- capability detection from a local catalog when available, safe fallbacks otherwise.
+- configurable base URL/key/model (OpenRouter, OpenCode Go);
+- timeout/retry, clear 401/403 messages;
+- one streaming parser and one non-streaming path;
+- capability detection from a local catalog with safe fallbacks.
 
 ## Testing
 
-- `npm test`: parsers + security smoke (CSRF, body limit, traversal, settings API).
+- `npm test`: 29 checks (10 module checks + parsers + security smoke: CSRF, body limit, traversal, settings API).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test_server_cancel.mjs`: cancellation and state revisions.
 - Browser/UI tests need Puppeteer (`npm i -D puppeteer` or `MATHAPP_PUPPETEER`) and a running app.
