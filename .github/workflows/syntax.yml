@@ -23,6 +23,10 @@ jobs:
           node --check server.mjs
           node --check public/app.js
           Get-ChildItem lib -Filter *.mjs | ForEach-Object { node --check $_.FullName }
+          Get-ChildItem routes -Filter *.mjs | ForEach-Object { node --check $_.FullName }
+          node --check test_ui_smoke.mjs
+          node --check test_agent.mjs
+          node --check test_modules.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -35,6 +39,10 @@ jobs:
           node test_flashparse.mjs
           node test_quizparse.mjs
           node test_server_security.mjs
+      - name: Browser dependency
+        run: npm install --no-save --no-package-lock puppeteer-core
+      - name: Browser smoke (no API key)
+        run: node test_ui_smoke.mjs
       - name: Launcher check
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\start-mathapp.ps1 -Check
       - name: Python syntax

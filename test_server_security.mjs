@@ -95,6 +95,18 @@ try {
   chk("legacy level -> dettagliato", legacy.status === 200 && JSON.parse(legacy.body).level === "dettagliato");
   const kbFull = await request(port, "GET", "/api/kb");
   chk("full: /api/kb -> 200", kbFull.status === 200);
+  const backup = await request(port, "GET", "/api/backup");
+  chk("GET /api/backup -> 200", backup.status === 200 && Array.isArray(JSON.parse(backup.body).items));
+  const kbText = Buffer.from("La derivata di x^2 e' 2x. Questa nota serve al test delle route degli appunti.").toString("base64");
+  const kbAdd = await request(port, "POST", "/api/kb/add", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "smoke.txt", mime: "text/plain", b64: kbText }) });
+  const kbDoc = JSON.parse(kbAdd.body);
+  chk("POST /api/kb/add -> 200", kbAdd.status === 200 && kbDoc.ok === true && kbDoc.doc && kbDoc.doc.id);
+  const prof = await request(port, "POST", "/api/profile", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ testo: "Preferisco passaggi brevi con un esempio concreto" }) });
+  chk("POST /api/profile -> 200", prof.status === 200 && JSON.parse(prof.body).ok === true);
+  const review = await request(port, "POST", "/api/review", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ convId: "smoke", title: "Derivata", text: "La derivata di x^2 e' 2x" }) });
+  chk("POST /api/review -> 200", review.status === 200 && JSON.parse(review.body).ok === true);
+  const quizDry = await request(port, "POST", "/api/quiz", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dry: true, topic: "derivate", n: 3 }) });
+  chk("POST /api/quiz dry -> 200", quizDry.status === 200 && JSON.parse(quizDry.body).dry === true);
   if (dj.sympy) {
     const calc = await request(port, "POST", "/api/compute", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation: "diff", expr: "x^2" }) });
     const calcJson = JSON.parse(calc.body);

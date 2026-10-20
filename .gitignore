@@ -3,6 +3,7 @@ data/
 backups/
 mathapp.log
 .tools/
+node_modules/
 __pycache__/
 *.bak
 *.bak-*

@@ -12,11 +12,12 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 
 ## Module map (v1.5.0)
 
-`server.mjs` is the HTTP shell and composition root. Domain services live in `lib/` and do not import the server or touch `req`/`res`.
+`server.mjs` is the HTTP shell (security, router, static, startup). API route groups live in `routes/`; domain services live in `lib/`. Neither routes nor services import `server.mjs`.
 
 | Module | Responsibility | Depends on |
 |---|---|---|
-| `server.mjs` | routes, validation, SSE, orchestration, startup | all services |
+| `server.mjs` | security, router, static files, startup | routes |
+| `routes/*.mjs` | API groups: settings, library, conversations, chat | lib services |
 | `lib/config.mjs` | settings file, paths, provider/key resolution, capability detection | Node only |
 | `lib/models.mjs` | model catalog, OpenRouter mapping, specialists | config |
 | `lib/llm.mjs` | one OpenAI-compatible client (streaming/non-streaming/vision) | config, models, log |
@@ -47,17 +48,17 @@ Dependency direction: `server -> agent -> tools/services -> storage/config`. Low
 
 ## What changed in the refactor
 
-- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~818 lines / 43 KB**.
-- Conversations/reviews/backups, KB, profile, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate modules.
+- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~60 lines / 3 KB**.
+- API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
 - Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
 - `test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
 
 ## Remaining risks / next steps
 
-1. Route handlers still live in `server.mjs`. The next mechanical step is `routes/` modules (settings, files, kb/review, chat) with the same auth/body/CSRF helpers.
+1. Browser smoke covers new chat, session restore and view state; a dedicated GeoGebra applet rebuild test remains manual.
 2. External dependencies (AI providers, GeoGebra/KaTeX CDN, Whisper models) remain the main failure surface; keep capabilities explicit and fallbacks visible.
 3. Windows/PowerShell setup is convenient but platform-specific; the Node server itself stays portable.
-4. Browser/UI tests still require Puppeteer and a running app; adding a small smoke suite to CI is the next quality improvement.
+4. The full browser suite (XSS, conversation switch, GeoGebra applet) still runs manually; only the smoke subset is in CI.
 
 ## Feature flags / lite mode
 
@@ -79,8 +80,9 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 37 checks (10 module + 4 agent + parsers + 23 security/session: CSRF, body limit, traversal, settings API, state persistence/revision).
+- `npm test`: 42 checks (10 module + 4 agent + parsers + 28 security/session: CSRF, body limit, traversal, settings API, state persistence/revision, library routes).
+- `npm run test:ui`: 7 browser smoke checks (new chat, session restore, view, UI); CI uses puppeteer-core + Edge.
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test_server_cancel.mjs`: cancellation and state revisions.
-- Browser/UI tests need Puppeteer (`npm i -D puppeteer` or `MATHAPP_PUPPETEER`) and a running app.
-- CI runs Node tests and the Python suite on Windows.
+- Full browser tests need Puppeteer and a running app; `npm run test:ui` is the CI smoke subset.
+- CI runs Node tests, browser smoke and the Python suite on Windows.

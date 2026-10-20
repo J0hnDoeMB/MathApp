@@ -17,8 +17,9 @@ Obiettivo: core chat + algebra + grafo + sessione affidabili.
 - [x] test del loop agente con upstream finto (tool call → SymPy → verifica → done)
 - [x] security/API smoke (CSRF, body cap, traversal, settings, core/full)
 - [x] CI: moduli, agente, parser, security; SymPy prima dei test; branch protection
-- [ ] split dei route handler in `routes/` (solo composizione in `server.mjs`)
-- [ ] test browser smoke in CI (almeno nuova chat, restore, GeoGebra state)
+- [x] split dei route handler in `routes/` (server ~60 righe, solo composizione)
+- [x] test browser smoke in CI (nuova chat, restore sessione/stato, view)
+- [ ] test browser dedicato al rebuild dell'applet GeoGebra
 
 **Exit criteria:** tutti i check verdi, nessuna regressione nota su chat/sessione/stato, branch `main` protetto, nessuna feature B nel core.
 

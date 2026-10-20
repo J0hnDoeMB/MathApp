@@ -49,7 +49,7 @@ Il **livello di dettaglio** (Auto, Sintetico, Dettagliato, Approfondito) si sceg
 Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esatti**. Se la risposta contiene matematica ma non ha usato SymPy, compare un avviso: il badge è volutamente onesto, perché il calcolo esatto non garantisce che il testo lo riporti correttamente.
 
 ## Architettura
-`server.mjs` è il guscio HTTP (route, validazione, SSE, avvio); i servizi di dominio stanno in `lib/`: `agent`, `prompts`, `tools`, `sympy`, `geogebra`, `documents`, `audio`, `kb`, `profile`, `storage`, `levels`. Le dipendenze vanno solo verso il basso (`server → agent → servizi → storage/config`), senza import circolari. Mappa completa e contratti in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); direzione e fasi in [`docs/ROADMAP.md`](docs/ROADMAP.md); release policy in [`docs/RELEASE.md`](docs/RELEASE.md); onboarding tecnico in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
+`server.mjs` è il guscio HTTP (sicurezza, router, statici, avvio, ~60 righe); le API stanno in `routes/` (settings, library, conversations, chat) e i servizi di dominio in `lib/`: `agent`, `prompts`, `tools`, `sympy`, `geogebra`, `documents`, `audio`, `kb`, `profile`, `storage`, `levels`. Le dipendenze vanno solo verso il basso (`server → routes → servizi → storage/config`), senza import circolari. Mappa completa e contratti in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); direzione e fasi in [`docs/ROADMAP.md`](docs/ROADMAP.md); release policy in [`docs/RELEASE.md`](docs/RELEASE.md); onboarding tecnico in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 
 ## Diagnostica
 
@@ -233,14 +233,17 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (37 check: 10 test dei moduli + 4 del loop agente + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni e persistenza); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (42 check: 10 test dei moduli + 4 del loop agente + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, persistenza e route libreria); `npm run test:py` per SymPy.
+- Smoke browser: `npm run test:ui` (7 check: nuova chat, ripristino sessione/view, UI); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test_xss.mjs`, `node test_conversation_restore.mjs`, `node test_conversation_switch.mjs`, `node test_geogebra_state.mjs`, `node test_geogebra_3d.mjs`, `node test_layout.mjs`, `node test_tutor.mjs`, `node test_review.mjs`, `node test_algebra_ui.mjs`, `node test_vista.mjs` e `node test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.
 - Test delle funzioni nuove (con MathApp avviata): `node test_lavagna.mjs` (undo, PNG, dettatura, foglio stampabile), `node test_strumenti.mjs`, `node test_tts.mjs`, `node test_fasec.mjs` (statistica, regressione, complessi, parziali, sistemi, area, tangente animata), `node test_tags.mjs` (etichette e ricerca globale), `node test_ripasso.mjs` (SM-2, export Anki, flashcard), `node test_quiz.mjs` (quiz completo), `node test_stop.mjs` (il pulsante Invia diventa Ferma e interrompe la risposta). Senza server: `node test_flashparse.mjs`, `node test_quizparse.mjs` (parser delle schede e dei quiz).
 
 ## File
-- `server.mjs` — guscio HTTP: route, validazione, SSE, avvio
+- `server.mjs` — guscio HTTP: sicurezza, router, statici, avvio
+- `routes/` — API settings, library, conversations, chat
+- `test_ui_smoke.mjs` — smoke browser (nuova chat, restore, view)
 - `setup.cmd`, `setup.ps1` — setup Windows: Node portatile, Python/SymPy opzionali
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali
 - `docs/SETUP-WINDOWS.md` — guida di installazione rapida

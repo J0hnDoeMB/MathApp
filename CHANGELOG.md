@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.3 - 2026-10-20
+
+### Changed
+- API routes extracted from `server.mjs` into `routes/` (settings, library, conversations, chat); server is now ~60 lines.
+- CI runs a browser smoke test (new chat, session restore, view state) with puppeteer-core + Edge, plus syntax checks for routes.
+- Test suite: **42 Node checks** (10 module + 4 agent + 28 security/session) and **7 browser smoke checks**.
+
 ## v1.5.2 - 2026-10-20
 
 ### Added
