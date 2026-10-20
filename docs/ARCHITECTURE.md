@@ -26,7 +26,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/tools.mjs` | tool schemas and core/full filtering | none |
 | `lib/agent.mjs` | agent loop, escalation, delegation, verification counts | llm, tools, prompts, sympy, geogebra, profile |
 | `lib/sympy.mjs` | exact math child process, timeout/output/concurrency limits | util |
-| `lib/geogebra.mjs` | GeoGebra bridge and browser confirmations | storage, log |
+| `lib/geogebra.mjs` | GeoGebra bridge and browser confirmations | session-store, log |
 | `lib/documents.mjs` | PDF/text extraction and upstream message building | audio, util |
 | `lib/audio.mjs` | persistent Whisper worker, audio cache, language changes | config, log, util |
 | `lib/kb.mjs` | attachment index, chunks and BM25-lite search | storage, log |
@@ -34,11 +34,13 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/review.mjs` | SM-2 scheduling | storage |
 | `lib/study.mjs` | flashcard/quiz prompts, model call and parsing | llm, parsers |
 | `lib/features.mjs` | optional API gate (core/full) | none |
-| `lib/storage.mjs` | conversations, review file, backups | config, log |
+| `lib/session-store.mjs` | session repository: read/write, state merge, history, tags | storage, schema, models, log |
+| `lib/schema.mjs` | data validation, limits and migrations | none |
+| `lib/storage.mjs` | data paths, review file, backups | config, log |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
 
-Dependency direction: `server -> agent -> tools/services -> storage/config`. Lower layers never import `server.mjs` or `public/`.
+Dependency direction: `server -> routes/agent -> domain/integration -> infrastructure`. Lower layers never import `server.mjs` or `public/`. Data entities and limits are in [`DATA-MODEL.md`](DATA-MODEL.md); ports and layer map in [`CONTRACTS.md`](CONTRACTS.md).
 
 ## Contracts and invariants
 
@@ -83,7 +85,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 ## Testing
 
-- `npm test`: 52 checks (15 module + 4 agent + parsers + 33 security/session: CSRF, body limit, traversal, core/full, settings API, state persistence/revision, feature routes).
+- `npm test`: 57 checks (18 module + 4 agent + parsers + 35 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, state persistence/revision, feature routes).
 - `npm run test:ui`: 7 browser smoke checks (new chat, session restore, view, UI); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

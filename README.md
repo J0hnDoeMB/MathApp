@@ -49,7 +49,7 @@ Il **livello di dettaglio** (Auto, Sintetico, Dettagliato, Approfondito) si sceg
 Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esatti**. Se la risposta contiene matematica ma non ha usato SymPy, compare un avviso: il badge è volutamente onesto, perché il calcolo esatto non garantisce che il testo lo riporti correttamente.
 
 ## Architettura
-`server.mjs` è il guscio HTTP (sicurezza, router, statici, avvio, ~60 righe); le API stanno in `routes/` (settings, backup, kb, profile, review, study, compute, conversations, chat) e i servizi di dominio in `lib/`: `agent`, `prompts`, `tools`, `sympy`, `geogebra`, `documents`, `audio`, `kb`, `profile`, `review`, `study`, `features`, `storage`, `levels`. Le dipendenze vanno solo verso il basso (`server → routes → servizi → storage/config`), senza import circolari. Mappa completa e contratti in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); direzione e fasi in [`docs/ROADMAP.md`](docs/ROADMAP.md); release policy in [`docs/RELEASE.md`](docs/RELEASE.md); onboarding tecnico in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
+`server.mjs` è il guscio HTTP (sicurezza, router, statici, avvio, ~60 righe); le API stanno in `routes/` (settings, backup, kb, profile, review, study, compute, conversations, chat) e i servizi di dominio in `lib/`: `agent`, `prompts`, `tools`, `sympy`, `geogebra`, `documents`, `audio`, `kb`, `profile`, `review`, `study`, `features`, `session-store`, `schema`, `storage`, `levels`. Le dipendenze vanno solo verso il basso (`server → routes → servizi → storage/config`), senza import circolari. Mappa completa e contratti in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e [`docs/CONTRACTS.md`](docs/CONTRACTS.md); entità e versioni in [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md); direzione e fasi in [`docs/ROADMAP.md`](docs/ROADMAP.md); release policy in [`docs/RELEASE.md`](docs/RELEASE.md); onboarding tecnico in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 
 ## Diagnostica
 
@@ -233,7 +233,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - L'HTML generato da Markdown viene ricostruito con una whitelist di elementi e attributi; HTML raw, handler JavaScript e URL `javascript:` vengono rimossi. I risultati LaTeX e i dettagli degli strumenti sono inseriti come testo.
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python -m unittest test_sympy_cli -v`.
-- Test rapidi senza server: `npm test` (52 check: 15 test dei moduli + 4 del loop agente + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, persistenza e route feature); `npm run test:py` per SymPy.
+- Test rapidi senza server: `npm test` (57 check: 18 test dei moduli + 4 del loop agente + parser + security/session smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, persistenza e route feature); `npm run test:py` per SymPy.
 - Smoke browser: `npm run test:ui` (7 check: nuova chat, ripristino sessione/view, UI); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test_whisper.mjs` (con MathApp avviata).
@@ -248,6 +248,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali
 - `docs/SETUP-WINDOWS.md` — guida di installazione rapida
 - `docs/ARCHITECTURE.md` — mappa dei moduli e regole di dipendenza
+- `docs/CONTRACTS.md`, `docs/DATA-MODEL.md` — contratti dei layer/port e modello dati
 - `sympy_cli.py` — calcolo esatto
 - `transcribe.py` — trascrizione audio locale (worker persistente con modello caldo)
 - `test_sympy_cli.py`, `test_xss.mjs`, `test_conversation_restore.mjs`, `test_conversation_switch.mjs`, `test_geogebra_state.mjs`, `test_geogebra_3d.mjs`, `test_server_cancel.mjs`, `test_whisper.mjs`, `test_algebra_ui.mjs`, `test_layout.mjs`, `test_tutor.mjs`, `test_review.mjs`, `test_vista.mjs`, `test_analisi.mjs`, `test_lavagna.mjs`, `test_strumenti.mjs`, `test_tts.mjs`, `test_fasec.mjs`, `test_tags.mjs`, `test_ripasso.mjs`, `test_quiz.mjs`, `test_stop.mjs`, `test_flashparse.mjs`, `test_quizparse.mjs` — regressioni parser, XSS, sessioni/GeoGebra (anche 3D), server, trascrittore, quaderno, layout, modo tutor, ripasso, pannello Vista, laboratorio di analisi, lavagna, strumenti, dettatura, fasi C/D (dati, tag, quiz) e parser di flashcard/quiz
@@ -255,7 +256,9 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `lib/config.mjs`, `lib/models.mjs`, `lib/llm.mjs`, `lib/log.mjs` — configurazione/provider, catalogo modelli, client LLM (OpenCode/OpenRouter) e log
 - `lib/agent.mjs`, `lib/prompts.mjs`, `lib/tools.mjs` — loop agente, prompt e schema degli strumenti
 - `lib/sympy.mjs`, `lib/geogebra.mjs`, `lib/documents.mjs`, `lib/audio.mjs` — calcolo esatto, ponte GeoGebra, PDF/testo, Whisper
-- `lib/storage.mjs`, `lib/kb.mjs`, `lib/profile.mjs`, `lib/levels.mjs`, `lib/util.mjs` — conversazioni/backup, appunti, stile, livelli e utility
+- `lib/session-store.mjs`, `lib/schema.mjs` — repository sessioni/stato/cronologia, validazione e migrazioni
+- `lib/review.mjs`, `lib/study.mjs`, `lib/features.mjs` — SM-2, generazione studio, gate core/full
+- `lib/storage.mjs`, `lib/kb.mjs`, `lib/profile.mjs`, `lib/levels.mjs`, `lib/util.mjs` — percorsi/backup, appunti, stile, livelli e utility
 - `extract.py` — estrazione testo dai PDF
 - `public/` — pagina (GeoGebra + chat + quaderno)
 - `start-mathapp.ps1` — avvio

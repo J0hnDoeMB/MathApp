@@ -5,7 +5,7 @@ import { transcribeImages } from "../lib/llm.mjs";
 import { buildUpstream } from "../lib/documents.mjs";
 import { profForPrompt } from "../lib/profile.mjs";
 import { kbAdd, kbSearch, tokenize } from "../lib/kb.mjs";
-import { saveConv } from "../lib/storage.mjs";
+import { saveConv } from "../lib/session-store.mjs";
 import { runAgent, streamWithEscalation } from "../lib/agent.mjs";
 import { EXPLAIN_PROMPT } from "../lib/prompts.mjs";
 import { resolveGGB } from "../lib/geogebra.mjs";

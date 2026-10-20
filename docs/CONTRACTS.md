@@ -1,0 +1,82 @@
+# Contracts
+
+Contratti tra i boundary. Le implementazioni possono cambiare (OpenRouter, OpenCode, SymPy, Edge) senza cambiare i chiamanti.
+
+## Layers
+
+| Layer | Dove | Responsabilità |
+|---|---|---|
+| Presentation | `public/` | UI, pannelli, stato client, eventi utente |
+| Application | `routes/`, `lib/agent.mjs` | orchestrazione richieste, chat flow, tool loop |
+| Domain | `lib/session-store`, `review`, `study`, `kb`, `profile`, `levels`, `features` | regole del prodotto |
+| Integration | `lib/llm`, `sympy`, `geogebra`, `audio`, `documents` | adapter verso servizi esterni |
+| Infrastructure | `lib/storage`, `config`, `schema`, `log`, `http` | filesystem, JSON, impostazioni, sicurezza di base |
+
+`server.mjs` compone: sicurezza → `routes/` → statici.
+
+## Ports
+
+### AIProvider
+```text
+stream({ sessionId, payload }, send, signal) -> { content, toolCalls, usage }
+generate(messages, { maxTokens, signal }) -> { text, usage }
+cancel(sessionId) -> void
+```
+Adapter: `lib/llm.mjs` (OpenRouter/OpenCode, fallback). Gli errori di provider espongono messaggio leggibile; il chiamante decide il fallback.
+
+### MathEngine
+```text
+compute(args) -> { ok, result, latex?, error? }
+```
+Adapter: `lib/sympy.mjs`. Non lancia per errori di calcolo; timeout, output cap e concorrenza sono responsabilità dell'adapter.
+
+### GraphEngine
+```text
+run(send, commands, title, mode, convId, view, signal) -> Promise<result>
+edit(send, ops, signal) -> Promise<result>
+resolve(callId, results) -> void
+```
+Adapter: `lib/geogebra.mjs`. Un timeout del browser non blocca la chat: restituisce una nota.
+
+### AudioTranscriber
+```text
+transcribe(b64) -> { ok, text, language, duration, model, error? }
+```
+Adapter: `lib/audio.mjs` (worker Whisper persistente, cache).
+
+### DocumentParser
+```text
+extractText(name, mime, b64) -> { ok, text, error? }
+```
+Adapter: `lib/documents.mjs` (PDF/testo).
+
+### SessionRepository
+```text
+read(id) -> Session|null
+applyState(rawState) -> { ok, stale?, error? }
+list() -> SessionSummary[]
+history(query) -> SessionSummary[]
+delete(id) -> void
+updateTags(id, tag, action) -> { status, ok, tags?, error? }
+```
+Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
+
+### StorageService
+```text
+dataDir, convDir, backups
+runBackup() -> { ok, file?, size?, error? }
+```
+Implementazione: `lib/storage.mjs`.
+
+## Regole di errore
+
+- Un adapter restituisce `{ok:false,error}` per errori previsti; lancia solo per cancellazione/abort.
+- Un provider o un PDF rotto non deve impedire chat, sessione o grafo.
+- Gli endpoint opzionali sono protetti da `lib/features.mjs` (core/full).
+- Nessun modulo domain/integration importa `server.mjs` o `public/`.
+- La UI non parla direttamente con filesystem o provider: usa le route.
+
+## Gap noti
+
+- Lo stato UI/domain è ancora nel grande `public/app.js`; la separazione eventi UI → application è il prossimo lavoro del layer Presentation.
+- Non c'è ancora un plugin loader per feature opzionali: il gate è centralizzato ma i moduli sono statici.

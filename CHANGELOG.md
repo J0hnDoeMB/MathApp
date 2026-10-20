@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7.0 - 2026-10-20
+
+### Changed
+- Session persistence centralized in `lib/session-store.mjs`: read/write, state merge, revision guard, history search, tags and delete no longer touch the filesystem in routes.
+- `lib/schema.mjs` validates state inputs and migrates stored sessions (`schemaVersion: 1`); limits for ggb, cells, figures, tags.
+- `docs/DATA-MODEL.md` and `docs/CONTRACTS.md` define entities, versions, ports and layer boundaries.
+
+### Tests
+- `npm test`: **57 checks** (18 module + 4 agent + 35 security/session), including schema/migration and invalid state.
+- UI 7, GeoGebra 5, Python 29.
+
 ## v1.6.0 - 2026-10-20
 
 ### Changed

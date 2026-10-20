@@ -140,11 +140,15 @@ try {
   chk("conversation/state -> 200", stateSave.status === 200 && JSON.parse(stateSave.body).ok === true);
   const stateGet = await request(port, "GET", `/api/conversation?id=${encodeURIComponent(stateId)}`);
   const saved = JSON.parse(stateGet.body);
-  chk("session persistence: ggb/cells/view", stateGet.status === 200 && saved.ggb === "<ggb/>" && saved.cells.length === 1 && saved.view && saved.view.xmin === -5 && saved.stateRevision === 1);
+  chk("session persistence: ggb/cells/view/schema", stateGet.status === 200 && saved.ggb === "<ggb/>" && saved.cells.length === 1 && saved.view && saved.view.xmin === -5 && saved.stateRevision === 1 && saved.schemaVersion === 1);
   const stale = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...stateBody, ggb: "<stale/>" }) });
   const staleJson = JSON.parse(stale.body);
   const afterStale = JSON.parse((await request(port, "GET", `/api/conversation?id=${encodeURIComponent(stateId)}`)).body);
   chk("state revision: stale non sovrascrive", stale.status === 200 && staleJson.stale === true && afterStale.ggb === "<ggb/>");
+  const badRevision = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...stateBody, revision: -1 }) });
+  chk("state: revisione negativa -> 400", badRevision.status === 400);
+  const noId = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ revision: 1 }) });
+  chk("state: id mancante -> 400", noId.status === 400);
   const history = await request(port, "GET", "/api/history");
   const histJson = JSON.parse(history.body);
   chk("history includes persisted session", history.status === 200 && histJson.items.some((it) => it.id === stateId && it.cells === 1));

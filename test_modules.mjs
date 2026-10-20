@@ -10,6 +10,7 @@ import { systemFor } from "./lib/prompts.mjs";
 import { isOptionalApi } from "./lib/features.mjs";
 import { gradeReview } from "./lib/review.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
+import { SCHEMA_VERSION, migrateSession, validateState } from "./lib/schema.mjs";
 
 let ok = 0, fail = 0;
 function chk(name, fn) {
@@ -130,6 +131,28 @@ const quiz = await generateQuiz({ topic: "derivate", n: 3, model: "fake", callMo
 chk("study: quiz con modello finto", () => {
   assert.equal(quiz.questions.length, 1);
   assert.equal(quiz.questions[0].ok, 1);
+});
+
+chk("schema: migrazione sessione", () => {
+  const s = migrateSession({ id: "x" });
+  assert.equal(s.schemaVersion, SCHEMA_VERSION);
+  assert.deepEqual(s.messages, []);
+  assert.deepEqual(s.cells, []);
+  assert.equal(s.stateRevision, 0);
+  assert.equal(s.title, "Nuova chat");
+});
+
+chk("schema: stato invalido", () => {
+  assert.equal(validateState({ id: "x", revision: -1 }).ok, false);
+  assert.equal(validateState({ id: "", revision: 1 }).ok, false);
+  assert.equal(validateState({ id: "x", ggb: 42 }).ok, false);
+});
+
+chk("schema: normalizza view e celle", () => {
+  const r = validateState({ id: "x", revision: 1, cells: [{ expr: "x^2" }], view: { xmin: -5, xmax: 5, ymin: -4, ymax: 8, axes: false, grid: true } });
+  assert.equal(r.ok, true);
+  assert.equal(r.state.cells.length, 1);
+  assert.deepEqual(r.state.view, { xmin: -5, xmax: 5, ymin: -4, ymax: 8, axes: false, grid: true });
 });
 
 console.log("----");
