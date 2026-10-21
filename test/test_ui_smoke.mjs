@@ -116,6 +116,14 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#settingsBtn", { timeout: 15000 });
   chk("UI caricata", await page.$("#chat") !== null && await page.$("#ggb") !== null);
+  const skip = await page.evaluate(() => {
+    const a = document.querySelector('a.skip-link[href="#main"]');
+    if (!a) return null;
+    a.focus();
+    const r = a.getBoundingClientRect();
+    return { visible: r.top >= 0 && r.height > 0 && r.width > 0, target: !!document.querySelector("#main"), focused: document.activeElement === a };
+  });
+  chk("skip link accessibile", !!skip && skip.visible && skip.target && skip.focused, JSON.stringify(skip));
   const store = await page.evaluate(() => ({
     exists: !!window.MathAppState,
     domain: window.MathAppState && typeof window.MathAppState.domain === "object",
@@ -210,6 +218,21 @@ try {
   await page.waitForFunction(() => !document.querySelector("#styleDrawer").hidden, { timeout: 5000 });
   chk("full: drawer Stile", true);
   await page.click("#styleClose");
+
+  await page.setViewport({ width: 390, height: 844 });
+  await new Promise((r) => setTimeout(r, 300));
+  const mobile = await page.evaluate(async () => {
+    const prompt = document.querySelector("#input");
+    if (prompt) prompt.scrollIntoView({ block: "center" });
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const rect = prompt ? prompt.getBoundingClientRect() : null;
+    return {
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      promptVisible: !!rect && rect.width > 100 && rect.bottom <= window.innerHeight + 2 && rect.top >= -2,
+      width: rect ? Math.round(rect.width) : 0,
+    };
+  });
+  chk("mobile: nessun overflow e prompt visibile", mobile.overflow <= 1 && mobile.promptVisible, JSON.stringify(mobile));
 
   chk("nessun errore JS dell'app", pageErrors.length === 0);
   if (pageErrors.length) console.error(pageErrors.slice(0, 4).join("\n"));

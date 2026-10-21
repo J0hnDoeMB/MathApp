@@ -102,7 +102,7 @@ Implementation: `lib/json-store.mjs`. Repositories must use it; corrupt files ar
 
 ### Diagnostics
 ```text
-diagnostics(port) -> { ok, node, python, sympy, whisper, provider, hasKey, dataDirOk, backupDirOk, port, mode, level }
+diagnostics(port) -> { ok, version, node, python, sympy, whisper, provider, hasKey, dataDirOk, backupDirOk, port, mode, level }
 ```
 Implementation: `lib/diagnostics.mjs`; exposed by `/api/diagnostics` and `/api/health`, mirrored by `start-mathapp.ps1 -Check`.
 

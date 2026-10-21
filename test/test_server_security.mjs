@@ -82,6 +82,7 @@ try {
   chk("GET /api/diagnostics -> 200", diag.status === 200 && dj.ok === true && typeof dj.node === "string" && typeof dj.python !== "undefined");
   chk("diagnostics: storage/port", dj.dataDirOk === true && dj.backupDirOk === true && typeof dj.port === "number");
   chk("diagnostics: capabilities", dj.capabilities && dj.capabilities.chat.available === true && typeof dj.coreOk === "boolean" && dj.adaptersOk === true);
+  chk("diagnostics: version", /^\d+\.\d+\.\d+/.test(dj.version || ""), dj.version);
   const health = await request(port, "GET", "/api/health");
   chk("GET /api/health -> 200", health.status === 200 && JSON.parse(health.body).dataDirOk === true);
   const traces = await request(port, "GET", "/api/traces?limit=5");

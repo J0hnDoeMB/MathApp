@@ -22,13 +22,14 @@ recent(limit)
 ```
 
 - `executeChat` apre `chat` e chiude `op.end` con convId/modello o cancellazione.
+- Alla prima delta viene scritto `chat.first_token` con `{ id, requestId, ms, model }`; `firstTokenMs` ? anche in `op.end` e nel valore di ritorno.
 - Ogni tool call apre `tool.<name>` con `traceId` della chat e chiude con ok/errore.
 - Gli adapter portano il proprio errore strutturato al chiamante; il dominio non perde il fault.
 
 ## Diagnosi
 
 - `GET /api/traces?limit=50` restituisce gli ultimi eventi (solo locale).
-- `/api/diagnostics` / `/api/health` restano il check di capability e storage.
+- `/api/diagnostics` / `/api/health` restano il check di versione, capability e storage.
 - `mathapp.log` resta il log testuale degli errori; `logs/trace.jsonl` ? il flusso strutturato.
 
 ## Regole

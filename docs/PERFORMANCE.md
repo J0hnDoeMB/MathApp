@@ -7,14 +7,14 @@ These are product budgets, not micro-benchmarks.
 | App startup | < 3 s on a normal PC | `start-mathapp.ps1` / browser smoke |
 | Session restore | < 1 s excluding GeoGebra CDN | UI smoke state restore |
 | Exact math common case | < 2 s | `npm run eval` / diagnostics |
-| Chat first token | provider-dependent | trace `http`/`op` durations |
+| Chat first token | provider-dependent | trace `chat.first_token` / `firstTokenMs` |
 | UI under long work | no blocking; Stop available | manual/UI tests |
 | API status warm | < 100 ms | `/api/diagnostics` cached |
 | Trace overhead | negligible (< 1 ms/request) | local measurement |
 
 ## Where to measure
 
-- `logs/trace.jsonl`: `http.ms`, `op.end.ms` for chat/tools.
+- `logs/trace.jsonl`: `http.ms`, `chat.first_token.ms`, `op.end.ms` for chat/tools.
 - `GET /api/traces?limit=50`.
 - `npm run test:ui` measures load/restore flow.
 - `npm run eval` measures SymPy cases.

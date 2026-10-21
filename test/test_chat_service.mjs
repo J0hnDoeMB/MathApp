@@ -38,6 +38,7 @@ chk("chat-service: risposta finale", result.finalText === "Risposta" && result.c
 chk("chat-service: eventi SSE", events.some((e) => e.ev === "delta") && events.some((e) => e.ev === "verification") && events.some((e) => e.ev === "conv"));
 chk("chat-service: allegato + appunti", events.some((e) => e.ev === "notice" && /allegato letto/.test(e.data.text)) && events.some((e) => e.ev === "notice" && /salvato negli Appunti/.test(e.data.text)));
 chk("chat-service: sessione salvata", saved && saved.id === "test-chat" && saved.msgs.length === 2 && saved.msgs[1].content === "Risposta");
+chk("chat-service: first-token metric", typeof result.firstTokenMs === "number" && result.firstTokenMs >= 0);
 console.log("----");
 console.log("OK=" + ok + " FAIL=" + fail);
 if (fail) process.exit(1);

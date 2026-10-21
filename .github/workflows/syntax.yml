@@ -29,6 +29,9 @@ jobs:
           Get-ChildItem routes -Filter *.mjs | ForEach-Object { node --check $_.FullName }
           node --check test/test_ui_smoke.mjs
           node --check test/test_geogebra_smoke.mjs
+          node --check test/test_instance_lock.mjs
+          node --check test/test_xss.mjs
+          node --check scripts/package-release.mjs
           node --check test/test_agent.mjs
           node --check test/test_chat_service.mjs
           node --check test/test_observability.mjs
@@ -40,7 +43,7 @@ jobs:
           python-version: '3.12'
       - name: Python dependencies
         run: python -m pip install --disable-pip-version-check sympy
-      - name: Node tests (modules + agent + parsers + security)
+      - name: Node tests (modules + agent + parsers + security + lock)
         run: |
           node test/test_modules.mjs
           node test/test_agent.mjs
@@ -51,10 +54,13 @@ jobs:
           node test/test_flashparse.mjs
           node test/test_quizparse.mjs
           node test/test_server_security.mjs
+          node test/test_instance_lock.mjs
       - name: Browser dependency
         run: npm install --no-save --no-package-lock puppeteer-core
       - name: Browser smoke (no API key)
         run: node test/test_ui_smoke.mjs
+      - name: Browser XSS regression (no API key)
+        run: node test/test_xss.mjs
       - name: GeoGebra rebuild smoke
         run: node test/test_geogebra_smoke.mjs
       - name: Math eval (SymPy)

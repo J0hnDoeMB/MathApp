@@ -21,6 +21,7 @@
 | Provider key leakage | local file only, redacted logs/traces | tests/docs |
 | Upload abuse | size/type caps, files confined to `data/kb` | security smoke |
 | Corrupt JSON | atomic write + quarantine | `test_session_corrupt` |
+| Two instances on the same data dir | PID lock; stale lock recovered only when the PID is gone | `test_instance_lock` |
 | Rate-limit lockout | only explicit wrong credentials count | security smoke |
 | Dependency failure | capabilities/fallback, no crash | diagnostics/tests |
 

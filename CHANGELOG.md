@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.27.0 - 2026-10-21
+
+### Added
+- Single-instance lock per data directory with stale-PID recovery; a second process fails with a clear owner message instead of racing on the same JSON files.
+- `chat.first_token` trace events and `firstTokenMs` in the chat operation and return value.
+- Self-contained XSS browser regression (14 checks) now runs in CI on Windows and Linux.
+- Tag-driven release workflow (`release.yml`) and `npm run package` for a versioned source zip; tag/version mismatch fails before packaging.
+- Skip link, visible focus styling and a 390 px mobile smoke check (UI 22).
+- App version exposed by `/api/diagnostics` and `/api/health`.
+
+### Tests
+- 88 Node, 22 UI, 14 XSS, 5 GeoGebra, 29 Python, 17 eval; coverage 69.9%.
+
 ## v1.26.1 - 2026-10-21
 
 ### Changed

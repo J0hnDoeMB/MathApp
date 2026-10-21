@@ -11,6 +11,7 @@ const tempRoot = os.tmpdir();
 const testDir = path.join(tempRoot, "mathapp-cancel-" + crypto.randomUUID());
 await fs.mkdir(testDir, { recursive: true });
 await fs.copyFile(new URL("../server.mjs", import.meta.url), path.join(testDir, "server.mjs"));
+await fs.copyFile(new URL("../package.json", import.meta.url), path.join(testDir, "package.json"));
 await fs.copyFile(new URL("../sympy_cli.py", import.meta.url), path.join(testDir, "sympy_cli.py"));
 await fs.copyFile(new URL("../transcribe.py", import.meta.url), path.join(testDir, "transcribe.py"));
 await fs.cp(new URL("../lib", import.meta.url), path.join(testDir, "lib"), { recursive: true });

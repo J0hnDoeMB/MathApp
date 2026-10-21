@@ -1,6 +1,6 @@
 {
   "name": "mathapp",
-  "version": "1.26.1",
+  "version": "1.27.0",
   "private": true,
   "description": "Local math tutor: AI chat + GeoGebra + exact algebra.",
   "type": "module",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "test": "node test/test_modules.mjs && node test/test_agent.mjs && node test/test_chat_service.mjs && node test/test_observability.mjs && node test/test_provider_fallback.mjs && node test/test_session_corrupt.mjs && node test/test_flashparse.mjs && node test/test_quizparse.mjs && node test/test_server_security.mjs",
+    "test": "node test/test_modules.mjs && node test/test_agent.mjs && node test/test_chat_service.mjs && node test/test_observability.mjs && node test/test_provider_fallback.mjs && node test/test_session_corrupt.mjs && node test/test_flashparse.mjs && node test/test_quizparse.mjs && node test/test_server_security.mjs && node test/test_instance_lock.mjs",
     "test:py": "python test/test_sympy_cli.py -v",
     "test:ui": "node test/test_ui_smoke.mjs",
     "test:geo": "node test/test_geogebra_smoke.mjs",
@@ -17,7 +17,10 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check": "npm run check:docs",
     "coverage": "c8 npm test",
-    "eval:ai": "node eval/run-ai-eval.mjs"
+    "eval:ai": "node eval/run-ai-eval.mjs",
+    "test:lock": "node test/test_instance_lock.mjs",
+    "test:xss": "node test/test_xss.mjs",
+    "package": "node scripts/package-release.mjs"
   },
   "devDependencies": {
     "c8": "^10.1.3"

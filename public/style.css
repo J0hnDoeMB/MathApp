@@ -7,6 +7,26 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;650;700&display=swap");
 
+
+/* Accessibilita': scorciatoia da tastiera per saltare la toolbar. */
+.skip-link {
+  position: fixed;
+  top: -48px;
+  left: 12px;
+  z-index: 10000;
+  padding: 8px 12px;
+  border: 1px solid var(--signal);
+  border-radius: 6px;
+  background: var(--sheet);
+  color: var(--ink);
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 12px;
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 :root {
   color-scheme: light;
   --paper: #edf3f3;

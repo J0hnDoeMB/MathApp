@@ -53,11 +53,12 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 
 ## Fase 3 — Polishing
 
-- onboarding primo avvio e guida in-app
-- packaging Windows e release workflow
-- accessibilità e UX mobile
-- documentazione per utenti finali
-- metriche di errore e diagnostica
+- [x] onboarding primo avvio e guida in-app
+- [ ] packaging Windows firmato/installer
+- [x] release workflow e archivio sorgente versionato (`npm run package`)
+- [x] accessibilità di base (skip link, focus) e smoke mobile 390 px
+- [ ] documentazione per utenti finali completa
+- [x] metriche di errore, first-token trace e diagnostica
 
 ## Regola di feature freeze
 

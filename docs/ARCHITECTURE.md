@@ -10,13 +10,13 @@ MathApp is intentionally **Node-only at its core**:
 
 A missing optional dependency must never block chat, GeoGebra or saved conversations. `/api/diagnostics` exposes detected capabilities; the launcher and Settings show them.
 
-## Module map (v1.5.0)
+## Module map (v1.27.0)
 
 `server.mjs` is the HTTP shell (security, router, static, startup). API route groups live in `routes/`; domain services live in `lib/`. Neither routes nor services import `server.mjs`.
 
 | Module | Responsibility | Depends on |
 |---|---|---|
-| `server.mjs` | security, router, static files, startup | routes |
+| `server.mjs` | security, router, static files, startup, instance lock | routes, instance-lock |
 | `routes/*.mjs` | core API groups + optional plugins (kb/profile/review/study) loaded on demand | lib services |
 | `lib/config.mjs` | settings file, paths, provider/key resolution, capability detection | Node only |
 | `lib/models.mjs` | model catalog, OpenRouter mapping, specialists | config |
@@ -27,6 +27,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/agent.mjs` | agent loop, escalation, delegation, verification counts | llm, tools, prompts, sympy, geogebra, profile |
 | `lib/chat-service.mjs` | chat orchestration: vision, attachments, KB, agent, save | models, llm, documents, kb, agent, session-store |
 | `lib/security.mjs` | CSRF and body-cap request guard | config |
+| `lib/instance-lock.mjs` | single-instance guard per data directory, stale-PID recovery | storage |
 | `routes/index.mjs` | core route dispatch + lazy plugin loader | routes, features |
 | `lib/sympy.mjs` | exact math child process, timeout/output/concurrency limits | util |
 | `lib/geogebra.mjs` | GeoGebra bridge and browser confirmations | session-store, log |
@@ -63,7 +64,7 @@ Dependency direction: `server -> routes/agent -> domain/integration -> infrastru
 
 ## What changed in the refactor
 
-- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~58 lines / 4 KB**.
+- `server.mjs` dropped from **~1,688 lines / 92 KB** to **~93 lines / 5 KB** including startup and the instance lock.
 - API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, review, study, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
 - Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
 - `test/test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
@@ -73,7 +74,7 @@ Dependency direction: `server -> routes/agent -> domain/integration -> infrastru
 1. Browser smoke covers new chat/session/view; `test/test_geogebra_smoke.mjs` covers the GeoGebra applet rebuild in CI.
 2. External dependencies (AI providers, GeoGebra/KaTeX CDN, Whisper models) remain the main failure surface; keep capabilities explicit and fallbacks visible.
 3. Windows/PowerShell setup is convenient but platform-specific; the Node server itself stays portable.
-4. The full browser suite (XSS, conversation switch, GeoGebra applet) still runs manually; only the smoke subset is in CI.
+4. XSS, layout/mobile, conversation switching and 3D remain partly manual; XSS and the mobile smoke are now in CI.
 
 ## Feature flags / lite mode
 
@@ -96,10 +97,11 @@ External I/O is isolated in `lib/llm.mjs`:
 ## Testing
 
 - `npm run eval`: 17 deterministic SymPy cases (`eval/`).
-- `npm test`: 80 checks (23 module + 4 agent + 4 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 40 security/session: CSRF, body limit, traversal, core/full, settings API, schema/migration, atomic JSON/quarantine, state persistence/revision, feature routes, capabilities/diagnostics, request IDs/traces).
-- `npm run test:ui`: 20 browser smoke checks (UI, state store, command bus, settings open, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
+- `npm test`: 88 checks (23 module + 4 agent + 5 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/session + 6 instance lock + parser).
+- `npm run test:ui`: 22 browser smoke checks (UI, skip link, mobile 390 px overflow/composer, state store, command bus, settings open, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
+- `npm run test:xss`: 14 self-contained browser checks (Markdown, tools, LaTeX) with a temporary server, in CI.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test/test_server_cancel.mjs`: cancellation and state revisions.
-- Full browser tests need Puppeteer and a running app; `npm run test:ui` is the CI smoke subset.
-- CI runs Node tests, browser smoke and the Python suite on Windows.
+- `npm run test:ui` and `npm run test:xss` are self-contained; the remaining full-flow browser tests need Puppeteer and a running app.
+- CI runs Node tests, browser smoke, XSS regression and the Python suite on Windows.

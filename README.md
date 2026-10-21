@@ -41,14 +41,17 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 ## Qualità
 
 ```bash
-npm test          # 80 check Node
-npm run test:ui   # 20 check browser (richiede Edge/Chrome + puppeteer-core)
+npm test          # 88 check Node
+npm run test:ui   # 22 check browser (richiede Edge/Chrome + puppeteer-core)
+npm run test:xss  # 14 check browser XSS (richiede Edge/Chrome + puppeteer-core)
 npm run test:geo  # 5 check GeoGebra (richiede CDN)
 npm run eval      # 17 casi SymPy
 npm run coverage  # copertura Node (soglia 65%)
 npm run test:py   # 29 test Python (opzionale)
 npm run eval:ai   # eval con provider reale, solo con chiave
 ```
+
+Per una release: `npm run package` crea `release/mathapp-v<versione>.zip` (sorgente, richiede worktree pulito).
 
 CI su Windows e Linux (Node 18/20/22) con branch protection. Diagnostica: `GET /api/diagnostics` (alias `/api/health`) o `.\start-mathapp.ps1 -Check`.
 
@@ -58,7 +61,7 @@ CI su Windows e Linux (Node 18/20/22) con branch protection. Diagnostica: `GET /
 - [Architettura](docs/ARCHITECTURE.md) · [Contratti](docs/CONTRACTS.md) · [Modello dati](docs/DATA-MODEL.md) · [Persistenza](docs/PERSISTENCE.md)
 - [Capabilities](docs/CAPABILITIES.md) · [Sicurezza](docs/SECURITY-MODEL.md) · [Performance](docs/PERFORMANCE.md) · [Scorecard](docs/SCORECARD.md)
 - [Setup Windows](docs/SETUP-WINDOWS.md) · [Setup macOS/Linux](docs/SETUP-MACOS-LINUX.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Quality gate](docs/QUALITY-GATE.md) · [Osservabilità](docs/OBSERVABILITY.md) · [Limiti noti](docs/KNOWN-LIMITATIONS.md) · [ADR](docs/adr/)
+- [Quality gate](docs/QUALITY-GATE.md) ? [Release](docs/RELEASE.md) ? [Osservabilit?](docs/OBSERVABILITY.md) ? [Limiti noti](docs/KNOWN-LIMITATIONS.md) ? [ADR](docs/adr/)
 
 ## Struttura
 

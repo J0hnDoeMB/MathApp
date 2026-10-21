@@ -7,9 +7,10 @@ MathApp is a local-first app with a stable core and optional feature modules. Sm
 ```bash
 npm ci                    # dev deps (c8)
 npm start                 # Node 18+
-npm coverage              # Node coverage, 40% line gate
-npm test                  # 80 Node checks
-npm run test:ui           # browser smoke (puppeteer-core + Edge/Chrome)
+npm run coverage          # Node coverage, 65% line gate
+npm test                  # 88 Node checks
+npm run test:ui           # 22 browser smoke checks (puppeteer-core + Edge/Chrome)
+npm run test:xss          # 14 self-contained XSS checks (same browser)
 npm run test:geo          # GeoGebra smoke (CDN)
 npm run test:py           # optional Python/SymPy tests
 npm run eval              # 17 deterministic math cases
@@ -29,4 +30,4 @@ The portable core (Node tests, eval, Python tests) runs on Linux in CI. Windows 
 
 ## Releases
 
-Update the version in `package.json`, add a `CHANGELOG.md` entry, tag `vX.Y.Z`, and publish release notes. The `tests` check must be green on `main`; branch protection applies to pull requests.
+Update the version in `package.json`, add a `CHANGELOG.md` entry, run `npm run package`, tag `vX.Y.Z`, and publish release notes with the source zip. The release workflow repeats tests and checks that the tag matches `package.json`. The `tests` check must be green on `main`; branch protection applies to pull requests.

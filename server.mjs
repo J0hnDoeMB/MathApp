@@ -9,9 +9,15 @@ import { serveStatic } from "./lib/http.mjs";
 import { handleApi, prepareApi } from "./routes/index.mjs";
 import { isOptionalApi } from "./lib/features.mjs";
 import { newId, trace } from "./lib/observability.mjs";
+import { acquireInstanceLock } from "./lib/instance-lock.mjs";
 
 const PORT = Number(process.env.MATHAPP_PORT) || 8790;
 const isFullMode = () => SETTINGS.mode === "full";
+const instanceLock = acquireInstanceLock({ port: PORT });
+if (!instanceLock.ok) {
+  console.error("MathApp: " + instanceLock.error + ". Close the other instance or set MATHAPP_DATA_DIR to a different directory.");
+  process.exit(1);
+}
 
 // ---------- http ----------
 const server = http.createServer(async (req, res) => {
@@ -60,7 +66,7 @@ let shuttingDown = false;
 function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
-  try { server.closeAllConnections?.(); server.close(() => process.exit(0)); } catch { process.exit(0); }
+  try { instanceLock.release(); server.closeAllConnections?.(); server.close(() => process.exit(0)); } catch { process.exit(0); }
   setTimeout(() => process.exit(0), 1000).unref();
 }
 process.on("SIGTERM", shutdown);
@@ -68,13 +74,16 @@ process.on("SIGINT", shutdown);
 
 server.on("error", (e) => {
   if (e && e.code === "EADDRINUSE") {
+    instanceLock.release();
     console.error("MathApp: porta " + PORT + " gia' in uso. Chiudi l'altra istanza o usa MATHAPP_PORT.");
     process.exit(1);
   }
+  instanceLock.release();
   console.error("MathApp: errore server: " + (e && e.message || e));
 });
 process.on("uncaughtException", (e) => { try { logErr("uncaught: " + (e && e.stack || e)); } catch {} });
 process.on("unhandledRejection", (e) => { try { logErr("unhandledRejection: " + (e && e.stack || e)); } catch {} });
+process.on("exit", () => instanceLock.release());
 
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`MathApp su http://127.0.0.1:${PORT}`);

@@ -49,6 +49,8 @@ jobs:
         run: npm install --no-save --no-package-lock puppeteer-core
       - name: Browser smoke
         run: npm run test:ui
+      - name: Browser XSS regression
+        run: npm run test:xss
       - name: Coverage summary artifact
         if: always()
         uses: actions/upload-artifact@v7
