@@ -35,7 +35,7 @@ jobs:
           node --check test/test_provider_fallback.mjs
           node --check test/test_session_corrupt.mjs
           node --check test/test_modules.mjs
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Python dependencies
