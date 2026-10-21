@@ -1,0 +1,27 @@
+[
+  {
+    "id": "derivative-x2",
+    "prompt": "Calcola la derivata di x^2 rispetto a x. Rispondi in una riga, con il risultato matematico.",
+    "contains": ["2x", "2*x", "2 x"]
+  },
+  {
+    "id": "integral-x",
+    "prompt": "Calcola l'integrale indefinito di x rispetto a x. Rispondi in una riga, con il risultato matematico.",
+    "contains": ["x^2/2", "x²/2", "x^2 / 2"]
+  },
+  {
+    "id": "solve-quadratic",
+    "prompt": "Risolvi x^2 - 4 = 0. Elenca tutte le soluzioni reali in una riga.",
+    "contains": ["2", "-2"]
+  },
+  {
+    "id": "limit-sinc",
+    "prompt": "Calcola il limite per x che tende a 0 di sin(x)/x. Rispondi in una riga.",
+    "contains": ["1"]
+  },
+  {
+    "id": "derivative-sin",
+    "prompt": "Calcola la derivata di sin(x) rispetto a x. Rispondi in una riga.",
+    "contains": ["cos"]
+  }
+]

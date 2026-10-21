@@ -1,0 +1,24 @@
+{
+  "include": [
+    "server.mjs",
+    "lib/**/*.mjs",
+    "routes/**/*.mjs"
+  ],
+  "exclude": [
+    "test/**",
+    "eval/**",
+    "scripts/**"
+  ],
+  "all": true,
+  "reporter": [
+    "text",
+    "json-summary"
+  ],
+  "report-dir": "coverage",
+  "clean": true,
+  "check-coverage": true,
+  "lines": 40,
+  "statements": 40,
+  "functions": 40,
+  "branches": 40
+}

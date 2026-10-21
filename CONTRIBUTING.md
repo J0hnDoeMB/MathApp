@@ -5,7 +5,9 @@ MathApp is a local-first app with a stable core and optional feature modules. Sm
 ## Setup
 
 ```bash
+npm ci                    # dev deps (c8)
 npm start                 # Node 18+
+npm coverage              # Node coverage, 40% line gate
 npm test                  # 80 Node checks
 npm run test:ui           # browser smoke (puppeteer-core + Edge/Chrome)
 npm run test:geo          # GeoGebra smoke (CDN)

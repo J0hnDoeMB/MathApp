@@ -13,3 +13,4 @@ public/*.new.*
 venv/
 .env
 *.pyc
+coverage/

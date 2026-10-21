@@ -45,7 +45,9 @@ npm test          # 80 check Node
 npm run test:ui   # 16 check browser (richiede Edge/Chrome + puppeteer-core)
 npm run test:geo  # 5 check GeoGebra (richiede CDN)
 npm run eval      # 17 casi SymPy
+npm run coverage  # copertura Node (soglia 40%)
 npm run test:py   # 29 test Python (opzionale)
+npm run eval:ai   # eval con provider reale, solo con chiave
 ```
 
 CI su Windows e Linux (Node 18/20/22) con branch protection. Diagnostica: `GET /api/diagnostics` (alias `/api/health`) o `.\start-mathapp.ps1 -Check`.

@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.25.0 - 2026-10-20
+
+### Added
+- Browser smoke on Linux CI (headless Chrome) and Linux browser paths.
+- Coverage instrumentation with c8 (`npm run coverage`, 40% line gate), dev-only.
+- Optional real-provider eval harness (`npm run eval:ai`), skipped without a key.
+
+### Changed
+- Portable CI installs dev dependencies and runs coverage + browser smoke.
+
 ## v1.24.1 - 2026-10-20
 
 ### Changed

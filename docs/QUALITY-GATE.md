@@ -30,9 +30,10 @@ Gli extra restano dietro il gate core/full e, per la UI, dietro il loader `publi
 3. `npm run test:geo` verde: **5 check** GeoGebra.
 4. `npm run test:py` verde: **29 test** SymPy.
 5. `npm run eval` verde (17 casi SymPy).
-6. `main` protetto dal check CI `tests`; niente force-push/delete.
-7. `.\start-mathapp.ps1 -Check` verde, incluso storage e backup scrivibili.
-8. `GET /api/diagnostics` (o `/api/health`) verde: Node, Python/SymPy/Whisper, provider, data dir, backup dir, porta, modo.
+6. `npm run coverage` verde (soglia 40% righe; c8); `npm run eval:ai` opzionale, con chiave e revisione umana.
+7. `main` protetto dal check CI `tests`; niente force-push/delete.
+8. `.\start-mathapp.ps1 -Check` verde, incluso storage e backup scrivibili.
+9. `GET /api/diagnostics` (o `/api/health`) verde: Node, Python/SymPy/Whisper, provider, data dir, backup dir, porta, modo.
 
 ## Definition of done per una modifica
 
