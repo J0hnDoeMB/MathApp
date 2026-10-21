@@ -24,6 +24,13 @@ const server = http.createServer(async (req, res) => {
   res.on("finish", () => {
     if (url.pathname.startsWith("/api/")) trace("http", { id: reqId, method: req.method, path: url.pathname, status: res.statusCode, ms: Date.now() - started });
   });
+  // Test seam used by c8/browser cleanup so child-server coverage is flushed.
+  if (process.env.MATHAPP_TEST_SHUTDOWN === "1" && req.method === "POST" && url.pathname === "/__test_shutdown") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("shutdown");
+    setTimeout(shutdown, 25);
+    return;
+  }
   const prep = await prepareApi(url.pathname, isFullMode());
   if (!prep.ok) {
     res.writeHead(500, { "Content-Type": "application/json" });
@@ -48,6 +55,16 @@ const server = http.createServer(async (req, res) => {
     }
   }
 });
+
+let shuttingDown = false;
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  try { server.closeAllConnections?.(); server.close(() => process.exit(0)); } catch { process.exit(0); }
+  setTimeout(() => process.exit(0), 1000).unref();
+}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 server.on("error", (e) => {
   if (e && e.code === "EADDRINUSE") {

@@ -36,7 +36,7 @@ Dipendenza consentita: `server → agent → servizi → storage/config`. I serv
 
 ```powershell
 npm test              # 80 check: moduli, agente, parser, security/sessione
-npm run test:ui       # 16 check browser (richiede browser)
+npm run test:ui       # 20 check browser (richiede browser)
 npm run test:geo      # 5 check GeoGebra (richiede rete CDN)
 npm run test:py       # parser SymPy
 node test/test_server_cancel.mjs

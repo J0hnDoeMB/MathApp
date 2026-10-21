@@ -47,7 +47,7 @@ async function waitReady(port) {
 const port = await freePort();
 const child = spawn(process.execPath, ["server.mjs"], {
   cwd: root,
-  env: { ...process.env, MATHAPP_PORT: String(port), MATHAPP_SETTINGS_FILE: settingsFile, MATHAPP_AUTH_FILE: authFile, MATHAPP_DATA_DIR: dataDir, MATHAPP_BACKUP_DIR: backupDir, MATHAPP_NO_WHISPER: "1" },
+  env: { ...process.env, MATHAPP_PORT: String(port), MATHAPP_SETTINGS_FILE: settingsFile, MATHAPP_AUTH_FILE: authFile, MATHAPP_DATA_DIR: dataDir, MATHAPP_BACKUP_DIR: backupDir, MATHAPP_NO_WHISPER: "1", MATHAPP_TEST_SHUTDOWN: "1" },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true,
 });
@@ -168,8 +168,10 @@ try {
   const big = await request(port, "POST", "/api/chat", { headers: { "Content-Type": "application/json", "Content-Length": String(65 * 1024 * 1024) } });
   chk("body > 64MB -> 413", big.status === 413);
 } finally {
-  child.kill();
-  await new Promise((r) => setTimeout(r, 500));
+  try { await fetch(`http://127.0.0.1:${port}/__test_shutdown`, { method: "POST", signal: AbortSignal.timeout(1000) }); } catch {}
+  await new Promise((r) => setTimeout(r, 600));
+  if (child.exitCode === null) child.kill();
+  await new Promise((r) => setTimeout(r, 300));
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
 }
 

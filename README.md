@@ -42,10 +42,10 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 
 ```bash
 npm test          # 80 check Node
-npm run test:ui   # 16 check browser (richiede Edge/Chrome + puppeteer-core)
+npm run test:ui   # 20 check browser (richiede Edge/Chrome + puppeteer-core)
 npm run test:geo  # 5 check GeoGebra (richiede CDN)
 npm run eval      # 17 casi SymPy
-npm run coverage  # copertura Node (soglia 40%)
+npm run coverage  # copertura Node (soglia 65%)
 npm run test:py   # 29 test Python (opzionale)
 npm run eval:ai   # eval con provider reale, solo con chiave
 ```

@@ -311,7 +311,8 @@ function setView3d(on, expectedGeneration = appState.domain.conversationGenerati
   appState.domain.ggb3d = on;
   updateViewButton();
 }
-$("#view3d").addEventListener("click", () => { setView3d(!appState.domain.ggb3d); saveState(); });
+function toggleView3d() { setView3d(!appState.domain.ggb3d); saveState(); return appState.domain.ggb3d; }
+$("#view3d").addEventListener("click", () => MathAppState.dispatch("view.toggle3d").catch((err) => console.warn("[MathApp] view.toggle3d", err)));
 updateViewButton();
 
 // ---------- finestra del grafico: vista 2D personalizzata ----------
@@ -1678,13 +1679,12 @@ async function refreshHistory() {
       t.appendChild(tagRow);
       const del = document.createElement("button");
       del.type = "button"; del.className = "hist-del"; del.textContent = "Elimina";
-      del.addEventListener("click", async (ev) => {
+      del.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        await fetch("/api/conversation?id=" + encodeURIComponent(it.id), { method: "DELETE" });
-        refreshHistory();
+        MathAppState.dispatch("conversation.delete", { id: it.id }).catch((err) => console.warn("[MathApp] conversation.delete", err));
       });
       row.append(t, del);
-      row.addEventListener("click", () => openConv(it.id));
+      row.addEventListener("click", () => MathAppState.dispatch("conversation.open", { id: it.id }).catch((err) => console.warn("[MathApp] conversation.open", err)));
       list.appendChild(row);
     }
   } catch { list.innerHTML = '<div class="hist-empty">Cronologia non disponibile.</div>'; }
@@ -1715,8 +1715,14 @@ async function openConv(id) {
     }
   }
 }
-$("#historyBtn").addEventListener("click", () => { drawer.hidden = !drawer.hidden; if (!drawer.hidden) { refreshHistory(); refreshBackupInfo(); } });
-$("#historyClose").addEventListener("click", () => { drawer.hidden = true; });
+function toggleHistory() {
+  drawer.hidden = !drawer.hidden;
+  if (!drawer.hidden) { refreshHistory(); refreshBackupInfo(); }
+  return !drawer.hidden;
+}
+function closeHistory() { drawer.hidden = true; return false; }
+$("#historyBtn").addEventListener("click", () => MathAppState.dispatch("history.toggle").catch((err) => console.warn("[MathApp] history.toggle", err)));
+$("#historyClose").addEventListener("click", () => MathAppState.dispatch("history.close").catch((err) => console.warn("[MathApp] history.close", err)));
 
 // ---------- copie di sicurezza ----------
 async function refreshBackupInfo() {
@@ -1730,16 +1736,17 @@ async function refreshBackupInfo() {
       : "nessun backup";
   } catch { el.textContent = ""; }
 }
-$("#backupBtn").addEventListener("click", async () => {
+async function createBackup() {
   const b = $("#backupBtn");
-  b.disabled = true; const old = b.textContent; b.textContent = "💾 salvo…";
+  b.disabled = true; const old = b.textContent; b.textContent = "salvo…";
   try {
     const r = await (await fetch("/api/backup", { method: "POST" })).json();
     flash(r.ok ? "backup creato" : "backup non riuscito: " + (r.error || ""));
-  } catch { flash("backup non riuscito"); }
-  b.disabled = false; b.textContent = old;
-  refreshBackupInfo();
-});
+    return !!r.ok;
+  } catch { flash("backup non riuscito"); return false; }
+  finally { b.disabled = false; b.textContent = old; refreshBackupInfo(); }
+}
+$("#backupBtn").addEventListener("click", () => MathAppState.dispatch("backup.create").catch((err) => console.warn("[MathApp] backup.create", err)));
 
 // ---------- allegati ----------
 const MAX_FILE = 8 * 1024 * 1024, MAX_FILES = 4;
@@ -2240,24 +2247,24 @@ function applyTutorMode(mode) {
     }
   }
 }
-$("#socraticBtn").addEventListener("click", () => {
-  const on = appState.domain.tutorMode !== "socratic";
-  applyTutorMode(on ? "socratic" : null);
-  flash(on ? "Esercitami: il tutor ti guida con domande" : "modalità spiegazione normale");
-});
-$("#stepBtn").addEventListener("click", () => {
-  const on = !appState.domain.stepMode;
-  applyTutorMode(on ? "step" : null);
-  flash(on ? "Passo-passo: le risposte si rivelano un passo alla volta" : "modalità spiegazione normale");
-});
-$("#modeHintExit").addEventListener("click", () => { applyTutorMode(null); flash("modalità spiegazione normale"); });
+function toggleTutor(mode) {
+  const on = mode === "socratic" ? appState.domain.tutorMode !== "socratic" : !appState.domain.stepMode;
+  applyTutorMode(on ? mode : null);
+  flash(on ? (mode === "socratic" ? "Esercitami: il tutor ti guida con domande" : "Passo-passo: le risposte si rivelano un passo alla volta") : "modalità spiegazione normale");
+  return on ? mode : null;
+}
+$("#socraticBtn").addEventListener("click", () => MathAppState.dispatch("tutor.toggle", { mode: "socratic" }).catch((err) => console.warn("[MathApp] tutor.toggle", err)));
+$("#stepBtn").addEventListener("click", () => MathAppState.dispatch("tutor.toggle", { mode: "step" }).catch((err) => console.warn("[MathApp] tutor.toggle", err)));
+$("#modeHintExit").addEventListener("click", () => MathAppState.dispatch("tutor.off").catch((err) => console.warn("[MathApp] tutor.off", err)));
 
-$("#themeBtn").addEventListener("click", () => {
+function toggleTheme() {
   const dark = !document.body.classList.contains("theme-dark");
   document.body.classList.toggle("theme-dark", dark);
   try { localStorage.setItem("mathapp.dark", dark ? "1" : ""); } catch {}
   applyGgbTheme();
-});
+  return dark;
+}
+$("#themeBtn").addEventListener("click", () => MathAppState.dispatch("theme.toggle").catch((err) => console.warn("[MathApp] theme.toggle", err)));
 
 // mentre l'IA risponde il pulsante Invia è "Ferma": clic = interrompi (senza inviare)
 $("#send").addEventListener("click", (e) => { if (appState.ui.streaming) { e.preventDefault(); MathAppState.dispatch("chat.stop").catch((err) => console.warn("[MathApp] chat.stop", err)); } });
@@ -2276,7 +2283,7 @@ function refreshReviewBadge() { if (reviewApi) reviewApi.refreshBadge(); }
 
 // ---------- ricerca nella cronologia ----------
 let histTimer = null;
-$("#historySearch").addEventListener("input", () => { clearTimeout(histTimer); histTimer = setTimeout(refreshHistory, 250); });
+$("#historySearch").addEventListener("input", (e) => { clearTimeout(histTimer); histTimer = setTimeout(() => MathAppState.dispatch("history.search", { q: e.target.value }).catch((err) => console.warn("[MathApp] history.search", err)), 250); });
 
 // ---------- fonti dagli appunti/libri (rete concettuale) ----------
 const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -2500,9 +2507,9 @@ function exportMarkdown() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   flash("Markdown scaricato");
 }
-$("#exportPdf").addEventListener("click", () => exportPdf());
-$("#exportMd").addEventListener("click", () => exportMarkdown());
-$("#calcPdf").addEventListener("click", () => exportNotebookPdf());
+$("#exportPdf").addEventListener("click", () => MathAppState.dispatch("export.pdf").catch((err) => console.warn("[MathApp] export.pdf", err)));
+$("#exportMd").addEventListener("click", () => MathAppState.dispatch("export.markdown").catch((err) => console.warn("[MathApp] export.markdown", err)));
+$("#calcPdf").addEventListener("click", () => MathAppState.dispatch("export.notebook").catch((err) => console.warn("[MathApp] export.notebook", err)));
 
 // ---------- scorciatoie da tastiera ----------
 window.addEventListener("keydown", (e) => {
@@ -2619,15 +2626,43 @@ MathAppState.handle("view.mode", ({ mode }) => setMode(mode === "algebra" ? "alg
 MathAppState.handle("chat.stop", () => stopStreaming());
 MathAppState.handle("chat.regenerate", () => regenerate());
 
+
 $("#settingsBtn").addEventListener("click", () => { MathAppState.dispatch("settings.toggle").catch((e) => console.warn("[MathApp] settings.toggle", e)); });
-  $("#settingsClose").addEventListener("click", () => { d.hidden = true; });
+  $("#settingsClose").addEventListener("click", () => MathAppState.dispatch("settings.close").catch((err) => console.warn("[MathApp] settings.close", err)));
   const so = $("#setupOpen"); if (so) so.addEventListener("click", () => { MathAppState.dispatch("settings.open").catch((e) => console.warn("[MathApp] settings.open", e)); });
   $("#settingsSave").addEventListener("click", () => { MathAppState.dispatch("settings.save").catch((e) => console.warn("[MathApp] settings.save", e)); });
   $("#settingsClearKey").addEventListener("click", () => { MathAppState.dispatch("settings.clearKey").catch((e) => console.warn("[MathApp] settings.clearKey", e)); });
-  const dr = $("#diagRefresh"); if (dr) dr.addEventListener("click", () => { loadDiagnostics(); });
+  const dr = $("#diagRefresh"); if (dr) dr.addEventListener("click", () => MathAppState.dispatch("diagnostics.refresh").catch((err) => console.warn("[MathApp] diagnostics.refresh", err)));
 }
 
 initSettingsUI();
+
+MathAppState.handle("settings.close", () => { const el = $("#settingsDrawer"); if (el) el.hidden = true; return false; });
+MathAppState.handle("theme.toggle", toggleTheme);
+MathAppState.handle("tutor.toggle", ({ mode }) => toggleTutor(mode === "socratic" ? "socratic" : "step"));
+MathAppState.handle("tutor.off", () => { applyTutorMode(null); flash("modalità spiegazione normale"); return null; });
+MathAppState.handle("view.toggle3d", toggleView3d);
+MathAppState.handle("history.toggle", toggleHistory);
+MathAppState.handle("history.close", closeHistory);
+MathAppState.handle("history.search", async ({ q }) => { const el = $("#historySearch"); if (el && typeof q === "string") el.value = q; await refreshHistory(); return true; });
+MathAppState.handle("conversation.open", ({ id }) => openConv(id));
+MathAppState.handle("conversation.delete", async ({ id }) => {
+  if (!id) return false;
+  await fetch("/api/conversation?id=" + encodeURIComponent(id), { method: "DELETE" });
+  await refreshHistory();
+  return true;
+});
+MathAppState.handle("backup.create", createBackup);
+MathAppState.handle("export.pdf", exportPdf);
+MathAppState.handle("export.markdown", exportMarkdown);
+MathAppState.handle("export.notebook", exportNotebookPdf);
+MathAppState.handle("diagnostics.refresh", loadDiagnostics);
+MathAppState.handle("model.select", ({ model }) => {
+  if (typeof model !== "string" || !model) return appState.domain.currentModel;
+  appState.domain.currentModel = model;
+  if (modelEl) modelEl.value = model;
+  return model;
+});
 
 MathAppState.handle("session.restore", () => restoreSession());
 
@@ -2643,7 +2678,7 @@ async function boot() {
     const vis = j.vision || {};
     modelEl.innerHTML = j.models.map((m) => `<option value="${m}">${m}${vis[m] === false ? " · solo testo" : ""}</option>`).join("");
     appState.domain.currentModel = j.default || appState.domain.currentModel; modelEl.value = appState.domain.currentModel;
-    modelEl.addEventListener("change", () => (appState.domain.currentModel = modelEl.value));
+    modelEl.addEventListener("change", () => MathAppState.dispatch("model.select", { model: modelEl.value }).catch((err) => console.warn("[MathApp] model.select", err)));
   } catch { modelEl.innerHTML = `<option>${appState.domain.currentModel}</option>`; }
   await loadSettings();
   await MathAppState.dispatch("session.restore");

@@ -1,16 +1,16 @@
 # Product scorecard
 
-Current state (v1.25.0):
+Current state (v1.26.0):
 
 | Metric | Current |
 |---|---|
 | Build/CI | Windows + Linux core matrix, branch protected |
 | Node checks | 80 |
-| UI smoke | 16 |
+| UI smoke | 20 |
 | GeoGebra smoke | 5 |
 | Python tests | 29 |
 | Portable CI | Node 18 / 20 / 22 on Linux + browser smoke |
-| Coverage | c8, 40% line gate |
+| Coverage | c8, 65% line gate (69.0% measured) |
 | Real-provider eval | optional, key-gated |
 | Math eval cases | 17 |
 | Critical vulnerabilities | none known; no runtime npm deps |

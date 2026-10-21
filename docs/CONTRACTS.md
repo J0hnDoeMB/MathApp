@@ -123,8 +123,9 @@ on(event, fn) / emit(event, value) / snapshot()
 ```text
 MathAppState.handle(name, fn)
 MathAppState.dispatch(name, payload) -> Promise
+// events: command:<name>, command:done:<name>, command:error:<name>
 ```
-Commands: `session.new`, `chat.send`, `session.restore`, `settings.open`, `settings.toggle`, `settings.save`, `settings.clearKey`, `view.mode`, `chat.stop`, `chat.regenerate`. UI events call dispatch; application handlers mutate state.
+Commands: `session.new`, `chat.send`, `session.restore`, `settings.open`, `settings.toggle`, `settings.save`, `settings.clearKey`, `settings.close`, `view.mode`, `view.toggle3d`, `chat.stop`, `chat.regenerate`, `theme.toggle`, `tutor.toggle`, `tutor.off`, `history.toggle`, `history.close`, `history.search`, `conversation.open`, `conversation.delete`, `backup.create`, `export.pdf`, `export.markdown`, `export.notebook`, `diagnostics.refresh`, `model.select`. UI events call dispatch; application handlers mutate state.
 Implementation: `public/state.js`. `app.js` uses `MathAppState` directly; no legacy global state.
 
 ### ChatOrchestrator
@@ -156,5 +157,5 @@ Implementazione: `lib/storage.mjs`.
 
 ## Gap noti
 
-- Lo stato UI/domain è in `public/state.js`, ma `app.js` è ancora un classico script: l'event model UI → application è il prossimo lavoro del layer Presentation.
+- Lo stato UI/domain è in `public/state.js`; i top-level intent della UI passano dal command bus. I controlli interni (form, editor, widget GeoGebra) restano nella Presentation e non mutano lo stato applicativo senza comando.
 - I plugin backend sono caricati on-demand; il codice UI delle feature opzionali è ancora nel bundle unico di `app.js`.

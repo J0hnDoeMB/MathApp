@@ -52,9 +52,14 @@
     const fn = commands.get(name);
     if (typeof fn !== "function") throw new Error("comando non registrato: " + name);
     emit("command:" + name, payload);
-    const result = await fn(payload || {});
-    emit("command:done:" + name, result);
-    return result;
+    try {
+      const result = await fn(payload || {});
+      emit("command:done:" + name, result);
+      return result;
+    } catch (error) {
+      emit("command:error:" + name, { error, payload });
+      throw error;
+    }
   }
   window.MathAppState = {
     domain,

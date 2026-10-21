@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.26.0 - 2026-10-21
+
+### Added
+- Client command bus covers top-level UI intents: theme, tutor mode, 3D view, history/search, conversation open/delete, backup, exports, diagnostics and model selection.
+- Browser smoke now verifies theme, tutor, history and command lifecycle events (20 checks).
+- `dispatch` emits `command:error` on handler rejection and keeps `command`/`command:done`.
+
+### Changed
+- Coverage gate raised from 40% to 65% lines after fixing child-server attribution (69.0% measured).
+- Server accepts a graceful test-only shutdown (`MATHAPP_TEST_SHUTDOWN=1`) so c8 can measure `server.mjs` and routes; no effect in normal runs.
+- Roadmap: UI → application event model completed for top-level flows; widget internals stay in Presentation.
+
 ## v1.25.0 - 2026-10-20
 
 ### Added

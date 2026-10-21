@@ -78,7 +78,7 @@ function browserPath() {
 const port = await freePort();
 const child = spawn(process.execPath, ["server.mjs"], {
   cwd: root,
-  env: { ...process.env, MATHAPP_PORT: String(port), MATHAPP_SETTINGS_FILE: settingsFile, MATHAPP_AUTH_FILE: authFile, MATHAPP_DATA_DIR: dataDir, MATHAPP_BACKUP_DIR: backupDir, MATHAPP_NO_WHISPER: "1" },
+  env: { ...process.env, MATHAPP_PORT: String(port), MATHAPP_SETTINGS_FILE: settingsFile, MATHAPP_AUTH_FILE: authFile, MATHAPP_DATA_DIR: dataDir, MATHAPP_BACKUP_DIR: backupDir, MATHAPP_NO_WHISPER: "1", MATHAPP_TEST_SHUTDOWN: "1" },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true,
 });
@@ -125,7 +125,41 @@ try {
   }));
   chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string" && !store.legacy);
   const commands = await page.evaluate(() => window.MathAppState.commands());
-  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore", "settings.toggle", "settings.save", "view.mode", "chat.stop", "chat.regenerate"].every((c) => commands.includes(c)));
+  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore", "settings.open", "settings.toggle", "settings.save", "settings.clearKey", "settings.close", "view.mode", "view.toggle3d", "chat.stop", "chat.regenerate", "theme.toggle", "tutor.toggle", "tutor.off", "history.toggle", "history.close", "history.search", "conversation.open", "conversation.delete", "backup.create", "export.pdf", "export.markdown", "export.notebook", "diagnostics.refresh", "model.select"].every((c) => commands.includes(c)));
+
+  const busEvents = await page.evaluate(async () => {
+    const seen = [];
+    const off = [
+      MathAppState.on("command:test.ok", () => seen.push("start")),
+      MathAppState.on("command:done:test.ok", () => seen.push("done")),
+      MathAppState.on("command:error:test.fail", () => seen.push("error")),
+    ];
+    MathAppState.handle("test.ok", () => ({ ok: true }));
+    MathAppState.handle("test.fail", () => { throw new Error("boom"); });
+    await MathAppState.dispatch("test.ok");
+    try { await MathAppState.dispatch("test.fail"); } catch {}
+    off.forEach((fn) => fn());
+    return seen;
+  });
+  chk("command bus lifecycle events", busEvents.join(",") === "start,done,error");
+
+  const themeBefore = await page.evaluate(() => document.body.classList.contains("theme-dark"));
+  await page.click("#themeBtn");
+  const themeAfter = await page.evaluate(() => document.body.classList.contains("theme-dark"));
+  chk("command theme.toggle", themeAfter !== themeBefore);
+  await page.click("#themeBtn");
+
+  await page.evaluate(() => window.MathAppState.dispatch("tutor.toggle", { mode: "socratic" }));
+  const tutorOn = await page.evaluate(() => window.MathAppState.domain.tutorMode);
+  await page.evaluate(() => window.MathAppState.dispatch("tutor.off"));
+  const tutorOff = await page.evaluate(() => window.MathAppState.domain.tutorMode);
+  chk("command tutor.toggle/off", tutorOn === "socratic" && tutorOff === null);
+
+  await page.evaluate(() => window.MathAppState.dispatch("history.toggle"));
+  await page.waitForFunction(() => !document.querySelector("#historyDrawer").hidden, { timeout: 5000 });
+  chk("command history.toggle", true);
+  await page.evaluate(() => window.MathAppState.dispatch("history.close"));
+  await page.waitForFunction(() => document.querySelector("#historyDrawer").hidden, { timeout: 5000 });
 
   await page.evaluate(() => window.MathAppState.dispatch("settings.open"));
   await page.waitForFunction(() => !document.querySelector("#settingsDrawer").hidden, { timeout: 5000 });
@@ -181,8 +215,10 @@ try {
   if (pageErrors.length) console.error(pageErrors.slice(0, 4).join("\n"));
 } finally {
   if (browser) await browser.close();
-  child.kill();
-  await new Promise((r) => setTimeout(r, 500));
+  try { await fetch(`http://127.0.0.1:${port}/__test_shutdown`, { method: "POST", signal: AbortSignal.timeout(1000) }); } catch {}
+  await new Promise((r) => setTimeout(r, 600));
+  if (child.exitCode === null) child.kill();
+  await new Promise((r) => setTimeout(r, 300));
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
 }
 console.log("----");

@@ -47,7 +47,7 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] prompt version + eval math deterministica (17 casi)
 - [x] security model, performance budget, scorecard, ADR
 - [x] adapter container in produzione + validazione repository secondari
-- [ ] event model per tutti i flussi UI → application
+- [x] event model per i top-level flussi UI → application (command bus; i widget interni restano Presentation).
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
 
