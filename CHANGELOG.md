@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.26.1 - 2026-10-21
+
+### Changed
+- Added Dependabot for npm/GitHub Actions with Node 18-compatible c8 pinning.
+- Added CodeQL analysis (JavaScript/TypeScript + Python) on push, PR and weekly schedule.
+- CI now runs `npm audit --audit-level=high` and uploads the coverage summary artifact.
+- Package metadata now declares MIT license, repository, homepage and issue tracker.
+- Updated the security policy supported version to 1.26.x.
+
 ## v1.26.0 - 2026-10-21
 
 ### Added

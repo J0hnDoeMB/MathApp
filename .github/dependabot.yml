@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-dev:
+        dependency-type: development
+        patterns: ["*"]
+    ignore:
+      # c8 11+ requires Node 20; the project still supports Node 18.
+      - dependency-name: c8
+        versions: [">=11"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

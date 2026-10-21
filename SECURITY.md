@@ -4,7 +4,7 @@ MathApp runs locally on a single user's machine. It does not include a hosted se
 
 ## Supported versions
 
-Security fixes target the latest release on `main` (currently `1.24.x`). Older tags are kept for reference but are not actively patched.
+Security fixes target the latest release on `main` (currently `1.26.x`). Older tags are kept for reference but are not actively patched.
 
 ## Reporting a vulnerability
 
