@@ -1,7 +1,7 @@
 # Known limitations
 
 - **Local-first, single-user**: no multi-user auth or multi-writer transaction; SQLite is not used.
-- **UI bundle**: the core `app.js` remains large, though Markdown/KaTeX and formatting helpers now live in `public/core/`; optional UI is lazy, core rendering/state is still one classic script.
+- **UI bundle**: the core `app.js` remains large (~2.5k lines), though Markdown/KaTeX, formatting, note sources and export helpers now live in `public/core/`; optional UI is lazy, core rendering/state is still one classic script.
 - **Browser tests**: CI runs UI smoke, mobile viewport, self-contained XSS and conversation-switch regression; layout/3D and model-provider browser flows remain manual.
 - **Coverage**: c8 reports Node line coverage, including child server processes, and enforces a 65% floor (69.9% measured); browser UI coverage is still incomplete.
 - **AI eval**: math engine eval is deterministic; teacher-quality, GeoGebra quality and hallucination evals require real providers + human review and are not in CI.

@@ -10,7 +10,7 @@ MathApp is intentionally **Node-only at its core**:
 
 A missing optional dependency must never block chat, GeoGebra or saved conversations. `/api/diagnostics` exposes detected capabilities; the launcher and Settings show them.
 
-## Module map (v1.28.0)
+## Module map (v1.29.0)
 
 `server.mjs` is the HTTP shell (security, router, static, startup). API route groups live in `routes/`; domain services live in `lib/`. Neither routes nor services import `server.mjs`.
 
@@ -49,6 +49,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
 | `public/state.js` | client domain/UI store, command bus and events | browser only |
 | `public/core/format.js`, `public/core/markdown.js` | formatting helpers and safe Markdown/KaTeX rendering | browser only |
+| `public/core/sources.js`, `public/core/export.js` | note-source matching and PDF/Markdown export | browser only |
 | `public/sw.js` | offline shell and CDN asset cache (GET only; never `/api`) | browser only |
 | `public/features.js`, `public/features/*.js` | lazy optional UI plugins (quiz, review, TTS, KB, style) | `MathAppApp` API |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |

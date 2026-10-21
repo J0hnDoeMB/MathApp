@@ -40,6 +40,8 @@ jobs:
           node --check public/sw.js
           node --check public/core/format.js
           node --check public/core/markdown.js
+          node --check public/core/sources.js
+          node --check public/core/export.js
           node --check public/state.js
           node --check public/features.js
           find public/features -name '*.js' -print0 | xargs -0 -n1 node --check

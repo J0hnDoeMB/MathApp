@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.29.0 - 2026-10-21
+
+### Changed
+- Further core split: note-source matching moved to `public/core/sources.js` and PDF/Markdown export to `public/core/export.js`; `app.js` drops from 2595 to 2468 lines and stays build-free.
+- Service-worker cache version bumped to `mathapp-v2` so existing clients pick up the new core scripts atomically.
+
+### Tests
+- 88 Node, 24 UI, 1 conversation-switch, 14 XSS, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage unchanged at 69.9%.
+
 ## v1.28.0 - 2026-10-21
 
 ### Added
