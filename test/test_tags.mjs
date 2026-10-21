@@ -3,13 +3,15 @@ import path from "node:path";
 // Verifica Fase D: etichette delle conversazioni + ricerca globale nei contenuti.
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 let puppeteer;
 try { puppeteer = createRequire(import.meta.url)("puppeteer"); }
 catch { const alt = process.env.MATHAPP_PUPPETEER; if (!alt) throw new Error("Puppeteer non installato: esegui npm i -D puppeteer oppure imposta MATHAPP_PUPPETEER."); puppeteer = createRequire(alt)("puppeteer"); }
 
 const BASE = "http://127.0.0.1:8790";
-const CONVDIR = path.join("C:\\Users\\Utente\\Documents\\MathApp", "data", "conversations");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const CONVDIR = path.join(process.env.MATHAPP_DATA_DIR || path.join(ROOT, "data"), "conversations");
 const UI = "tags-test-ui";
 const WAIT = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -62,7 +64,9 @@ try {
     await WAIT(500);
     await page.waitForFunction(() => !document.querySelector("#historyList .hist-empty") || document.querySelector("#historySearch").value.trim() === "", { timeout: 5000 }).catch(() => {});
   };
-  const rowOf = (title) => `[...document.querySelectorAll("#historyList .hist-item")].find((li) => li.querySelector("b").textContent === ${JSON.stringify(title)})`;
+  await page.evaluate(() => {
+    window.__rowByTitle = (title) => [...document.querySelectorAll("#historyList .hist-item")].find((li) => li.querySelector("b").textContent === title) || null;
+  });
   // attende che la lista CONTENGA le conversazioni volute e NON contenga le altre
   // (la cronologia può avere altre conversazioni che matchano la stessa parola)
   const expectList = async (want, not = []) => {
@@ -76,9 +80,9 @@ try {
   await page.click("#historyBtn");
   await page.waitForFunction(() => document.querySelectorAll("#historyList .hist-item").length >= 2, { timeout: 15000 });
   let s = await page.evaluate((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     return { chip: row.querySelector(".hist-tag-name").textContent, nChip: row.querySelectorAll(".hist-tag").length };
-  }, rowOf("Studio del cerchio"));
+  }, "Studio del cerchio");
   assert.equal(s.chip, "#geometria", "il chip dell'etichetta è mostrato");
   assert.equal(s.nChip, 1, "una sola etichetta");
 
@@ -86,13 +90,13 @@ try {
   await search("derivata");
   await expectList(["Derivate e pendenza"], ["Studio del cerchio"]);
   s = await page.evaluate((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     return {
       title: row.querySelector("b").textContent,
       snip: (row.querySelector(".hist-snip") || {}).textContent || "",
       where: (row.querySelector(".hist-where") || {}).textContent || "",
     };
-  }, rowOf("Derivate e pendenza"));
+  }, "Derivate e pendenza");
   assert.match(s.snip, /derivata di x\^3/, "l'estratto mostra la frase trovata (" + s.snip + ")");
   assert.match(s.where, /domanda/, "il risultato dice dove è stato trovato");
 
@@ -100,12 +104,12 @@ try {
   await search("monomio");
   await expectList(["Derivate e pendenza"], ["Studio del cerchio"]);
   s = await page.evaluate((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     return {
       snip: (row.querySelector(".hist-snip") || {}).textContent || "",
       where: (row.querySelector(".hist-where") || {}).textContent || "",
     };
-  }, rowOf("Derivate e pendenza"));
+  }, "Derivate e pendenza");
   assert.match(s.snip, /monomio/, "estratto dalla risposta");
   assert.match(s.where, /risposta/);
 
@@ -113,9 +117,9 @@ try {
   await search("pi*r^2");
   await expectList(["Studio del cerchio"], ["Derivate e pendenza"]);
   s = await page.evaluate((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     return { where: (row.querySelector(".hist-where") || {}).textContent || "" };
-  }, rowOf("Studio del cerchio"));
+  }, "Studio del cerchio");
   assert.match(s.where, /calcolo/, "trovato nei calcoli (" + s.where + ")");
 
   // 5) filtro per #etichetta (scritto a mano)
@@ -125,35 +129,35 @@ try {
   // 6) aggiunta etichetta dalla riga (dtest-1)
   await search("");
   await page.waitForFunction(() => document.querySelectorAll("#historyList .hist-item").length >= 2, { timeout: 15000 });
-  await page.evaluate((r) => eval(r).querySelector(".hist-tag-add").click(), rowOf("Derivate e pendenza"));
-  await page.waitForFunction((r) => !!eval(r).querySelector(".hist-tag-input"), { timeout: 5000 }, rowOf("Derivate e pendenza"));
+  await page.evaluate((r) => window.__rowByTitle(r).querySelector(".hist-tag-add").click(), "Derivate e pendenza");
+  await page.waitForFunction((r) => !!window.__rowByTitle(r).querySelector(".hist-tag-input"), { timeout: 5000 }, "Derivate e pendenza");
   await page.evaluate((r) => {
-    const inp = eval(r).querySelector(".hist-tag-input");
+    const inp = window.__rowByTitle(r).querySelector(".hist-tag-input");
     inp.value = "analisi";
     inp.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-  }, rowOf("Derivate e pendenza"));
+  }, "Derivate e pendenza");
   await page.waitForFunction((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     return [...row.querySelectorAll(".hist-tag-name")].some((c) => c.textContent === "#analisi");
-  }, { timeout: 10000 }, rowOf("Derivate e pendenza"));
+  }, { timeout: 10000 }, "Derivate e pendenza");
   let saved = await (await fetch(BASE + "/api/conversation?id=dtest-1")).json();
   assert.deepEqual(saved.tags, ["analisi"], "l'etichetta è salvata nel file della conversazione");
 
   // 7) rimozione etichetta con la ×
   await page.evaluate((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     const chip = [...row.querySelectorAll(".hist-tag")].find((c) => c.querySelector(".hist-tag-name").textContent === "#analisi");
     chip.querySelector(".hist-tag-x").click();
-  }, rowOf("Derivate e pendenza"));
+  }, "Derivate e pendenza");
   await page.waitForFunction((r) => {
-    const row = eval(r);
+    const row = window.__rowByTitle(r);
     return ![...row.querySelectorAll(".hist-tag-name")].some((c) => c.textContent === "#analisi");
-  }, { timeout: 10000 }, rowOf("Derivate e pendenza"));
+  }, { timeout: 10000 }, "Derivate e pendenza");
   saved = await (await fetch(BASE + "/api/conversation?id=dtest-1")).json();
   assert.deepEqual(saved.tags, [], "l'etichetta è stata tolta anche dal file");
 
   // 8) il chip esistente filtra al click
-  await page.evaluate((r) => eval(r).querySelector(".hist-tag-name").click(), rowOf("Studio del cerchio"));
+  await page.evaluate((r) => window.__rowByTitle(r).querySelector(".hist-tag-name").click(), "Studio del cerchio");
   await WAIT(600);
   await expectList(["Studio del cerchio"], ["Derivate e pendenza"]);
   s = await page.evaluate(() => ({
@@ -166,7 +170,7 @@ try {
   // 9) regressione: la ricerca per titolo continua a funzionare
   await search("cerchio");
   await expectList(["Studio del cerchio"]);
-  s = await page.evaluate((r) => (eval(r).querySelector(".hist-where") || {}).textContent || "", rowOf("Studio del cerchio"));
+  s = await page.evaluate((r) => (window.__rowByTitle(r).querySelector(".hist-where") || {}).textContent || "", "Studio del cerchio");
   assert.match(s, /titolo/, "la ricerca per titolo è ancora riconosciuta");
 
   console.log("PASS: fase D — etichette delle conversazioni e ricerca globale (titolo, testo, calcoli, #tag)");
