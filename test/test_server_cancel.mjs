@@ -18,6 +18,8 @@ await fs.cp(new URL("../routes", import.meta.url), path.join(testDir, "routes"),
 const legacyId = "legacy-" + crypto.randomUUID();
 const revisionId = "revision-" + crypto.randomUUID();
 const legacyFigure = { fid: "legacy-figure", title: "Figura legacy", commands: ["A=(1,2)"], msgIdx: 0 };
+// Rendere il test indipendente dalle credenziali presenti sulla macchina.
+await fs.writeFile(path.join(testDir, "settings.json"), JSON.stringify({ provider: "opencode", apiKey: "oc-cancel-test", model: "deepseek-v4.1-flash" }), "utf8");
 const convDir = path.join(testDir, "data", "conversations");
 await fs.mkdir(convDir, { recursive: true });
 await fs.writeFile(path.join(convDir, legacyId + ".json"), JSON.stringify({
