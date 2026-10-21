@@ -5,19 +5,21 @@ MathApp is a local-first app with a stable core and optional feature modules. Sm
 ## Setup
 
 ```bash
-npm ci                    # dev deps (c8)
+npm ci                    # dev deps (c8, eslint)
+npm run lint              # ESLint (no-undef e regole di correttezza)
 npm start                 # Node 18+
 npm run coverage          # Node coverage, 65% line gate
-npm test                  # 88 Node checks
-npm run test:ui           # 22 browser smoke checks (puppeteer-core + Edge/Chrome)
+npm test                  # 120 Node checks
+npm run test:ui           # 25 browser smoke checks (puppeteer-core + Edge/Chrome)
 npm run test:xss          # 14 self-contained XSS checks (same browser)
-npm run test:geo          # GeoGebra smoke (CDN)
+npm run test:switch       # 1 conversation-switch regression
+npm run test:geo          # 5 GeoGebra checks (CDN)
 npm run test:py           # optional Python/SymPy tests
 npm run eval              # 17 deterministic math cases
 npm run check:docs        # local Markdown links and stale test paths
 ```
 
-The portable core (Node tests, eval, Python tests) runs on Linux in CI. Windows adds the PowerShell launcher and browser/GeoGebra smokes.
+The portable core (lint, Node tests, eval, Python tests) runs on Linux in CI. Windows adds the PowerShell launcher and browser/GeoGebra smokes.
 
 ## Pull requests
 

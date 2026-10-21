@@ -25,16 +25,17 @@ Gli extra restano dietro il gate core/full e, per la UI, dietro il loader `publi
 
 ## Gate di qualità
 
-1. `npm test` verde: **88 check** (23 moduli, 4 agente, 5 chat-service, 3 observability, 2 provider fallback, 4 session recovery, 41 security/sessione, 6 lock di istanza; oltre ai parser).
-2. `npm run test:ui` verde: **24 check** browser (skip link e mobile 390 px inclusi).
-3. `npm run test:xss` verde: **14 check** XSS self-contained.
-4. `npm run test:switch` verde: **1 check** cambio conversazione self-contained.
-5. `npm run test:geo` verde: **5 check** GeoGebra.
-6. `npm run test:py` verde: **29 test** SymPy.
-7. `npm run eval` verde (17 casi SymPy).
-8. `npm run coverage` verde (soglia 65% righe; 69.9% misurato; c8); `npm run eval:ai` opzionale, con chiave e revisione umana.
-9. `npm run package` produce lo zip sorgente versionato (worktree pulito, nessun file personale).
-10. `main` protetto dal check CI `tests`; niente force-push/delete.
+1. `npm run lint` verde (ESLint, `no-undef` e regole di correttezza).
+2. `npm test` verde: **120 check** (23 moduli, 4 agente, 6 chat-service, 3 observability, 2 provider fallback, 4 session recovery, 41 security/sessione, 6 lock di istanza, 25 hardening, 6 restore; oltre ai parser).
+3. `npm run test:ui` verde: **25 check** browser (skip link e mobile 390 px inclusi).
+4. `npm run test:xss` verde: **14 check** XSS self-contained.
+5. `npm run test:switch` verde: **1 check** cambio conversazione self-contained.
+6. `npm run test:geo` verde: **5 check** GeoGebra.
+7. `npm run test:py` verde: **29 test** SymPy.
+8. `npm run eval` verde (17 casi SymPy).
+9. `npm run coverage` verde (soglia 65% righe; 71.1% misurato; c8); `npm run eval:ai` opzionale, con chiave e revisione umana.
+10. `npm run package` produce lo zip sorgente versionato (worktree pulito, nessun file personale).
+11. `main` protetto dal check CI `tests`; niente force-push/delete.
 11. `.\start-mathapp.ps1 -Check` verde, incluso storage e backup scrivibili.
 12. `GET /api/diagnostics` (o `/api/health`) verde: versione, Node, Python/SymPy/Whisper, provider, data dir, backup dir, porta, modo.
 

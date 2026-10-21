@@ -35,6 +35,7 @@ La dettatura funziona da `http://127.0.0.1:8790` o HTTPS (contesto sicuro richie
 ## settings.json corrotto o perso
 - Elimina `settings.json` e riconfigura da **Impostazioni** (la chiave non è recuperabile, va reinserita).
 - Le conversazioni sono in `data/`; i backup in `backups/`.
+- Per ripristinare un backup: ferma MathApp e lancia `node scripts/restore-backup.mjs [file.zip]`.
 
 ## Aggiornamento
 Sostituisci i file del codice, riavvia l'app e verifica con `.\start-mathapp.ps1 -Check`. Non copiare `settings.json`/`data/` da altre installazioni se non vuoi mescolare i dati.

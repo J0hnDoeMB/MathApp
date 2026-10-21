@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Security
+- Hardened HTTP crash paths, static/stream writes, request and PDF timeouts, save-failure propagation, CSP/security headers, KB attachment MIME handling and POSIX file modes.
+- Pinned CDN assets with SRI and GeoGebra `5.4.920.0`; offline service worker uses CORS so SRI assets remain verifiable.
+- Added a guarded backup restore CLI with path traversal/symlink rejection and a `data.pre-restore-*` safety copy.
+
+### Added
+- ESLint (`npm run lint`, `no-undef` and correctness rules) in local checks and CI.
+- Restore test suite (6 checks) and browser coverage for the algebra “partial sums” variable path.
+
+### Fixed
+- `new URL()` crash path, silent conversation save failures, KB HTML/SVG inline serving, GeoGebra restore/view race, and undefined `calcVar` in the algebra notebook.
+
+### Tests
+- 120 Node, 25 UI, 1 conversation-switch, 14 XSS, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage 71.1%.
+
 ## v1.29.0 - 2026-10-21
 
 ### Changed

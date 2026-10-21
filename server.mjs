@@ -1,7 +1,7 @@
 // MathApp server - guscio HTTP: sicurezza, route API, statici e avvio.
 import http from "node:http";
 import { settings as SETTINGS, getKey } from "./lib/config.mjs";
-import { guardRequest } from "./lib/security.mjs";
+import { applySecurityHeaders, guardRequest } from "./lib/security.mjs";
 import { logErr } from "./lib/log.mjs";
 import { scheduleBackups } from "./lib/storage.mjs";
 import { maybePreloadWhisper } from "./lib/audio.mjs";
@@ -21,11 +21,13 @@ if (!instanceLock.ok) {
 
 // ---------- http ----------
 const server = http.createServer(async (req, res) => {
-  try {
-  const url = new URL(req.url, "http://127.0.0.1");
+  // Deve esistere anche se new URL() fallisce: il catch la usa per log e trace.
   const reqId = newId("req");
   req.mathappId = reqId;
+  applySecurityHeaders(req, res);
+  try {
   try { res.setHeader("X-Request-Id", reqId); } catch {}
+  const url = new URL(req.url, "http://127.0.0.1");
   const started = Date.now();
   res.on("finish", () => {
     if (url.pathname.startsWith("/api/")) trace("http", { id: reqId, method: req.method, path: url.pathname, status: res.statusCode, ms: Date.now() - started });

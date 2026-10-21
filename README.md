@@ -44,8 +44,9 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 ## Qualità
 
 ```bash
-npm test          # 88 check Node
-npm run test:ui   # 24 check browser (richiede Edge/Chrome + puppeteer-core)
+npm run lint      # ESLint (no-undef e regole di correttezza)
+npm test          # 120 check Node
+npm run test:ui   # 25 check browser (richiede Edge/Chrome + puppeteer-core)
 npm run test:xss  # 14 check browser XSS (richiede Edge/Chrome + puppeteer-core)
 npm run test:switch # 1 check cambio conversazione (richiede Edge/Chrome + puppeteer-core)
 npm run test:geo  # 5 check GeoGebra (richiede CDN)

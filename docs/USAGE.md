@@ -207,7 +207,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
   cerca ovunque (titolo, testo, calcoli, tag), con `#tag` filtra per etichetta e mostra il passo trovato.
 - **Studio su carta**: stampa della conversazione (con **foglio A/B** per le verifiche), **PDF del quaderno**,
   **PNG** dei grafici, **Undo/Redo** delle costruzioni, ascolto delle risposte (**TTS** italiano),
-  **foto di un esercizio** dalla fotocamera e **backup automatico** dei dati in `data/backup/`.
+  **foto di un esercizio** dalla fotocamera e **backup automatico** dei dati in `backups/`.
 
 ## Dove stanno i dati
 - `data/conversations/*.json` — le conversazioni salvate (per la Cronologia).
@@ -238,8 +238,8 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python test/test_sympy_cli.py -v`.
 - Math eval deterministico: `npm run eval` (17 casi SymPy, in CI).
-- Test rapidi senza server: `npm test` (88 check: 23 test dei moduli + 4 del loop agente + 5 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/sessione/lock + parser + smoke con CSRF, body cap, path traversal, modalit? core, API impostazioni, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
-- Smoke browser: `npm run test:ui` (24 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI ? automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
+- Test rapidi senza server: `npm test` (120 check: 23 test dei moduli + 4 del loop agente + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/sessione/lock + 25 hardening + 6 restore + parser + smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
+- Smoke browser: `npm run test:ui` (25 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view, quaderno parziali); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test/test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test/test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test/test_conversation_restore.mjs`, `node test/test_conversation_switch.mjs`, `node test/test_geogebra_state.mjs`, `node test/test_geogebra_3d.mjs`, `node test/test_layout.mjs`, `node test/test_tutor.mjs`, `node test/test_review.mjs`, `node test/test_algebra_ui.mjs`, `node test/test_vista.mjs` e `node test/test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test/test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.

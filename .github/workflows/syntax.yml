@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Install dev dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
       - name: Node syntax
         run: |
           node --check server.mjs
@@ -38,7 +42,10 @@ jobs:
           node --check test/test_xss.mjs
           node --check test/test_conversation_switch.mjs
           node --check scripts/package-release.mjs
+          node --check scripts/restore-backup.mjs
           node --check test/test_agent.mjs
+          node --check test/test_hardening.mjs
+          node --check test/test_restore.mjs
           node --check test/test_chat_service.mjs
           node --check test/test_observability.mjs
           node --check test/test_provider_fallback.mjs
@@ -61,6 +68,8 @@ jobs:
           node test/test_quizparse.mjs
           node test/test_server_security.mjs
           node test/test_instance_lock.mjs
+          node test/test_hardening.mjs
+          node test/test_restore.mjs
       - name: Browser dependency
         run: npm install --no-save --no-package-lock puppeteer-core
       - name: Browser smoke (no API key)

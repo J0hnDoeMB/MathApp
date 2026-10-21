@@ -100,11 +100,12 @@ External I/O is isolated in `lib/llm.mjs`:
 ## Testing
 
 - `npm run eval`: 17 deterministic SymPy cases (`eval/`).
-- `npm test`: 88 checks (23 module + 4 agent + 5 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/session + 6 instance lock + parser).
-- `npm run test:ui`: 24 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
+- `npm run lint`: ESLint correctness rules (`no-undef`, unreachable/duplicate keys, and related checks).
+- `npm test`: 120 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/session + 6 instance lock + 25 hardening + 6 restore + parser).
+- `npm run test:ui`: 25 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open, lazy plugins core/full, drawers, new chat, session restore, view, algebra partials); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
 - `npm run test:xss`: 14 self-contained browser checks (Markdown, tools, LaTeX) with a temporary server, in CI.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
 - `node test/test_server_cancel.mjs`: cancellation and state revisions.
 - `npm run test:ui`, `npm run test:xss` and `npm run test:switch` are self-contained; they start a temporary server and use puppeteer-core.
-- CI runs Node tests, browser smoke, XSS regression, conversation-switch regression and the Python suite on Windows.
+- CI runs lint and Node tests on Windows and Linux, plus browser smoke, XSS regression, conversation-switch regression and the Python suite on Windows.

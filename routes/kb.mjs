@@ -8,6 +8,30 @@ import { logErr } from "../lib/log.mjs";
 
 export const feature = "kb";
 
+// Il MIME del client non e' affidabile: il tipo servito dipende dall'estensione.
+const FILE_TYPES = new Map([
+  [".pdf", ["application/pdf", true]],
+  [".png", ["image/png", true]],
+  [".jpg", ["image/jpeg", true]],
+  [".jpeg", ["image/jpeg", true]],
+  [".gif", ["image/gif", true]],
+  [".webp", ["image/webp", true]],
+  [".txt", ["text/plain; charset=utf-8", true]],
+  [".md", ["text/plain; charset=utf-8", true]],
+  [".csv", ["text/plain; charset=utf-8", true]],
+  [".mp3", ["audio/mpeg", true]],
+  [".wav", ["audio/wav", true]],
+  [".m4a", ["audio/mp4", true]],
+  [".ogg", ["audio/ogg", true]],
+  [".svg", ["image/svg+xml", false]],
+]);
+
+function servedFile(doc) {
+  const ext = path.extname(String(doc.file.name || doc.file.path || "")).toLowerCase();
+  const [type, inline] = FILE_TYPES.get(ext) || ["application/octet-stream", false];
+  return { type, inline };
+}
+
 export function handle(req, res, url) {
 if (req.method === "POST" && url.pathname === "/api/kb/use") {
     let b = "";
@@ -25,14 +49,20 @@ if (req.method === "POST" && url.pathname === "/api/kb/use") {
   if (req.method === "GET" && url.pathname === "/api/kb/file") {
     const id = url.searchParams.get("id") || "";
     const doc = kbLoad().docs.find((d) => d.id === id);
-    if (!doc || !doc.file || !fs.existsSync(doc.file.path)) { res.writeHead(404); return res.end("file non trovato"); }
-    const inline = /pdf|image\//i.test(doc.file.mime || "") || /\.(pdf|png|jpe?g|gif|webp|svg|txt|md|wav|mp3|m4a|ogg)$/i.test(doc.file.name || "");
+    if (!doc || !doc.file || !doc.file.path) { res.writeHead(404); return res.end("file non trovato"); }
+    const fp = path.resolve(doc.file.path);
+    const kbRoot = path.resolve(KB_DIR) + path.sep;
+    if (!fp.startsWith(kbRoot) || !fs.existsSync(fp)) { res.writeHead(404); return res.end("file non trovato"); }
+    const { type, inline } = servedFile(doc);
     res.writeHead(200, {
-      "Content-Type": doc.file.mime || "application/octet-stream",
+      "Content-Type": type,
       "Content-Disposition": (inline ? "inline" : "attachment") + '; filename="' + encodeURIComponent(doc.file.name || "file") + '"',
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "no-cache",
     });
-    return fs.createReadStream(doc.file.path).pipe(res);
+    const stream = fs.createReadStream(fp);
+    stream.on("error", () => { try { res.destroy(); } catch {} });
+    return stream.pipe(res);
   }
   if (req.method === "POST" && url.pathname === "/api/transcribe") {
     let b = "";
@@ -93,7 +123,8 @@ if (req.method === "POST" && url.pathname === "/api/kb/use") {
         // NON cancello il file: lo sposto nel cestino (recuperabile)
         try {
           const cestino = path.join(KB_DIR, "cestino");
-          fs.mkdirSync(cestino, { recursive: true });
+          fs.mkdirSync(cestino, { recursive: true, mode: 0o700 });
+          try { fs.chmodSync(cestino, 0o700); } catch {}
           fs.renameSync(doc.file.path, path.join(cestino, path.basename(doc.file.path)));
         } catch (e) { logErr("cestino: " + e.message); }
       }

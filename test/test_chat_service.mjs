@@ -28,7 +28,24 @@ const result = await executeChat({
       send("verification", { sympy: 1, geogebra: 0 });
       return "Risposta";
     },
-    saveConv: (id, model, msgs) => { saved = { id, model, msgs }; },
+    saveConv: (id, model, msgs) => { saved = { id, model, msgs }; return true; },
+  },
+});
+
+const failEvents = [];
+const failResult = await executeChat({
+  body: { conversationId: "test-chat-fail", messages: [{ role: "user", content: "Ciao" }], model: "deepseek-v4.1-flash" },
+  send: (ev, data) => failEvents.push({ ev, data }),
+  isGone: () => false,
+  signal: null,
+  deps: {
+    buildUpstream: async () => ({ msgs: [{ role: "user", content: "Ciao" }], notices: [], collected: [] }),
+    profForPrompt: () => [],
+    kbAdd: () => null,
+    kbSearch: () => [],
+    tokenize: () => [],
+    runAgent: async () => "Risposta",
+    saveConv: () => false,
   },
 });
 
@@ -39,6 +56,7 @@ chk("chat-service: eventi SSE", events.some((e) => e.ev === "delta") && events.s
 chk("chat-service: allegato + appunti", events.some((e) => e.ev === "notice" && /allegato letto/.test(e.data.text)) && events.some((e) => e.ev === "notice" && /salvato negli Appunti/.test(e.data.text)));
 chk("chat-service: sessione salvata", saved && saved.id === "test-chat" && saved.msgs.length === 2 && saved.msgs[1].content === "Risposta");
 chk("chat-service: first-token metric", typeof result.firstTokenMs === "number" && result.firstTokenMs >= 0);
+chk("chat-service: errore di salvataggio esplicito", failResult.saveError === true && failEvents.some((e) => e.ev === "notice" && /non e' stata salvata/.test(e.data.text)));
 console.log("----");
 console.log("OK=" + ok + " FAIL=" + fail);
 if (fail) process.exit(1);

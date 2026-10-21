@@ -70,6 +70,8 @@ function initGGB() {
     appletOnLoad: (api) => { ggbApplet = api; ggbReady = true; window.__ggb = api; window.__ggbResolve(api); setTimeout(() => { try { applyGgbTheme(); } catch {} }, 400); setTimeout(() => ggbResize(), 60); },
   };
   const app = new GGBApplet(params, true);
+  // Fissa la versione del motore: evita aggiornamenti silenziosi della CDN.
+  try { app.setHTML5Codebase("https://www.geogebra.org/apps/5.4.920.0/web3d/"); } catch {}
   app.inject("ggb");
   // ridimensiona l'applet quando cambia lo spazio disponibile (finestra o divider)
   try { new ResizeObserver(() => ggbResize()).observe(wrapEl); } catch {}
@@ -979,7 +981,7 @@ function setMode(m, allowDuringLoad = false) {
 // ---------- quaderno di algebra ----------
 const OP_LABEL = { simplify: "semplificazione", expand: "espansione", factor: "fattorizzazione", diff: "derivata", integrate: "integrale", limit: "limite", solve: "soluzione", series: "serie", evaluate: "valutazione", det: "determinante", inverse: "inversa", rank: "rango", transpose: "trasposta", studio: "studio di funzione", stats: "statistica", regressione: "regressione lineare", complesso: "numeri complessi", parziali: "somme parziali", sistema: "sistema di equazioni", dot: "prodotto scalare", cross: "prodotto vettoriale", norm: "norma", angle: "angolo", projection: "proiezione", independence: "indipendenza", gram_schmidt: "Gram-Schmidt" };
 const VECTOR_OPS = new Set(["dot", "cross", "norm", "angle", "projection", "independence", "gram_schmidt"]);
-const calcForm = $("#calcForm"), calcExpr = $("#calcExpr"), calcOp = $("#calcOp"), calcCells = $("#calcCells");
+const calcForm = $("#calcForm"), calcExpr = $("#calcExpr"), calcOp = $("#calcOp"), calcVar = $("#calcVar"), calcCells = $("#calcCells");
 
 function updateExtra() {
   const op = calcOp.value;
@@ -1885,6 +1887,15 @@ async function renderConversation(conv, generation) {
     }
   }
   viewPanelSync();
+  // Con il codebase GeoGebra fissato l'applet puo' caricarsi dopo il restore:
+  // riapplica la finestra salvata quando la lavagna e' pronta, senza sovrascriverla.
+  if (!ggbReady) {
+    ggbReadyPromise.then(() => {
+      if (generation !== appState.domain.conversationGeneration) return;
+      if (appState.domain.viewCustom && !appState.domain.ggb3d) applyViewToBoard(appState.domain.viewCustom);
+      viewPanelSync();
+    });
+  }
   setMode(conv.mode === "algebra" ? "algebra" : "figure", true);
   if (generation !== appState.domain.conversationGeneration) return false;
   appState.ui.autoFollow = true;

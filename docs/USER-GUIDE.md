@@ -151,9 +151,12 @@ Se lo stato esatto manca, l'app prova a ricostruirlo dai comandi salvati.
 - **PDF / MD** esporta la conversazione in una finestra pronta per la stampa o
   in un file Markdown.
 - Nel quaderno puoi esportare il PDF dei calcoli e i grafici in PNG.
-- I dati stanno in `data/` (`conversations/`, `kb/`, `backup/`, ...).
-- I backup automatici stanno in `data/backup/`; copia quella cartella su un
+- I dati stanno in `data/` (`conversations/`, `kb/`, ...).
+- I backup automatici stanno in `backups/`; copia quella cartella su un
   supporto esterno se vuoi conservarla.
+- Per ripristinare: ferma MathApp, poi esegui `node scripts/restore-backup.mjs`
+  (usa l'ultimo backup) oppure `node scripts/restore-backup.mjs backups\<file>.zip`.
+  I dati precedenti vengono conservati in `data.pre-restore-<data>`.
 - `settings.json` contiene la configurazione e la chiave API: non è dentro
   `data/` e non viene incluso nei backup automatici.
 

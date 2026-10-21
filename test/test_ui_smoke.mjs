@@ -205,6 +205,14 @@ try {
   chk("ripristino sessione: cella", restored.cells === 1 && restored.expr.includes("x^2"));
   chk("ripristino sessione: view", restored.xmin === "-5");
 
+  const partial = await page.evaluate(() => {
+    const op = document.querySelector("#calcOp");
+    op.value = "parziali";
+    op.dispatchEvent(new Event("change", { bubbles: true }));
+    return { variable: document.querySelector("#calcVar").value, hint: document.querySelector("#calcHint").textContent };
+  });
+  chk("quaderno: parziali imposta variabile n", partial.variable === "n" && /somme/i.test(partial.hint), JSON.stringify(partial));
+
   const lazyCore = await page.evaluate(() => ({
     plugins: window.MathAppPlugins ? window.MathAppPlugins.loaded() : [],
     quiz: typeof window.__quiz,

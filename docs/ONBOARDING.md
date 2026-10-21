@@ -35,8 +35,8 @@ Dipendenza consentita: `server → agent → servizi → storage/config`. I serv
 ## 4. Test
 
 ```powershell
-npm test              # 88 check: moduli, agente, parser, security/sessione, lock
-npm run test:ui       # 24 check browser (richiede browser)
+npm test              # 120 check: moduli, agente, parser, security/sessione, lock, hardening, restore
+npm run test:ui       # 25 check browser (richiede browser)
 npm run test:xss      # 14 check XSS self-contained (richiede browser)
 npm run test:switch   # 1 check cambio conversazione self-contained (richiede browser)
 npm run test:geo      # 5 check GeoGebra (richiede rete CDN)

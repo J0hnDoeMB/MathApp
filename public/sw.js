@@ -1,6 +1,6 @@
 // Offline shell + CDN cache. The app stays local-first: the service worker
 // only caches static GET assets, never /api traffic or user data.
-const VERSION = "mathapp-v2";
+const VERSION = "mathapp-v3";
 const SHELL = [
   "/",
   "/index.html",
@@ -14,7 +14,7 @@ const SHELL = [
   "/app.js",
 ];
 const CDN = [
-  "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
+  "https://cdn.jsdelivr.net/npm/marked@18.1.1/lib/marked.umd.js",
   "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css",
   "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js",
   "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js",
@@ -34,7 +34,8 @@ self.addEventListener("install", (event) => {
     await Promise.allSettled(SHELL.map((url) => cache.add(url)));
     await Promise.allSettled(CDN.map(async (url) => {
       try {
-        const res = await fetch(url, { mode: "no-cors", cache: "reload", signal: AbortSignal.timeout(8000) });
+        // CORS (non opaque): gli script con integrity/crossorigin devono restare verificabili offline.
+        const res = await fetch(url, { mode: "cors", cache: "reload", signal: AbortSignal.timeout(8000) });
         if (res) await cache.put(url, res);
       } catch { /* offline install: the shell is still usable */ }
     }));

@@ -38,7 +38,9 @@ Le route non leggono/scrivono JSON direttamente: usano `lib/session-store.mjs`, 
 
 ## Instance lock
 
-`data/.mathapp-instance.lock` contiene PID, host, porta e timestamp di avvio del processo attivo. Serve a rifiutare un secondo processo sulla stessa directory; un lock rimasto da un crash viene recuperato quando il PID non ? pi? attivo o proviene da un altro host. ? un file operativo (circa 100 byte) e pu? finire in un backup: non contiene dati utente. Usare `MATHAPP_DATA_DIR` per eseguire test o istanze isolate.
+`data/.mathapp-instance.lock` contiene PID, host, porta e timestamp di avvio del processo attivo. Serve a rifiutare un secondo processo sulla stessa directory; un lock rimasto da un crash viene recuperato quando il PID non è più attivo o proviene da un altro host. È un file operativo (circa 100 byte) e può finire in un backup: non contiene dati utente. Usare `MATHAPP_DATA_DIR` per eseguire test o istanze isolate.
+
+Per ripristinare: fermare il server, eseguire `node scripts/restore-backup.mjs [file.zip]`; i dati precedenti vengono conservati in `data.pre-restore-<timestamp>`.
 
 ## Test
 

@@ -31,6 +31,8 @@ jobs:
         run: npm ci
       - name: Dependency audit
         run: npm audit --audit-level=high
+      - name: Lint
+        run: npm run lint
       - name: Docs and paths
         run: npm run check:docs
       - name: Node syntax
