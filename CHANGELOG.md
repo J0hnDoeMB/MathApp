@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.24.0 - 2026-10-20
+
+### Changed
+- Test suite moved to `test/` (Node, browser, Python); npm scripts and CI paths updated.
+- README reduced to one page; full product guide moved to `docs/USAGE.md`.
+- Added `docs/chat-geogebra.png` (chat + GeoGebra in action).
+- Added macOS/Linux setup guide (`docs/SETUP-MACOS-LINUX.md`, npm start + Python venv).
+
+### Tests
+- `npm test`: 80 checks; UI 16; GeoGebra 5; eval 17; Python 29.
+
 ## v1.23.0 - 2026-10-20
 
 ### Changed

@@ -27,14 +27,14 @@ jobs:
           Get-ChildItem public/features -Filter *.js | ForEach-Object { node --check $_.FullName }
           Get-ChildItem lib -Filter *.mjs | ForEach-Object { node --check $_.FullName }
           Get-ChildItem routes -Filter *.mjs | ForEach-Object { node --check $_.FullName }
-          node --check test_ui_smoke.mjs
-          node --check test_geogebra_smoke.mjs
-          node --check test_agent.mjs
-          node --check test_chat_service.mjs
-          node --check test_observability.mjs
-          node --check test_provider_fallback.mjs
-          node --check test_session_corrupt.mjs
-          node --check test_modules.mjs
+          node --check test/test_ui_smoke.mjs
+          node --check test/test_geogebra_smoke.mjs
+          node --check test/test_agent.mjs
+          node --check test/test_chat_service.mjs
+          node --check test/test_observability.mjs
+          node --check test/test_provider_fallback.mjs
+          node --check test/test_session_corrupt.mjs
+          node --check test/test_modules.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -42,26 +42,26 @@ jobs:
         run: python -m pip install --disable-pip-version-check sympy
       - name: Node tests (modules + agent + parsers + security)
         run: |
-          node test_modules.mjs
-          node test_agent.mjs
-          node test_chat_service.mjs
-          node test_observability.mjs
-          node test_provider_fallback.mjs
-          node test_session_corrupt.mjs
-          node test_flashparse.mjs
-          node test_quizparse.mjs
-          node test_server_security.mjs
+          node test/test_modules.mjs
+          node test/test_agent.mjs
+          node test/test_chat_service.mjs
+          node test/test_observability.mjs
+          node test/test_provider_fallback.mjs
+          node test/test_session_corrupt.mjs
+          node test/test_flashparse.mjs
+          node test/test_quizparse.mjs
+          node test/test_server_security.mjs
       - name: Browser dependency
         run: npm install --no-save --no-package-lock puppeteer-core
       - name: Browser smoke (no API key)
-        run: node test_ui_smoke.mjs
+        run: node test/test_ui_smoke.mjs
       - name: GeoGebra rebuild smoke
-        run: node test_geogebra_smoke.mjs
+        run: node test/test_geogebra_smoke.mjs
       - name: Math eval (SymPy)
         run: npm run eval
       - name: Launcher check
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\start-mathapp.ps1 -Check
       - name: Python syntax
-        run: python -m py_compile sympy_cli.py extract.py transcribe.py test_sympy_cli.py
+        run: python -m py_compile sympy_cli.py extract.py transcribe.py test/test_sympy_cli.py
       - name: Python tests
-        run: python -m unittest test_sympy_cli -v
+        run: python test/test_sympy_cli.py -v

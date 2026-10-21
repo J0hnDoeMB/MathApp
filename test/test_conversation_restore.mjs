@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 let puppeteer;
 try { puppeteer = createRequire(import.meta.url)("puppeteer"); }
 catch { const alt = process.env.MATHAPP_PUPPETEER; if (!alt) throw new Error("Puppeteer non installato: esegui npm i -D puppeteer oppure imposta MATHAPP_PUPPETEER."); puppeteer = createRequire(alt)("puppeteer"); }
-const appSource = await fs.readFile(new URL("./public/app.js", import.meta.url), "utf8");
+const appSource = await fs.readFile(new URL("../public/app.js", import.meta.url), "utf8");
 const fakeGgb = `
 window.__ggbLoadLog = [];
 window.GGBApplet = class {

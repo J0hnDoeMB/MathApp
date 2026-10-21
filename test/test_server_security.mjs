@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
 
-const root = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "..");
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mathapp-sec-"));
 const settingsFile = path.join(tmp, "settings.json");
 const authFile = path.join(tmp, "noauth.json");

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const B = "http://127.0.0.1:8790";
 const PY = "python";
-const CLI = fileURLToPath(new URL("./transcribe.py", import.meta.url));
+const CLI = fileURLToPath(new URL("../transcribe.py", import.meta.url));
 const audioPath = process.env.MATHAPP_TEST_AUDIO;
 if (!audioPath || !fs.existsSync(audioPath)) {
   console.log("SKIP: imposta MATHAPP_TEST_AUDIO con un file audio di prova.");

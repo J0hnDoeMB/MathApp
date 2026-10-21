@@ -3,21 +3,21 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { LEVELS, normalizeLevel, levelRule } from "./lib/levels.mjs";
-import { tokenize, chunkText } from "./lib/kb.mjs";
-import { revNorm } from "./lib/storage.mjs";
-import { cachePut } from "./lib/util.mjs";
-import { isAudio } from "./lib/audio.mjs";
-import { TOOLS, toolsFor } from "./lib/tools.mjs";
-import { systemFor } from "./lib/prompts.mjs";
-import { featureForPath, isOptionalApi } from "./lib/features.mjs";
-import { gradeReview } from "./lib/review.mjs";
-import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "./lib/study.mjs";
-import { SCHEMA_VERSION, migrateSession, validateState, normalizeReviewItem, normalizeProfileItem, normalizeDocument } from "./lib/schema.mjs";
-import { readJson, writeJsonAtomic } from "./lib/json-store.mjs";
-import { adapters } from "./lib/adapters.mjs";
-import { assertPorts } from "./lib/ports.mjs";
-import { capabilityReport } from "./lib/capabilities.mjs";
+import { LEVELS, normalizeLevel, levelRule } from "../lib/levels.mjs";
+import { tokenize, chunkText } from "../lib/kb.mjs";
+import { revNorm } from "../lib/storage.mjs";
+import { cachePut } from "../lib/util.mjs";
+import { isAudio } from "../lib/audio.mjs";
+import { TOOLS, toolsFor } from "../lib/tools.mjs";
+import { systemFor } from "../lib/prompts.mjs";
+import { featureForPath, isOptionalApi } from "../lib/features.mjs";
+import { gradeReview } from "../lib/review.mjs";
+import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "../lib/study.mjs";
+import { SCHEMA_VERSION, migrateSession, validateState, normalizeReviewItem, normalizeProfileItem, normalizeDocument } from "../lib/schema.mjs";
+import { readJson, writeJsonAtomic } from "../lib/json-store.mjs";
+import { adapters } from "../lib/adapters.mjs";
+import { assertPorts } from "../lib/ports.mjs";
+import { capabilityReport } from "../lib/capabilities.mjs";
 
 let ok = 0, fail = 0;
 function chk(name, fn) {
@@ -99,7 +99,7 @@ chk("levels: auto e approfondito", () => {
   assert.match(levelRule("approfondito"), /controesempi/);
 });
 
-const pluginMods = await Promise.all(["./routes/kb.mjs", "./routes/profile.mjs", "./routes/review.mjs", "./routes/study.mjs"].map((p) => import(p)));
+const pluginMods = await Promise.all(["../routes/kb.mjs", "../routes/profile.mjs", "../routes/review.mjs", "../routes/study.mjs"].map((p) => import(p)));
 chk("plugins: contratto feature/handle", () => {
   assert.deepEqual(pluginMods.map((m) => m.feature), ["kb", "profile", "review", "study"]);
   assert.equal(pluginMods.every((m) => typeof m.handle === "function"), true);

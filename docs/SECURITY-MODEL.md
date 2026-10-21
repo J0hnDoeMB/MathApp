@@ -13,7 +13,7 @@
 | CSRF from another site | Origin/Sec-Fetch-Site checks on every non-GET | security smoke |
 | Oversized body | 64 MB cap, early 413 | security smoke |
 | Path traversal (static/files) | resolved path must stay under the allowlisted root | security smoke |
-| XSS from model Markdown | HTML whitelist, raw HTML/script/handlers removed | `test_xss.mjs` |
+| XSS from model Markdown | HTML whitelist, raw HTML/script/handlers removed | `test/test_xss.mjs` |
 | XSS in project/session names | `esc`/`jarg` escaping in UI | security smoke/manual |
 | SymPy code execution | AST whitelist parser; no eval/sympify on user input | `test_sympy_cli` |
 | Model output executed as code | GeoGebra commands parsed/validated; no eval | unit/manual |

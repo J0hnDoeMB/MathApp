@@ -20,7 +20,7 @@ global.fetch = async (url) => {
   return new Response("unexpected", { status: 500 });
 };
 
-const llm = await import("./lib/llm.mjs?test=" + Date.now());
+const llm = await import("../lib/llm.mjs?test=" + Date.now());
 let ok = 0, fail = 0;
 function chk(name, cond) { if (cond) { console.log("OK   " + name); ok++; } else { console.error("FAIL " + name); fail++; } }
 try {

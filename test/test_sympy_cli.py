@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-CLI = Path(__file__).with_name("sympy_cli.py")
+CLI = Path(__file__).resolve().parent.parent / "sympy_cli.py"
 
 
 def compute(payload):

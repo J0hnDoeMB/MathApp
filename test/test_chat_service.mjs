@@ -1,6 +1,6 @@
 // Test dell'orchestratore chat con dipendenze finte: nessuna rete.
 import assert from "node:assert/strict";
-import { executeChat } from "./lib/chat-service.mjs";
+import { executeChat } from "../lib/chat-service.mjs";
 
 const events = [];
 let saved = null;

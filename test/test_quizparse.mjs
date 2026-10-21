@@ -1,6 +1,6 @@
 // Test unitario del parser dei quiz (lib/quizparse.mjs).
 import assert from "node:assert/strict";
-import { parseQuiz } from "./lib/quizparse.mjs";
+import { parseQuiz } from "../lib/quizparse.mjs";
 
 // 1) JSON puro
 let q = parseQuiz(JSON.stringify([

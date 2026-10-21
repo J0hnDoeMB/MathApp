@@ -1,6 +1,6 @@
 // Test del parser delle flashcard generate dall'IA (lib/flashparse.mjs).
 import assert from "node:assert/strict";
-import { parseCards } from "./lib/flashparse.mjs";
+import { parseCards } from "../lib/flashparse.mjs";
 
 // 1) JSON puro
 assert.deepEqual(parseCards('[{"d":"Quanto fa 2+2?","r":"4"}]'), [{ d: "Quanto fa 2+2?", r: "4" }]);

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mathapp-trace-"));
 process.env.MATHAPP_TRACE_DIR = tmp;
-const obs = await import("./lib/observability.mjs?test=" + Date.now());
+const obs = await import("../lib/observability.mjs?test=" + Date.now());
 
 let ok = 0, fail = 0;
 function chk(name, cond) { if (cond) { console.log("OK   " + name); ok++; } else { console.error("FAIL " + name); fail++; } }

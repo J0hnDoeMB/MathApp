@@ -38,4 +38,4 @@ Le route non leggono/scrivono JSON direttamente: usano `lib/session-store.mjs`, 
 
 ## Test
 
-`test_modules.mjs` verifica roundtrip atomico, assenza di `.tmp`, quarantena di un file corrotto e fallback su file mancante.
+`test/test_modules.mjs` verifica roundtrip atomico, assenza di `.tmp`, quarantena di un file corrotto e fallback su file mancante.

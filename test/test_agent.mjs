@@ -1,6 +1,6 @@
 // Test del loop agente con un upstream finto: nessuna rete, nessuna chiave.
 import assert from "node:assert/strict";
-import { runAgent } from "./lib/agent.mjs";
+import { runAgent } from "../lib/agent.mjs";
 
 let call = 0;
 const stream = async () => {

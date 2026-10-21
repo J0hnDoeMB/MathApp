@@ -66,11 +66,11 @@ Dependency direction: `server -> routes/agent -> domain/integration -> infrastru
 - `server.mjs` dropped from **~1,688 lines / 92 KB** to **~58 lines / 4 KB**.
 - API routes are grouped in `routes/`; conversations/reviews/backups, KB, profile, review, study, SymPy, PDF/text, Whisper, GeoGebra, prompts/tools and the agent loop are separate `lib/` modules.
 - Public HTTP behavior is unchanged: verified by the security suite and a real chat using SymPy.
-- `test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
+- `test/test_modules.mjs` adds direct unit checks for levels, prompts, tools, KB tokenization/chunking, SM-2 normalization, cache bounds and audio types.
 
 ## Remaining risks / next steps
 
-1. Browser smoke covers new chat/session/view; `test_geogebra_smoke.mjs` covers the GeoGebra applet rebuild in CI.
+1. Browser smoke covers new chat/session/view; `test/test_geogebra_smoke.mjs` covers the GeoGebra applet rebuild in CI.
 2. External dependencies (AI providers, GeoGebra/KaTeX CDN, Whisper models) remain the main failure surface; keep capabilities explicit and fallbacks visible.
 3. Windows/PowerShell setup is convenient but platform-specific; the Node server itself stays portable.
 4. The full browser suite (XSS, conversation switch, GeoGebra applet) still runs manually; only the smoke subset is in CI.
@@ -100,6 +100,6 @@ External I/O is isolated in `lib/llm.mjs`:
 - `npm run test:ui`: 16 browser smoke checks (UI, state store, command bus, settings open, lazy plugins core/full, drawers, new chat, session restore, view); CI uses puppeteer-core + Edge.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.
-- `node test_server_cancel.mjs`: cancellation and state revisions.
+- `node test/test_server_cancel.mjs`: cancellation and state revisions.
 - Full browser tests need Puppeteer and a running app; `npm run test:ui` is the CI smoke subset.
 - CI runs Node tests, browser smoke and the Python suite on Windows.

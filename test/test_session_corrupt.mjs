@@ -7,8 +7,8 @@ import assert from "node:assert/strict";
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mathapp-session-"));
 process.env.MATHAPP_DATA_DIR = path.join(tmp, "data");
 process.env.MATHAPP_BACKUP_DIR = path.join(tmp, "backups");
-const store = await import("./lib/session-store.mjs?test=" + Date.now());
-const storage = await import("./lib/storage.mjs?test=" + Date.now());
+const store = await import("../lib/session-store.mjs?test=" + Date.now());
+const storage = await import("../lib/storage.mjs?test=" + Date.now());
 
 let ok = 0, fail = 0;
 function chk(name, cond) { if (cond) { console.log("OK   " + name); ok++; } else { console.error("FAIL " + name); fail++; } }
