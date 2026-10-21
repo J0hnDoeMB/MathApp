@@ -9,3 +9,7 @@ __pycache__/
 *.bak
 *.bak-*
 public/*.new.*
+.venv/
+venv/
+.env
+*.pyc

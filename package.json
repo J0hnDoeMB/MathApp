@@ -1,6 +1,6 @@
 {
   "name": "mathapp",
-  "version": "1.24.0",
+  "version": "1.24.1",
   "private": true,
   "description": "Local math tutor: AI chat + GeoGebra + exact algebra.",
   "type": "module",
@@ -13,6 +13,8 @@
     "test:py": "python test/test_sympy_cli.py -v",
     "test:ui": "node test/test_ui_smoke.mjs",
     "test:geo": "node test/test_geogebra_smoke.mjs",
-    "eval": "node eval/run-eval.mjs"
+    "eval": "node eval/run-eval.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check": "npm run check:docs"
   }
 }

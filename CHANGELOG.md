@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.24.1 - 2026-10-20
+
+### Changed
+- Added portable Linux CI (Node 18/20/22) for core tests, eval and Python.
+- Added `SECURITY.md`, `CONTRIBUTING.md` and a local Markdown-link checker (`npm run check:docs`).
+- Ignore `.venv/`, `venv/`, `.env` and `*.pyc`; documented tested platform limits.
+
 ## v1.24.0 - 2026-10-20
 
 ### Changed

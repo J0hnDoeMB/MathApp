@@ -1,6 +1,6 @@
 # MathApp
 
-[![tests](https://github.com/J0hnDoeMB/MathApp/actions/workflows/syntax.yml/badge.svg)](https://github.com/J0hnDoeMB/MathApp/actions/workflows/syntax.yml)
+[![tests](https://github.com/J0hnDoeMB/MathApp/actions/workflows/syntax.yml/badge.svg)](https://github.com/J0hnDoeMB/MathApp/actions/workflows/syntax.yml) [![portable](https://github.com/J0hnDoeMB/MathApp/actions/workflows/portable.yml/badge.svg)](https://github.com/J0hnDoeMB/MathApp/actions/workflows/portable.yml)
 
 Tutor di matematica **locale** con chat AI, GeoGebra e calcolo esatto SymPy. La API key resta sul tuo PC.
 
@@ -48,11 +48,11 @@ npm run eval      # 17 casi SymPy
 npm run test:py   # 29 test Python (opzionale)
 ```
 
-CI su Windows con branch protection. Diagnostica: `GET /api/diagnostics` (alias `/api/health`) o `.\start-mathapp.ps1 -Check`.
+CI su Windows e Linux (Node 18/20/22) con branch protection. Diagnostica: `GET /api/diagnostics` (alias `/api/health`) o `.\start-mathapp.ps1 -Check`.
 
 ## Documentazione
 
-- [Guida completa](docs/USAGE.md)
+- [Guida completa](docs/USAGE.md) ? [Contributing](CONTRIBUTING.md) ? [Security](SECURITY.md)
 - [Architettura](docs/ARCHITECTURE.md) · [Contratti](docs/CONTRACTS.md) · [Modello dati](docs/DATA-MODEL.md) · [Persistenza](docs/PERSISTENCE.md)
 - [Capabilities](docs/CAPABILITIES.md) · [Sicurezza](docs/SECURITY-MODEL.md) · [Performance](docs/PERFORMANCE.md) · [Scorecard](docs/SCORECARD.md)
 - [Setup Windows](docs/SETUP-WINDOWS.md) · [Setup macOS/Linux](docs/SETUP-MACOS-LINUX.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)

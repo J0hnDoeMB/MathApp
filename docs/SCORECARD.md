@@ -1,14 +1,15 @@
 # Product scorecard
 
-Current state (v1.21.0):
+Current state (v1.24.1):
 
 | Metric | Current |
 |---|---|
-| Build/CI | green, branch protected |
+| Build/CI | Windows + Linux core matrix, branch protected |
 | Node checks | 80 |
 | UI smoke | 16 |
 | GeoGebra smoke | 5 |
 | Python tests | 29 |
+| Portable CI | Node 18 / 20 / 22 on Linux |
 | Math eval cases | 17 |
 | Critical vulnerabilities | none known; no runtime npm deps |
 | Core domains | chat, session, math, docs, audio, AI providers |
