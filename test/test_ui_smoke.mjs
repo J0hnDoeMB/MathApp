@@ -86,7 +86,7 @@ let log = "";
 child.stdout.on("data", (c) => (log += c));
 child.stderr.on("data", (c) => (log += c));
 let ok = 0, fail = 0;
-function chk(name, cond) { if (cond) { console.log("OK   " + name); ok++; } else { console.error("FAIL " + name); fail++; } }
+function chk(name, cond, detail) { if (cond) { console.log("OK   " + name); ok++; } else { console.error("FAIL " + name + (detail ? " " + detail : "")); fail++; } }
 
 let browser;
 try {
@@ -116,12 +116,20 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#settingsBtn", { timeout: 15000 });
   chk("UI caricata", await page.$("#chat") !== null && await page.$("#ggb") !== null);
-  const skip = await page.evaluate(() => {
+  await page.keyboard.press("Tab");
+  const skip = await page.evaluate(async () => {
     const a = document.querySelector('a.skip-link[href="#main"]');
     if (!a) return null;
-    a.focus();
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     const r = a.getBoundingClientRect();
-    return { visible: r.top >= 0 && r.height > 0 && r.width > 0, target: !!document.querySelector("#main"), focused: document.activeElement === a };
+    const style = getComputedStyle(a);
+    return {
+      visible: r.top >= 0 && r.height > 0 && r.width > 0,
+      target: !!document.querySelector("#main"),
+      focused: document.activeElement === a,
+      top: style.top,
+      position: style.position,
+    };
   });
   chk("skip link accessibile", !!skip && skip.visible && skip.target && skip.focused, JSON.stringify(skip));
   const store = await page.evaluate(() => ({
