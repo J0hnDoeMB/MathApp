@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release (e.g. v1.27.0)'
+        required: true
 
 permissions:
   contents: write
@@ -15,6 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
@@ -23,8 +29,8 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          if ("v$version" -ne "${{ github.ref_name }}") {
-            throw "Tag ${{ github.ref_name }} does not match package version v$version"
+          if ("v$version" -ne "${{ github.event.inputs.tag || github.ref_name }}") {
+            throw "Tag ${{ github.event.inputs.tag || github.ref_name }} does not match package version v$version"
           }
       - name: Install dev dependencies
         run: npm ci
@@ -59,8 +65,10 @@ jobs:
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${RELEASE_TAG}"
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" --title "$tag" --notes "See CHANGELOG.md for details."
           fi

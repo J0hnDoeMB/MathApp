@@ -14,6 +14,7 @@
 4. Nessun segreto, `settings.json`, `data/`, `.tools/` o path personale nel commit.
 5. `npm run package` e tag annotato `vX.Y.Z`; il workflow `release.yml` ricontrolla i test, verifica tag/versione e pubblica lo zip come asset.
 6. CI e workflow `release` verdi sul commit taggato **prima** di annunciare la release.
+7. Se il workflow `release` fallisce dopo il tag, rilancialo da **Actions ? Release ? Run workflow** indicando il tag esistente: non serve spostare il tag.
 
 ## Branch protection
 
