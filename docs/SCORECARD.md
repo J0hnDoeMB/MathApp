@@ -1,6 +1,6 @@
 # Product scorecard
 
-Current state (v1.27.0):
+Current state (v1.27.1):
 
 | Metric | Current |
 |---|---|

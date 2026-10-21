@@ -10,7 +10,7 @@ MathApp is intentionally **Node-only at its core**:
 
 A missing optional dependency must never block chat, GeoGebra or saved conversations. `/api/diagnostics` exposes detected capabilities; the launcher and Settings show them.
 
-## Module map (v1.27.0)
+## Module map (v1.27.1)
 
 `server.mjs` is the HTTP shell (security, router, static, startup). API route groups live in `routes/`; domain services live in `lib/`. Neither routes nor services import `server.mjs`.
 

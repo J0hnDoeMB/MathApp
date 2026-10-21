@@ -4,6 +4,8 @@
 
 Tutor di matematica **locale** con chat AI, GeoGebra e calcolo esatto SymPy. La API key resta sul tuo PC.
 
+Percorso guidato per il primo avvio: [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md).
+
 ![Chat con GeoGebra in azione](docs/chat-geogebra.png)
 
 ## Avvio rapido

@@ -57,7 +57,7 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [ ] packaging Windows firmato/installer
 - [x] release workflow e archivio sorgente versionato (`npm run package`)
 - [x] accessibilità di base (skip link, focus) e smoke mobile 390 px
-- [ ] documentazione per utenti finali completa
+- [x] documentazione per utenti finali completa (USER-GUIDE + USAGE)
 - [x] metriche di errore, first-token trace e diagnostica
 
 ## Regola di feature freeze

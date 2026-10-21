@@ -5,6 +5,8 @@
 App locale: **chat con un'IA di matematica** + **GeoGebra** che l'IA può disegnare, il tutto sul PC.
 L'IA spiega a parole e in LaTeX; quando serve, disegna nell'applet GeoGebra che vedi e puoi manipolare.
 
+Se ? il primo avvio, segui la [`USER-GUIDE.md`](USER-GUIDE.md); questa pagina resta la reference completa.
+
 Su **macOS/Linux** usa `npm start` (vedi [`SETUP-MACOS-LINUX.md`](SETUP-MACOS-LINUX.md)); gli script PowerShell sono solo Windows.
 
 ![MathApp - impostazioni API key](settings.png)

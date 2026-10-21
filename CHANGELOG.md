@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.27.1 - 2026-10-21
+
+### Added
+- Guida utente passo-passo in `docs/USER-GUIDE.md`, collegata da README e USAGE: primo avvio, API key, chat, GeoGebra, quaderno, backup, privacy, problemi comuni e scorciatoie.
+- Release workflow: esecuzione manuale su un tag esistente e `GH_REPO` nel job di pubblicazione, cos? un rerun non dipende dal checkout git.
+
+### Changed
+- Roadmap: documentazione utente finale completata.
+
+### Tests
+- Nessun cambiamento al codice runtime; restano 88 Node, 22 UI, 14 XSS, 5 GeoGebra, 29 Python, 17 eval, coverage 69.9%.
+
 ## v1.27.0 - 2026-10-21
 
 ### Added
