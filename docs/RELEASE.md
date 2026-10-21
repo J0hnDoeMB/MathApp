@@ -8,8 +8,8 @@
 
 ## Checklist di release
 
-1. `npm test` verde (88 check), `npm run test:ui` verde (22 check), `npm run test:xss` verde (14 check), `npm run test:geo` verde (5 check) e `npm run test:py` verde.
-2. `node test/test_server_cancel.mjs` e i test UI disponibili verdi.
+1. `npm test` verde (88 check), `npm run test:ui` verde (24 check), `npm run test:xss` verde (14 check), `npm run test:switch` verde (1 check), `npm run test:geo` verde (5 check) e `npm run test:py` verde.
+2. `node test/test_server_cancel.mjs` e i test browser self-contained verdi.
 3. `docs/ARCHITECTURE.md` e `CHANGELOG.md` aggiornati; versione allineata in `package.json`/`package-lock.json`.
 4. Nessun segreto, `settings.json`, `data/`, `.tools/` o path personale nel commit.
 5. `npm run package` e tag annotato `vX.Y.Z`; il workflow `release.yml` ricontrolla i test, verifica tag/versione e pubblica lo zip come asset.

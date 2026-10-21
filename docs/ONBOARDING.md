@@ -36,14 +36,15 @@ Dipendenza consentita: `server → agent → servizi → storage/config`. I serv
 
 ```powershell
 npm test              # 88 check: moduli, agente, parser, security/sessione, lock
-npm run test:ui       # 22 check browser (richiede browser)
+npm run test:ui       # 24 check browser (richiede browser)
 npm run test:xss      # 14 check XSS self-contained (richiede browser)
+npm run test:switch   # 1 check cambio conversazione self-contained (richiede browser)
 npm run test:geo      # 5 check GeoGebra (richiede rete CDN)
 npm run test:py       # parser SymPy
 node test/test_server_cancel.mjs
 ```
 
-I test browser richiedono Puppeteer e l'app avviata; vedi README.
+I test browser usano puppeteer-core con Edge/Chrome; UI, XSS e cambio conversazione avviano un server temporaneo da soli.
 
 ## 5. Contratti principali
 

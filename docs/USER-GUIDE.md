@@ -27,7 +27,7 @@ conversazioni: manca solo la risposta dell'IA.
 | Python + pypdf | no | estrazione testo dai PDF |
 | Python + faster-whisper | no | dettatura e trascrizione audio locale |
 
-GeoGebra e KaTeX vengono caricati da CDN: senza internet la chat e il calcolo
+GeoGebra e KaTeX vengono caricati da CDN al primo avvio; il service worker li conserva per le visite successive anche senza internet. Senza internet al primo avvio la chat e il calcolo
 restano disponibili, ma il disegno e il rendering delle formule no.
 
 ## 3. Installazione

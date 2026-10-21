@@ -22,6 +22,9 @@ jobs:
         run: |
           node --check server.mjs
           node --check public/app.js
+          node --check public/sw.js
+          node --check public/core/format.js
+          node --check public/core/markdown.js
           node --check public/state.js
           node --check public/features.js
           Get-ChildItem public/features -Filter *.js | ForEach-Object { node --check $_.FullName }
@@ -31,6 +34,7 @@ jobs:
           node --check test/test_geogebra_smoke.mjs
           node --check test/test_instance_lock.mjs
           node --check test/test_xss.mjs
+          node --check test/test_conversation_switch.mjs
           node --check scripts/package-release.mjs
           node --check test/test_agent.mjs
           node --check test/test_chat_service.mjs
@@ -61,6 +65,8 @@ jobs:
         run: node test/test_ui_smoke.mjs
       - name: Browser XSS regression (no API key)
         run: node test/test_xss.mjs
+      - name: Browser conversation switch (no API key)
+        run: node test/test_conversation_switch.mjs
       - name: GeoGebra rebuild smoke
         run: node test/test_geogebra_smoke.mjs
       - name: Math eval (SymPy)

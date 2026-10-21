@@ -116,6 +116,10 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#settingsBtn", { timeout: 15000 });
   chk("UI caricata", await page.$("#chat") !== null && await page.$("#ggb") !== null);
+  chk("service worker registrato", await page.waitForFunction(
+    () => navigator.serviceWorker.getRegistration().then(Boolean).catch(() => false),
+    { timeout: 5000 },
+  ).then(() => true).catch(() => false));
   await page.keyboard.press("Tab");
   const skip = await page.evaluate(async () => {
     const a = document.querySelector('a.skip-link[href="#main"]');
@@ -244,6 +248,19 @@ try {
 
   chk("nessun errore JS dell'app", pageErrors.length === 0);
   if (pageErrors.length) console.error(pageErrors.slice(0, 4).join("\n"));
+
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.setOfflineMode(true);
+  await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });
+  const offlineShell = await page.evaluate(() => ({
+    shell: !!document.querySelector("#chat") && !!window.MathAppFormat && !!window.MathAppMarkdown,
+    markdown: !!window.marked,
+    katex: !!window.katex,
+    geogebra: typeof window.GGBApplet === "function",
+  }));
+  chk("offline: shell servita dalla cache", offlineShell.shell && offlineShell.markdown && offlineShell.katex && offlineShell.geogebra, JSON.stringify(offlineShell));
+  await page.setOfflineMode(false);
 } finally {
   if (browser) await browser.close();
   try { await fetch(`http://127.0.0.1:${port}/__test_shutdown`, { method: "POST", signal: AbortSignal.timeout(1000) }); } catch {}

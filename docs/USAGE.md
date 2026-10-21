@@ -39,7 +39,7 @@ La chiave resta in `settings.json`, solo sul tuo PC, e non viene mai mostrata. S
 | Funzione | Richiede | Se manca |
 |---|---|---|
 | Chat AI, API key, conversazioni, impostazioni | Node.js | - |
-| GeoGebra e LaTeX | browser + internet (CDN) | la chat funziona, manca il disegno |
+| GeoGebra e LaTeX | browser + primo caricamento internet (CDN), poi cache offline | la chat funziona; senza cache manca il disegno |
 | Calcolo esatto, studio di funzione, matrici, vettori | Python + SymPy | la chat funziona; il quaderno esatto no |
 | Dettatura | Python + faster-whisper | il microfono non è disponibile |
 | Quiz, ripasso, appunti, stile, TTS | solo l'app | - |
@@ -226,7 +226,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 ## Requisiti
 - Node.js. Opzionali: Python + SymPy per il calcolo esatto, pypdf per i PDF, Whisper per la dettatura.
 - Su Windows `.\setup.ps1` scarica Node portatile e, con `-Math`/`-Full`, prepara le dipendenze Python.
-- Connessione internet (per l'IA e per GeoGebra/KaTeX da CDN).
+- Connessione internet al primo avvio (per l'IA e per scaricare GeoGebra/KaTeX; il service worker li conserva per l'uso offline successivo).
 - La chiave API si configura in **Impostazioni** (salvata in `settings.json`) oppure, per compatibilita, si legge da `auth.json` di OpenCode; con OpenRouter basta incollare la chiave nelle Impostazioni.
 
 ## Sicurezza e verifiche
@@ -239,7 +239,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - Test parser: `python test/test_sympy_cli.py -v`.
 - Math eval deterministico: `npm run eval` (17 casi SymPy, in CI).
 - Test rapidi senza server: `npm test` (88 check: 23 test dei moduli + 4 del loop agente + 5 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/sessione/lock + parser + smoke con CSRF, body cap, path traversal, modalit? core, API impostazioni, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
-- Smoke browser: `npm run test:ui` (22 check: UI, skip link, mobile senza overflow, state store, command bus/settings.open, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI ? automatico. `npm run test:xss` esegue 14 check XSS con server temporaneo autonomo.
+- Smoke browser: `npm run test:ui` (24 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view); richiede Edge/Chrome e `puppeteer-core`, in CI ? automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test/test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test/test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test/test_conversation_restore.mjs`, `node test/test_conversation_switch.mjs`, `node test/test_geogebra_state.mjs`, `node test/test_geogebra_3d.mjs`, `node test/test_layout.mjs`, `node test/test_tutor.mjs`, `node test/test_review.mjs`, `node test/test_algebra_ui.mjs`, `node test/test_vista.mjs` e `node test/test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test/test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.

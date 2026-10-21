@@ -15,7 +15,12 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const cases = JSON.parse(fs.readFileSync(path.join(here, "ai-cases.json"), "utf8"));
 const base = (process.env.MATHAPP_AI_EVAL_BASE || "https://openrouter.ai/api/v1").replace(/\/$/, "");
 const model = process.env.MATHAPP_AI_EVAL_MODEL || "deepseek/deepseek-v4-flash-0731";
-const normalize = (s) => String(s || "").toLowerCase().replace(/\s+/g, "").replace(/\*/g, "");
+const SUPERSCRIPT = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
+const normalize = (s) => String(s || "")
+  .toLowerCase()
+  .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (d) => "^" + SUPERSCRIPT[d])
+  .replace(/\s+/g, "")
+  .replace(/\*/g, "");
 
 let pass = 0;
 let fail = 0;

@@ -20,6 +20,7 @@ Obiettivo: core chat + algebra + grafo + sessione affidabili.
 - [x] split dei route handler in `routes/` (server ~60 righe, solo composizione)
 - [x] test browser smoke in CI (nuova chat, restore sessione/stato, view)
 - [x] test browser dedicato al rebuild dell'applet GeoGebra (`test/test_geogebra_smoke.mjs`, 5 check in CI)
+- [x] test browser self-contained del cambio conversazione (`test/test_conversation_switch.mjs`, 1 check in CI)
 
 **Exit criteria:** tutti i check verdi, nessuna regressione nota su chat/sessione/stato, branch `main` protetto, nessuna feature B nel core.
 

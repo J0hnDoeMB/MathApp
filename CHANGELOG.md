@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.28.0 - 2026-10-21
+
+### Added
+- Self-contained browser regression for conversation switching (`test/test_conversation_switch.mjs`, 1 check) with temporary server, no API key, now in CI.
+- Offline shell: `public/sw.js` caches the app shell and CDN assets (marked, KaTeX, GeoGebra) after the first online visit; `/api` and user data are never cached. The UI smoke now verifies the offline reload (24 checks).
+- Core client split: Markdown/KaTeX sanitization in `public/core/markdown.js` and formatting helpers in `public/core/format.js`; `app.js` is smaller and still build-free.
+- Real-provider eval normalization for Unicode superscripts; the optional `eval:ai` harness passes 5/5 with `deepseek/deepseek-v4-flash-0731`.
+
+### Changed
+- README, USAGE, USER-GUIDE, ARCHITECTURE, ONBOARDING, QUALITY-GATE, RELEASE and SCORECARD document the offline behavior, new tests and optional AI eval result.
+- Known limitation updated: a brand-new install still needs one online visit for CDN assets; multi-user remains out of scope.
+
+### Tests
+- 88 Node, 24 UI, 1 conversation-switch, 14 XSS, 5 GeoGebra, 29 Python, 17 deterministic eval, 5/5 optional real-provider eval; coverage 69.9%.
+
 ## v1.27.1 - 2026-10-21
 
 ### Added
