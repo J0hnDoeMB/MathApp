@@ -10,7 +10,7 @@ MathApp is intentionally **Node-only at its core**:
 
 A missing optional dependency must never block chat, GeoGebra or saved conversations. `/api/diagnostics` exposes detected capabilities; the launcher and Settings show them.
 
-## Module map (v1.29.0)
+## Module map (v1.30.0)
 
 `server.mjs` is the HTTP shell (security, router, static, startup). API route groups live in `routes/`; domain services live in `lib/`. Neither routes nor services import `server.mjs`.
 
@@ -38,18 +38,20 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `lib/review.mjs` | SM-2 scheduling | storage |
 | `lib/study.mjs` | flashcard/quiz prompts, model call and parsing | llm, parsers |
 | `lib/features.mjs` | optional API gate + plugin registry (id, prefixes, module) | none |
-| `lib/session-store.mjs` | session repository: read/write, state merge, history, tags | storage, schema, models, log |
+| `lib/session-store.mjs` | session repository: read/write, state merge, paginated history with summary cache, tags | storage, schema, models, log |
 | `lib/schema.mjs` | data validation, limits and migrations | none |
 | `lib/ports.mjs`, `lib/adapters.mjs` | external port contracts and concrete adapter container | integration services |
 | `lib/capabilities.mjs` | required/optional capability status and degraded fallback | config, storage, fs-check |
 | `lib/diagnostics.mjs` | runtime/storage/provider diagnostics for API and launcher | config, storage, levels, capabilities |
 | `lib/observability.mjs` | request/operation IDs, JSONL trace, rotation | config |
 | `lib/json-store.mjs` | atomic JSON read/write, corruption quarantine | log |
-| `lib/storage.mjs` | data paths, review file, backups | config, log, json-store |
+| `lib/storage.mjs` | data paths, review file, backups and reschedulable backup timer | config, log, json-store |
 | `lib/util.mjs` | project paths, UTF-8 Python env, bounded caches | none |
 | `public/state.js` | client domain/UI store, command bus and events | browser only |
 | `public/core/format.js`, `public/core/markdown.js` | formatting helpers and safe Markdown/KaTeX rendering | browser only |
 | `public/core/sources.js`, `public/core/export.js` | note-source matching and PDF/Markdown export | browser only |
+| `public/core/history.js`, `public/core/settings-ui.js` | history drawer with pagination and settings drawer (hot backup options) | `MathAppState`, HTTP API |
+| `public/core/audio.js`, `public/core/geo-view.js` | dictation bridge and GeoGebra view panel/fit helpers | browser only |
 | `public/sw.js` | offline shell and CDN asset cache (GET only; never `/api`) | browser only |
 | `public/features.js`, `public/features/*.js` | lazy optional UI plugins (quiz, review, TTS, KB, style) | `MathAppApp` API |
 | `public/` | browser UI (GeoGebra, chat, notebook) | HTTP API |
@@ -101,8 +103,8 @@ External I/O is isolated in `lib/llm.mjs`:
 
 - `npm run eval`: 17 deterministic SymPy cases (`eval/`).
 - `npm run lint`: ESLint correctness rules (`no-undef`, unreachable/duplicate keys, and related checks).
-- `npm test`: 120 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/session + 6 instance lock + 25 hardening + 6 restore + parser).
-- `npm run test:ui`: 25 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open, lazy plugins core/full, drawers, new chat, session restore, view, algebra partials); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
+- `npm test`: 135 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 11 history/backup scheduler + 45 security/session + 6 instance lock + 25 hardening + 6 restore + parser).
+- `npm run test:ui`: 29 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open/save including backup interval, history pagination, lazy plugins core/full, drawers, new chat, session restore, view, algebra partials); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
 - `npm run test:xss`: 14 self-contained browser checks (Markdown, tools, LaTeX) with a temporary server, in CI.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

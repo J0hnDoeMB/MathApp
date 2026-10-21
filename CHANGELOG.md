@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.30.0 - 2026-10-22
 
 ### Security
 - Hardened HTTP crash paths, static/stream writes, request and PDF timeouts, save-failure propagation, CSP/security headers, KB attachment MIME handling and POSIX file modes.
@@ -8,14 +8,20 @@
 - Added a guarded backup restore CLI with path traversal/symlink rejection and a `data.pre-restore-*` safety copy.
 
 ### Added
+- History pagination: `/api/history?limit&offset` returns `items`, `total`, `offset`, `limit`, `hasMore`; the drawer loads 40 items per page with "Mostra altri". Session summary headers are cached per path and invalidated on write/delete or mtime/size changes.
+- Backup schedule is configurable from Settings (on/off, 1-168 hours, default 24) and is rescheduled at runtime without restarting the server.
+- Split history, settings, dictation and GeoGebra-view UI into `public/core/{history,settings-ui,audio,geo-view}.js`; `app.js` drops from 2468 to 2055 lines and stays build-free.
 - ESLint (`npm run lint`, `no-undef` and correctness rules) in local checks and CI.
-- Restore test suite (6 checks) and browser coverage for the algebra “partial sums” variable path.
+- Restore test suite (6 checks), history/backup scheduler suite (11 checks) and browser coverage for the algebra "partial sums" variable path.
 
 ### Fixed
 - `new URL()` crash path, silent conversation save failures, KB HTML/SVG inline serving, GeoGebra restore/view race, and undefined `calcVar` in the algebra notebook.
 
+### Changed
+- Service-worker cache version bumped to `mathapp-v4` so existing clients pick up the new core scripts and modules atomically.
+
 ### Tests
-- 120 Node, 25 UI, 1 conversation-switch, 14 XSS, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage 71.1%.
+- 135 Node, 29 UI, 1 conversation-switch, 14 XSS, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage 73.2%.
 
 ## v1.29.0 - 2026-10-21
 

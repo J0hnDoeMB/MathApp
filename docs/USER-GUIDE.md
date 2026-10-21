@@ -141,7 +141,8 @@ di funzione, statistica e regressione.
 - **Disegna** porta il risultato sulla lavagna.
 - **Nuova chat** azzera conversazione, quaderno e allegati.
 - **Cronologia** riapre una conversazione con figure e calcoli; la ricerca
-  accetta anche tag come `#verifica`.
+  accetta anche tag come `#verifica`. Se le conversazioni sono molte, **Mostra
+  altri** carica la pagina successiva (40 per volta).
 
 La sessione è **persistente**: F5 non cancella conversazione, figure o quaderno.
 Se lo stato esatto manca, l'app prova a ricostruirlo dai comandi salvati.
@@ -152,8 +153,9 @@ Se lo stato esatto manca, l'app prova a ricostruirlo dai comandi salvati.
   in un file Markdown.
 - Nel quaderno puoi esportare il PDF dei calcoli e i grafici in PNG.
 - I dati stanno in `data/` (`conversations/`, `kb/`, ...).
-- I backup automatici stanno in `backups/`; copia quella cartella su un
-  supporto esterno se vuoi conservarla.
+- I backup automatici stanno in `backups/`; in **Impostazioni** puoi
+  attivarli/disattivarli e scegliere l'intervallo (1-168 ore, default 24) senza
+  riavviare. Copia quella cartella su un supporto esterno se vuoi conservarla.
 - Per ripristinare: ferma MathApp, poi esegui `node scripts/restore-backup.mjs`
   (usa l'ultimo backup) oppure `node scripts/restore-backup.mjs backups\<file>.zip`.
   I dati precedenti vengono conservati in `data.pre-restore-<data>`.

@@ -53,7 +53,7 @@ I blocchi sono `{docId,docName,kind,page,i,text}`.
 ## SettingsProfile (`settings.json`)
 
 `provider`, `apiKey?`, `model`, `mode`, `level`, `whisperLanguage`, `backup`, `backupHours`.
-La chiave non viene mai restituita dalle API, non finisce nei log e non è inclusa nei backup (`data/`).
+La chiave non viene mai restituita dalle API, non finisce nei log e non è inclusa nei backup (`data/`). `backup` abilita/disabilita i backup automatici; `backupHours` è l'intervallo in ore (1-168, default 24) e viene applicato a caldo senza riavvio.
 
 ## BackupSnapshot (`backups/*.zip`)
 

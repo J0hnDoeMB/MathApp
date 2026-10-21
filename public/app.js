@@ -323,175 +323,7 @@ function toggleView3d() { setView3d(!appState.domain.ggb3d); saveState(); return
 $("#view3d").addEventListener("click", () => MathAppState.dispatch("view.toggle3d").catch((err) => console.warn("[MathApp] view.toggle3d", err)));
 updateViewButton();
 
-// ---------- finestra del grafico: vista 2D personalizzata ----------
-// La finestra [xmin,xmax]x[ymin,ymax] dell'applet si legge dall'XML (coordSystem + size)
-// e si applica con setCoordSystem; assi e griglia con le API dedicate.
-
-function viewFinite(v) {
-  return !!v && [v.xmin, v.xmax, v.ymin, v.ymax].every((n) => Number.isFinite(n)) && v.xmin < v.xmax && v.ymin < v.ymax;
-}
-
-function viewFromBoard() {
-  if (!ggbReady) return appState.domain.viewCache;
-  try {
-    const block = (ggbApplet.getXML().match(/<euclidianView>[\s\S]*?<\/euclidianView>/) || [""])[0];
-    if (!block) return appState.domain.viewCache;
-    const tag = (re) => (block.match(re) || [""])[0];
-    const num = (t, name) => { const m = String(t).match(new RegExp("\\b" + name + '="([^"]+)"')); return m ? parseFloat(m[1]) : NaN; };
-    const flag = (t, name) => { const m = String(t).match(new RegExp("\\b" + name + '="([^"]+)"')); return m ? m[1] === "true" : null; };
-    const sizeTag = tag(/<size [^>]*>/), csTag = tag(/<coordSystem [^>]*>/), evTag = tag(/<evSettings [^>]*>/);
-    const W = num(sizeTag, "width"), H = num(sizeTag, "height");
-    const x0 = num(csTag, "xZero"), y0 = num(csTag, "yZero"), sx = num(csTag, "scale"), sy = num(csTag, "yscale");
-    if (![W, H, x0, y0, sx, sy].every(Number.isFinite) || sx <= 0 || sy <= 0) return appState.domain.viewCache;
-    const rec = {
-      xmin: -x0 / sx, xmax: (W - x0) / sx,
-      ymin: (y0 - H) / sy, ymax: y0 / sy,
-      axes: flag(evTag, "axes"), grid: flag(evTag, "grid"),
-    };
-    if (viewFinite(rec)) { appState.domain.viewCache = rec; return rec; }
-    return appState.domain.viewCache;
-  } catch { return appState.domain.viewCache; }
-}
-
-function applyViewToBoard(rec) {
-  if (!ggbReady || appState.domain.ggb3d || !viewFinite(rec)) return false;
-  let done = false;
-  try { ggbApplet.setCoordSystem(rec.xmin, rec.xmax, rec.ymin, rec.ymax); done = true; } catch (e) { console.warn("[MathApp] setCoordSystem non riuscito", e); }
-  if (!done) {
-    try { ggbApplet.evalCommand("ZoomIn(" + fmtViewNum(rec.xmin) + "," + fmtViewNum(rec.ymin) + "," + fmtViewNum(rec.xmax) + "," + fmtViewNum(rec.ymax) + ")"); done = true; } catch {}
-  }
-  if (!done) return false;
-  appState.domain.viewCache = rec; // anche a lavagna nascosta la finestra applicata è quella giusta
-  try { if (typeof rec.axes === "boolean" && ggbApplet.setAxesVisible) ggbApplet.setAxesVisible(rec.axes, rec.axes); } catch {}
-  try { if (typeof rec.grid === "boolean" && ggbApplet.setGridVisible) ggbApplet.setGridVisible(rec.grid); } catch {}
-  return true;
-}
-
-function viewPanelSync() {
-  const cur = viewFromBoard() || appState.domain.viewCustom;
-  const base = cur || { xmin: -10, xmax: 10, ymin: -10, ymax: 10 };
-  const set = (id, v) => { const el = $(id); if (el) el.value = fmtViewNum(v); };
-  set("#vxmin", base.xmin); set("#vxmax", base.xmax); set("#vymin", base.ymin); set("#vymax", base.ymax);
-  const ax = $("#vaxes"), gr = $("#vgrid");
-  if (ax) ax.checked = cur && cur.axes !== null && cur.axes !== undefined ? !!cur.axes : true;
-  if (gr) gr.checked = !!(cur && cur.grid);
-}
-
-function applyView(rec, persist) {
-  if (appState.domain.ggb3d) { flash("la finestra vale per il piano 2D: prima esci dalla vista 3D"); return false; }
-  if (!applyViewToBoard(rec)) { flash("finestra non applicata"); return false; }
-  appState.domain.viewCustom = rec;
-  viewPanelSync();
-  if (persist !== false) saveState();
-  return true;
-}
-
-const viewPanel = $("#viewPanel");
-function setViewPanel(open) {
-  if (!viewPanel) return;
-  viewPanel.hidden = !open;
-  const b = $("#viewBtn");
-  if (b) { b.classList.toggle("is-on", !!open); b.setAttribute("aria-expanded", String(!!open)); }
-  if (open) viewPanelSync();
-}
-
-if (viewPanel) {
-  $("#viewBtn").addEventListener("click", () => setViewPanel(viewPanel.hidden));
-  $("#viewClose").addEventListener("click", () => setViewPanel(false));
-  document.addEventListener("click", (e) => {
-    if (viewPanel.hidden) return;
-    if (viewPanel.contains(e.target) || $("#viewBtn").contains(e.target)) return;
-    setViewPanel(false);
-  });
-  $("#viewApply").addEventListener("click", () => {
-    const num = (id) => parseFloat(String($(id).value).replace(",", "."));
-    const rec = { xmin: num("#vxmin"), xmax: num("#vxmax"), ymin: num("#vymin"), ymax: num("#vymax"), axes: $("#vaxes").checked, grid: $("#vgrid").checked };
-    if (!viewFinite(rec)) { flash("controlla gli intervalli: il minimo dev'essere minore del massimo"); return; }
-    if (applyView(rec)) flash("finestra applicata");
-  });
-  $("#viewStd").addEventListener("click", () => { if (applyView({ xmin: -10, xmax: 10, ymin: -10, ymax: 10, axes: true, grid: false })) flash("finestra standard"); });
-  $("#viewFit").addEventListener("click", () => { if (!fitToContent()) flash("niente da inquadrare: disegna prima una funzione o dei punti"); });
-}
-
-// ---------- "Adatta": inquadra funzioni e punti notevoli ----------
-function latestDrawCell() {
-  for (let i = appState.domain.cellData.length - 1; i >= 0; i--) {
-    const c = appState.domain.cellData[i];
-    if (c && c.res && c.res.draw) return c.res;
-  }
-  return null;
-}
-
-function collectFitPoints() {
-  const pts = [];
-  const lastFig = appState.domain.figures[appState.domain.figures.length - 1];
-  if (lastFig) for (const c of lastFig.commands) {
-    const m = String(c).match(/^\s*[A-Za-z][\w']*\s*=\s*\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*[,)]/);
-    if (m) pts.push({ x: parseFloat(m[1]), y: parseFloat(m[2]) });
-  }
-  const lastDraw = latestDrawCell();
-  if (lastDraw && lastDraw.draw && Array.isArray(lastDraw.draw.punti)) for (const p of lastDraw.draw.punti) {
-    const x = Number(p.x), y = Number(p.y);
-    if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
-  }
-  return pts;
-}
-
-// campiona f(x) facendo calcolare il valore a GeoGebra (variabile temporanea zzFit)
-function sampleFnY(name, x) {
-  try {
-    if (!ggbApplet.evalCommand("zzFit = " + name + "(" + fmtViewNum(x) + ")")) return null;
-    const v = Number(ggbApplet.getValue("zzFit"));
-    return Number.isFinite(v) ? v : null;
-  } catch { return null; }
-}
-
-function fitToContent(opts) {
-  if (!ggbReady || appState.domain.ggb3d) return false;
-  const pts = collectFitPoints().concat((opts && opts.points) || []);
-  const fns = ((opts && opts.functions) || []).slice();
-  const lastFig = appState.domain.figures[appState.domain.figures.length - 1];
-  if (lastFig) for (const c of lastFig.commands) {
-    const m = String(c).match(/^\s*([A-Za-z]\w*)\s*\(x\)\s*=/);
-    if (m) fns.push(m[1]);
-  }
-  const lastDraw = latestDrawCell();
-  if (lastDraw && lastDraw.kind === "studio" && lastDraw.draw && lastDraw.draw.funzione) fns.push("f");
-  const cur = viewFromBoard();
-  let xmin = Infinity, xmax = -Infinity;
-  for (const p of pts) { if (p.x < xmin) xmin = p.x; if (p.x > xmax) xmax = p.x; }
-  if (Number.isFinite(xmin)) {
-    if (xmax - xmin < 1e-9) { const c0 = (xmin + xmax) / 2 || 0; xmin = c0 - 2; xmax = c0 + 2; }
-    const padX = Math.min(Math.max(0.35 * (xmax - xmin), 1), 50);
-    xmin -= padX; xmax += padX;
-  } else if (fns.length && cur) { xmin = cur.xmin; xmax = cur.xmax; }
-  else return false;
-  const ys = [];
-  for (const p of pts) if (Number.isFinite(p.y) && Math.abs(p.y) < 1e6) ys.push(p.y);
-  if (fns.length) {
-    let names = [];
-    try { names = ggbApplet.getAllObjectNames(); } catch {}
-    const valid = fns.filter((nm, i) => names.includes(nm) && fns.indexOf(nm) === i);
-    if (valid.length && !names.includes("zzFit")) {
-      for (const nm of valid) {
-        for (let i = 0; i <= 120; i++) {
-          const y = sampleFnY(nm, xmin + ((xmax - xmin) * i) / 120);
-          if (y !== null && Math.abs(y) < 1e6) ys.push(y);
-        }
-      }
-      try { ggbApplet.deleteObject("zzFit"); } catch {}
-    }
-  }
-  if (!ys.length) return false;
-  ys.sort((a, b) => a - b);
-  const pick = (q) => ys[Math.min(ys.length - 1, Math.max(0, Math.floor(q * (ys.length - 1))))];
-  let ymin = pick(0.02), ymax = pick(0.98);
-  if (!(ymax > ymin)) { ymin = ys[0]; ymax = ys[ys.length - 1]; }
-  if (ymax - ymin < 1e-9) { const c1 = (ymin + ymax) / 2 || 0; ymin = c1 - 2; ymax = c1 + 2; }
-  const padY = 0.1 * (ymax - ymin);
-  const base = appState.domain.viewCustom || cur || { axes: true, grid: false };
-  return applyView({ xmin, xmax, ymin: ymin - padY, ymax: ymax + padY, axes: base.axes !== false, grid: base.grid === true });
-}
+// ---------- finestra del grafico (modulo public/core/geo-view.js) ----------
 
 // Scheda di una costruzione: comandi in chiaro, si rivede e si esegue quando vuoi.
 function renderFigureCard(parent, fig, opts) {
@@ -614,6 +446,13 @@ async function execEdits(callId, ops, expectedGeneration = appState.domain.conve
 // Markdown/KaTeX: estratti in public/core/markdown.js (classic script, no build).
 const { fixMathNotation, renderMD } = window.MathAppMarkdown;
 const { escapeHtml, fmtViewNum, fmt6, fmtDate, fmtSize } = window.MathAppFormat;
+
+const geoView = window.MathAppGeoView.create({
+  appState, $, flash, saveState, fmtViewNum,
+  getApplet: () => ggbApplet,
+  isReady: () => ggbReady,
+});
+const { viewFinite, viewFromBoard, applyViewToBoard, viewPanelSync, setViewPanel, fitToContent } = geoView;
 
 // ---------- chat ----------
 // Auto-scroll rispettoso: se stai leggendo più in alto, non ti riporta giù.
@@ -1494,7 +1333,6 @@ calcForm.addEventListener("submit", async (e) => {
 });
 
 // ---------- cronologia ----------
-const drawer = $("#historyDrawer");
 function appendRendered(role, content, files, idx) {
   let d;
   if (role === "user") {
@@ -1509,130 +1347,23 @@ function appendRendered(role, content, files, idx) {
   if (idx != null) d.dataset.idx = idx;
   return d;
 }
-async function refreshHistory() {
-  const list = $("#historyList");
-  const q = ($("#historySearch") ? $("#historySearch").value : "") || "";
-  try {
-    const j = await (await fetch("/api/history" + (q.trim() ? "?q=" + encodeURIComponent(q.trim()) : ""))).json();
-    if (!j.items.length) {
-      list.innerHTML = "";
-      const d = document.createElement("div"); d.className = "hist-empty";
-      d.textContent = q.trim()
-        ? "Nessun risultato. Prova con meno parole, oppure un #tag."
-        : "Nessun argomento ancora. Le conversazioni compaiono qui.";
-      list.appendChild(d);
-      return;
-    }
-    list.innerHTML = "";
-    for (const it of j.items) {
-      const row = document.createElement("div"); row.className = "hist-item";
-      const t = document.createElement("div"); t.className = "t";
-      const b = document.createElement("b"); b.textContent = it.title || "Senza titolo";
-      const s = document.createElement("span");
-      const extra = [];
-      if (it.figures) extra.push(it.figures + (it.figures === 1 ? " figura" : " figure"));
-      else if (it.hasGgb) extra.push("figura");
-      if (it.cells) extra.push(it.cells + " calcoli");
-      s.textContent = fmtDate(it.updatedAt) + " · " + it.count + " messaggi" + (extra.length ? " · " + extra.join(" · ") : "");
-      t.append(b, s);
-      if (it.match && it.match.snippet) {
-        const m = document.createElement("div"); m.className = "hist-match";
-        const w = document.createElement("em"); w.className = "hist-where";
-        w.textContent = "trovato in " + (it.match.where || []).join(", ") + ": ";
-        const sn = document.createElement("span"); sn.className = "hist-snip"; sn.textContent = it.match.snippet;
-        m.append(w, sn);
-        t.appendChild(m);
-      }
-      // etichette: chip cliccabili + aggiunta/rimozione inline
-      const tagRow = document.createElement("div"); tagRow.className = "hist-tags";
-      const addTag = (tag) => fetch("/api/conversation/tags", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: it.id, tag, action: "add" }),
-      }).then(() => refreshHistory()).catch(() => {});
-      const rmTag = (tag) => fetch("/api/conversation/tags", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: it.id, tag, action: "remove" }),
-      }).then(() => refreshHistory()).catch(() => {});
-      for (const tg of (it.tags || [])) {
-        const chip = document.createElement("span"); chip.className = "hist-tag";
-        const link = document.createElement("button"); link.type = "button"; link.className = "hist-tag-name"; link.textContent = "#" + tg;
-        link.title = "Mostra solo gli argomenti con questa etichetta";
-        link.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          const inp = $("#historySearch");
-          inp.value = "#" + tg;
-          refreshHistory();
-        });
-        const x = document.createElement("button"); x.type = "button"; x.className = "hist-tag-x"; x.textContent = "×";
-        x.title = "Togli l'etichetta";
-        x.addEventListener("click", (ev) => { ev.stopPropagation(); rmTag(tg); });
-        chip.append(link, x);
-        tagRow.appendChild(chip);
-      }
-      const addBtn = document.createElement("button");
-      addBtn.type = "button"; addBtn.className = "hist-tag-add"; addBtn.textContent = "+ etichetta";
-      addBtn.title = "Aggiungi un'etichetta a questo argomento";
-      addBtn.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        const inp = document.createElement("input");
-        inp.type = "text"; inp.className = "hist-tag-input"; inp.maxLength = 24; inp.placeholder = "etichetta…";
-        inp.addEventListener("click", (e2) => e2.stopPropagation());
-        inp.addEventListener("keydown", (e2) => {
-          e2.stopPropagation();
-          if (e2.key === "Enter") { const v = inp.value.trim(); if (v) addTag(v); else refreshHistory(); }
-          else if (e2.key === "Escape") refreshHistory();
-        });
-        addBtn.replaceWith(inp);
-        inp.focus();
-      });
-      tagRow.appendChild(addBtn);
-      t.appendChild(tagRow);
-      const del = document.createElement("button");
-      del.type = "button"; del.className = "hist-del"; del.textContent = "Elimina";
-      del.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        MathAppState.dispatch("conversation.delete", { id: it.id }).catch((err) => console.warn("[MathApp] conversation.delete", err));
-      });
-      row.append(t, del);
-      row.addEventListener("click", () => MathAppState.dispatch("conversation.open", { id: it.id }).catch((err) => console.warn("[MathApp] conversation.open", err)));
-      list.appendChild(row);
-    }
-  } catch { list.innerHTML = '<div class="hist-empty">Cronologia non disponibile.</div>'; }
-}
-async function openConv(id) {
-  const generation = invalidateConversationWork();
-  const pendingWrites = stateWriteQueue;
-  appState.ui.conversationLoading = true;
-  sendBtn.disabled = true;
-  statusEl.textContent = "carico argomento…";
-  try {
-    await pendingWrites;
-    if (generation !== appState.domain.conversationGeneration) return;
-    const r = await fetch("/api/conversation?id=" + encodeURIComponent(id));
-    if (generation !== appState.domain.conversationGeneration) return;
-    if (!r.ok) { flash("argomento non disponibile"); return; }
-    const c = await r.json();
-    if (generation !== appState.domain.conversationGeneration || !(await renderConversation(c, generation))) return;
-    drawer.hidden = true;
-    statusEl.textContent = "argomento ripreso";
-    setTimeout(() => (statusEl.textContent = ""), 1500);
-  } catch { if (generation === appState.domain.conversationGeneration) flash("errore nel caricamento dell'argomento"); }
-  finally {
-    if (generation === appState.domain.conversationGeneration) {
-      appState.ui.conversationLoading = false;
-      sendBtn.disabled = false;
-      saveState();
-    }
-  }
-}
-function toggleHistory() {
-  drawer.hidden = !drawer.hidden;
-  if (!drawer.hidden) { refreshHistory(); refreshBackupInfo(); }
-  return !drawer.hidden;
-}
-function closeHistory() { drawer.hidden = true; return false; }
-$("#historyBtn").addEventListener("click", () => MathAppState.dispatch("history.toggle").catch((err) => console.warn("[MathApp] history.toggle", err)));
-$("#historyClose").addEventListener("click", () => MathAppState.dispatch("history.close").catch((err) => console.warn("[MathApp] history.close", err)));
+
+const historyUi = window.MathAppHistory.create({
+  appState,
+  drawer: $("#historyDrawer"),
+  listEl: $("#historyList"),
+  searchEl: $("#historySearch"),
+  fmtDate,
+  flash,
+  saveState,
+  invalidateConversationWork,
+  renderConversation,
+  getPendingWrites: () => stateWriteQueue,
+  sendBtn,
+  statusEl,
+  refreshBackupInfo,
+});
+const { refreshHistory, openConv, toggleHistory, closeHistory } = historyUi;
 
 // ---------- copie di sicurezza ----------
 async function refreshBackupInfo() {
@@ -2206,94 +1937,7 @@ $("#historySearch").addEventListener("input", (e) => { clearTimeout(histTimer); 
 const { renderSources } = window.MathAppSources;
 
 // ---------- dettatura vocale (trascrizione locale con Whisper) ----------
-let mediaRec = null, recChunks = [], recTimer = null, recStart = 0, recBusy = false;
-
-function b64FromBlob(blob) {
-  return new Promise((resolve) => {
-    const fr = new FileReader();
-    fr.onload = () => { const s = String(fr.result || ""); resolve(s.slice(s.indexOf(",") + 1)); };
-    fr.readAsDataURL(blob);
-  });
-}
-
-async function transcribeBlob(blob) {
-  flash("trascrivo in locale… (può richiedere qualche secondo)");
-  try {
-    const b64 = await b64FromBlob(blob);
-    const r = await fetch("/api/transcribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ b64 }) });
-    const j = await r.json();
-    if (j && j.ok && j.text) {
-      inputEl.value = (inputEl.value.trim() ? inputEl.value.replace(/\s+$/, "") + " " : "") + j.text;
-      inputEl.focus();
-      flash("trascrizione pronta (" + j.language + " " + Math.round((j.language_probability || 0) * 100) + "%): controlla e invia");
-    } else if (j && j.ok) {
-      flash("non ho sentito nulla: riprova parlando più vicino al microfono");
-    } else {
-      flash("trascrizione non riuscita: " + ((j && j.error) || "errore"));
-    }
-  } catch (e) { flash("trascrizione non riuscita: " + e.message); }
-}
-
-let micBusyTimer = null;
-function setMicBusy(on) {
-  const b = $("#micBtn");
-  if (on) {
-    recBusy = true;
-    clearInterval(recTimer);
-    b.classList.remove("recording");
-    b.classList.add("transcribing");
-    b.disabled = true;
-    const t0 = Date.now();
-    const tick = () => { b.textContent = "✍ " + Math.round((Date.now() - t0) / 1000) + "s"; };
-    tick();
-    micBusyTimer = setInterval(tick, 500);
-  } else {
-    recBusy = false;
-    clearInterval(micBusyTimer);
-    micBusyTimer = null;
-    b.classList.remove("transcribing");
-    b.disabled = false;
-    b.textContent = "🎤";
-  }
-}
-
-async function toggleMic() {
-  if (recBusy) return;
-  if (mediaRec && mediaRec.state === "recording") { mediaRec.stop(); return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const tipo = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : (MediaRecorder.isTypeSupported("audio/ogg") ? "audio/ogg" : "");
-    mediaRec = tipo ? new MediaRecorder(stream, { mimeType: tipo }) : new MediaRecorder(stream);
-    recChunks = [];
-    mediaRec.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
-    mediaRec.onstop = async () => {
-      try { stream.getTracks().forEach((t) => t.stop()); } catch {}
-      clearInterval(recTimer);
-      const blob = new Blob(recChunks, { type: mediaRec.mimeType || "audio/webm" });
-      if (blob.size > 800) {
-        setMicBusy(true);
-        try { await transcribeBlob(blob); } finally { setMicBusy(false); }
-      } else {
-        $("#micBtn").classList.remove("recording");
-        $("#micBtn").textContent = "🎤";
-        flash("registrazione troppo breve");
-      }
-    };
-    mediaRec.start();
-    recStart = Date.now();
-    $("#micBtn").classList.add("recording");
-    $("#micBtn").textContent = "■ 0s";
-    recTimer = setInterval(() => {
-      const s = Math.round((Date.now() - recStart) / 1000);
-      $("#micBtn").textContent = "■ " + s + "s";
-      if (s >= 120) mediaRec.stop(); // limite di sicurezza
-    }, 250);
-    flash("registro… premi di nuovo per fermare");
-  } catch (e) {
-    flash("microfono non disponibile: " + e.message);
-  }
-}
-$("#micBtn").addEventListener("click", toggleMic);
+const { b64FromBlob, toggleMic } = window.MathAppAudio.create({ inputEl, flash });
 
 // ---------- export ----------
 const { exportPdf, exportNotebookPdf, exportMarkdown } = window.MathAppExport.create({ appState, chatEl, escapeHtml, flash });
@@ -2341,93 +1985,17 @@ async function loadDiagnostics() {
   } catch { el.textContent = "diagnostica non disponibile"; }
 }
 
-async function loadSettings() {
-  try { const r = await fetch("/api/settings"); appState.ui.settingsData = await r.json(); } catch { appState.ui.settingsData = null; }
-  const d = appState.ui.settingsData;
-  if (!d || !d.ok) return;
-  applyMode(d.mode || "core");
-  const modeSel = $("#setMode"); if (modeSel) modeSel.value = d.mode || "core";
-  const levelSel = $("#setLevel"); if (levelSel) levelSel.value = d.level || "auto";
-  if ((d.mode || "core") === "full" && window.MathAppPlugins) {
-    for (const id of ["quiz", "review", "tts", "kb", "style"]) window.MathAppPlugins.load(id).catch((e) => console.warn("[MathApp] " + id + " plugin", e));
-  }
-  const banner = $("#setupBanner"); if (banner) banner.hidden = !!d.hasKey;
-  const prov = $("#setProvider"); if (prov) prov.value = d.provider || "openrouter";
-  const keyEl = $("#setKey"); if (keyEl) keyEl.value = "";
-  const ks = $("#setKeyState");
-  if (ks) ks.textContent = d.hasKey ? (d.keySource === "settings" ? ("chiave salvata (..." + d.keyHint + ")") : "chiave esistente (auth OpenCode locale)") : "nessuna chiave configurata";
-  const clear = $("#settingsClearKey"); if (clear) clear.hidden = !(d.hasKey && d.keySource === "settings");
-  const lang = $("#setLang"); if (lang) lang.value = d.whisperLanguage || "it";
-  const mdl = $("#setModel");
-  if (mdl) {
-    try {
-      const mr = await fetch("/api/models"); const mj = await mr.json();
-      mdl.innerHTML = mj.models.map((m) => `<option value="${m}">${m}</option>`).join("");
-      mdl.value = d.model || mj.default;
-    } catch {}
-  }
-  loadDiagnostics();
-}
+const settingsUi = window.MathAppSettingsUI.create({
+  appState, $, applyMode, loadDiagnostics, modelEl, inputEl,
+});
+const { loadSettings, saveSettings } = settingsUi;
+settingsUi.init();
 
-async function saveSettings(extra) {
-  const msg = $("#settingsMsg");
-  const body = Object.assign({
-    provider: $("#setProvider").value,
-    whisperLanguage: $("#setLang").value
-  }, extra || {});
-  const mv = $("#setModel").value; if (mv) body.model = mv;
-  const modeEl = $("#setMode"); if (modeEl) body.mode = modeEl.value;
-  const levelEl = $("#setLevel"); if (levelEl) body.level = levelEl.value;
-  const k = $("#setKey").value.trim();
-  if (k) body.apiKey = k;
-  try {
-    const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const j = await r.json();
-    if (!j.ok) { if (msg) msg.textContent = "Errore: " + (j.err || "salvataggio fallito"); return; }
-    if (msg) msg.textContent = "Salvato.";
-    if (j.model) { appState.domain.currentModel = j.model; if (modelEl) modelEl.value = j.model; }
-    if (j.mode) { applyMode(j.mode); const ms = $("#setMode"); if (ms) ms.value = j.mode; }
-    if (j.level) { const ls = $("#setLevel"); if (ls) ls.value = j.level; }
-    await loadSettings();
-    try {
-      const mr = await fetch("/api/models"); const mj = await mr.json();
-      const vis = mj.vision || {};
-      modelEl.innerHTML = mj.models.map((m) => `<option value="${m}">${m}${vis[m] === false ? " (solo testo)" : ""}</option>`).join("");
-      appState.domain.currentModel = mj.default || appState.domain.currentModel;
-      modelEl.value = appState.domain.currentModel;
-    } catch {}
-  } catch (e) { if (msg) msg.textContent = "Errore di rete"; }
-}
 
-function initSettingsUI() {
-  const d = $("#settingsDrawer"); if (!d) return;
-  const chatWelcome = $("#chatWelcome");
-  if (chatWelcome) chatWelcome.addEventListener("click", (e) => {
-    const q = e.target.closest("[data-q]");
-    if (!q) return;
-    inputEl.value = q.dataset.q;
-    inputEl.focus();
-  });
-  MathAppState.handle("settings.open", async () => { const el = $("#settingsDrawer"); if (!el) return false; el.hidden = false; await loadSettings(); return true; });
-MathAppState.handle("settings.toggle", async () => { const el = $("#settingsDrawer"); if (!el) return false; el.hidden = !el.hidden; if (!el.hidden) await loadSettings(); return !el.hidden; });
-MathAppState.handle("settings.save", (payload) => saveSettings(payload || {}));
-MathAppState.handle("settings.clearKey", () => saveSettings({ clearKey: true }));
+MathAppState.handle("settings.close", () => { const el = $("#settingsDrawer"); if (el) el.hidden = true; return false; });
 MathAppState.handle("view.mode", ({ mode }) => setMode(mode === "algebra" ? "algebra" : "figure"));
 MathAppState.handle("chat.stop", () => stopStreaming());
 MathAppState.handle("chat.regenerate", () => regenerate());
-
-
-$("#settingsBtn").addEventListener("click", () => { MathAppState.dispatch("settings.toggle").catch((e) => console.warn("[MathApp] settings.toggle", e)); });
-  $("#settingsClose").addEventListener("click", () => MathAppState.dispatch("settings.close").catch((err) => console.warn("[MathApp] settings.close", err)));
-  const so = $("#setupOpen"); if (so) so.addEventListener("click", () => { MathAppState.dispatch("settings.open").catch((e) => console.warn("[MathApp] settings.open", e)); });
-  $("#settingsSave").addEventListener("click", () => { MathAppState.dispatch("settings.save").catch((e) => console.warn("[MathApp] settings.save", e)); });
-  $("#settingsClearKey").addEventListener("click", () => { MathAppState.dispatch("settings.clearKey").catch((e) => console.warn("[MathApp] settings.clearKey", e)); });
-  const dr = $("#diagRefresh"); if (dr) dr.addEventListener("click", () => MathAppState.dispatch("diagnostics.refresh").catch((err) => console.warn("[MathApp] diagnostics.refresh", err)));
-}
-
-initSettingsUI();
-
-MathAppState.handle("settings.close", () => { const el = $("#settingsDrawer"); if (el) el.hidden = true; return false; });
 MathAppState.handle("theme.toggle", toggleTheme);
 MathAppState.handle("tutor.toggle", ({ mode }) => toggleTutor(mode === "socratic" ? "socratic" : "step"));
 MathAppState.handle("tutor.off", () => { applyTutorMode(null); flash("modalità spiegazione normale"); return null; });
@@ -2455,6 +2023,14 @@ MathAppState.handle("model.select", ({ model }) => {
 });
 
 MathAppState.handle("session.restore", () => restoreSession());
+
+// Compatibilita' con i collaudi manuali e con le API globali storiche: prima
+// dello split queste funzioni erano dichiarazioni top-level del classic script.
+Object.assign(window, {
+  send, openConv, refreshHistory, toggleHistory, closeHistory,
+  viewFinite, viewFromBoard, applyViewToBoard, viewPanelSync, setViewPanel, fitToContent,
+  toggleMic, loadSettings, saveSettings,
+});
 
 window.MathAppApp = { $, flash, mkBtn, renderMD, fmtDate, openConv, b64FromBlob, refreshReviewBadge, state: appState };
 

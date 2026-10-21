@@ -36,7 +36,7 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 
 ## Cosa include
 
-- **Core**: chat, sessioni/cronologia, GeoGebra, SymPy, backup, sicurezza.
+- **Core**: chat, sessioni/cronologia paginata, GeoGebra, SymPy, backup automatici configurabili, sicurezza.
 - **Offline**: dopo il primo caricamento il service worker conserva UI e asset CDN (GeoGebra/KaTeX); le API e i dati utente non vengono mai messi in cache.
 - **Completa** (opzionale): quiz, ripasso, appunti/KB, flashcard, TTS, dettatura, stile. Si attiva da **Impostazioni → Modalità**.
 - **BYO key**: OpenRouter o OpenCode Go, configurata in Impostazioni. Nessuna telemetria; la chiave non è nei backup.
@@ -45,8 +45,8 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 
 ```bash
 npm run lint      # ESLint (no-undef e regole di correttezza)
-npm test          # 120 check Node
-npm run test:ui   # 25 check browser (richiede Edge/Chrome + puppeteer-core)
+npm test          # 135 check Node
+npm run test:ui   # 29 check browser (richiede Edge/Chrome + puppeteer-core)
 npm run test:xss  # 14 check browser XSS (richiede Edge/Chrome + puppeteer-core)
 npm run test:switch # 1 check cambio conversazione (richiede Edge/Chrome + puppeteer-core)
 npm run test:geo  # 5 check GeoGebra (richiede CDN)

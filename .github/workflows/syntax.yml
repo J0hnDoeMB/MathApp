@@ -31,6 +31,10 @@ jobs:
           node --check public/core/markdown.js
           node --check public/core/sources.js
           node --check public/core/export.js
+          node --check public/core/audio.js
+          node --check public/core/geo-view.js
+          node --check public/core/history.js
+          node --check public/core/settings-ui.js
           node --check public/state.js
           node --check public/features.js
           Get-ChildItem public/features -Filter *.js | ForEach-Object { node --check $_.FullName }
@@ -50,6 +54,7 @@ jobs:
           node --check test/test_observability.mjs
           node --check test/test_provider_fallback.mjs
           node --check test/test_session_corrupt.mjs
+          node --check test/test_history.mjs
           node --check test/test_modules.mjs
       - uses: actions/setup-python@v7
         with:
@@ -64,6 +69,7 @@ jobs:
           node test/test_observability.mjs
           node test/test_provider_fallback.mjs
           node test/test_session_corrupt.mjs
+          node test/test_history.mjs
           node test/test_flashparse.mjs
           node test/test_quizparse.mjs
           node test/test_server_security.mjs

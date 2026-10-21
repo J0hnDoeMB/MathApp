@@ -104,6 +104,13 @@ try {
     mode: "figure", view3d: false, view: { xmin: -5, xmax: 5, ymin: -5, ymax: 5, axes: true, grid: true },
   });
   chk("setup stato sessione", state.status === 200);
+  for (let i = 0; i < 41; i++) {
+    const extra = await request(port, "POST", "/api/conversation/state", {
+      id: "bulk-" + i, revision: 1, ggb: "", cells: [{ op: "diff", expr: "x^" + i, res: "2*x" }], figures: [],
+      mode: "figure", view3d: false,
+    });
+    if (extra.status !== 200) throw new Error("seed sessione fallito: " + i);
+  }
 
   browser = await puppeteer.launch({ executablePath: exe, headless: "new", args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"] });
   const page = await browser.newPage();
@@ -178,12 +185,25 @@ try {
   await page.evaluate(() => window.MathAppState.dispatch("history.toggle"));
   await page.waitForFunction(() => !document.querySelector("#historyDrawer").hidden, { timeout: 5000 });
   chk("command history.toggle", true);
+  await page.waitForFunction(() => document.querySelectorAll(".hist-item").length === 40 && !!document.querySelector(".hist-more"), { timeout: 10000 });
+  chk("history: prima pagina con Mostra altri", true);
+  await page.click(".hist-more button");
+  await page.waitForFunction(() => document.querySelectorAll(".hist-item").length === 42, { timeout: 10000 });
+  chk("history: seconda pagina", true);
   await page.evaluate(() => window.MathAppState.dispatch("history.close"));
   await page.waitForFunction(() => document.querySelector("#historyDrawer").hidden, { timeout: 5000 });
 
   await page.evaluate(() => window.MathAppState.dispatch("settings.open"));
   await page.waitForFunction(() => !document.querySelector("#settingsDrawer").hidden, { timeout: 5000 });
   chk("command settings.open", true);
+  const backupDefaults = await page.evaluate(() => ({ on: document.querySelector("#setBackup").checked, hours: document.querySelector("#setBackupHours").value }));
+  chk("settings: backup default", backupDefaults.on === true && backupDefaults.hours === "24", JSON.stringify(backupDefaults));
+  await page.click("#setBackup");
+  await page.$eval("#setBackupHours", (el) => { el.value = "6"; });
+  await page.click("#settingsSave");
+  await page.waitForFunction(() => document.querySelector("#settingsMsg").textContent === "Salvato.", { timeout: 10000 });
+  const backupSaved = JSON.parse((await request(port, "GET", "/api/settings")).body);
+  chk("settings: backup salvato", backupSaved.backup === false && backupSaved.backupHours === 6);
   await page.click("#settingsClose");
 
   const idBefore = await page.evaluate(() => localStorage.getItem("mathapp.conv"));

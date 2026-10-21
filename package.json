@@ -1,6 +1,6 @@
 {
   "name": "mathapp",
-  "version": "1.29.0",
+  "version": "1.30.0",
   "private": true,
   "description": "Local math tutor: AI chat + GeoGebra + exact algebra.",
   "type": "module",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node server.mjs",
     "lint": "eslint .",
-    "test": "node test/test_modules.mjs && node test/test_agent.mjs && node test/test_chat_service.mjs && node test/test_observability.mjs && node test/test_provider_fallback.mjs && node test/test_session_corrupt.mjs && node test/test_flashparse.mjs && node test/test_quizparse.mjs && node test/test_server_security.mjs && node test/test_instance_lock.mjs && node test/test_hardening.mjs && node test/test_restore.mjs",
+    "test": "node test/test_modules.mjs && node test/test_agent.mjs && node test/test_chat_service.mjs && node test/test_observability.mjs && node test/test_provider_fallback.mjs && node test/test_session_corrupt.mjs && node test/test_history.mjs && node test/test_flashparse.mjs && node test/test_quizparse.mjs && node test/test_server_security.mjs && node test/test_instance_lock.mjs && node test/test_hardening.mjs && node test/test_restore.mjs",
     "test:py": "python test/test_sympy_cli.py -v",
     "test:ui": "node test/test_ui_smoke.mjs",
     "test:geo": "node test/test_geogebra_smoke.mjs",

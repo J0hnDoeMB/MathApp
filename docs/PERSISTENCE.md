@@ -24,6 +24,8 @@ writeJsonAtomic(file, value) -> { ok, error? }
 | Ripasso | `data/review.json` | lista SM-2 |
 | Profilo/stile | `data/profile.json` | lista preferenze |
 | KB index/chunks | `data/kb/index.json`, `chunks.json` | documenti + blocchi |
+
+Le intestazioni delle sessioni sono cacheate per path e invalidate esplicitamente su scrittura/delete (o da mtime/size); la cronologia è paginata lato server (`limit`/`offset`). I backup automatici usano un timer riprogrammabile a caldo da Impostazioni (`backup`, `backupHours` 1-168, default 24).
 | Settings | `settings.json` | config atomico separato |
 
 Le route non leggono/scrivono JSON direttamente: usano `lib/session-store.mjs`, `lib/kb.mjs`, `lib/profile.mjs`, `lib/storage.mjs`.
