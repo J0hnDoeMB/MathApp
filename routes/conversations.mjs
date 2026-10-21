@@ -20,7 +20,10 @@ export function handle(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/history") {
-    sendJson(res, 200, { items: history(url.searchParams.get("q") || "") });
+    sendJson(res, 200, history(url.searchParams.get("q") || "", {
+      limit: url.searchParams.get("limit"),
+      offset: url.searchParams.get("offset"),
+    }));
     return true;
   }
 

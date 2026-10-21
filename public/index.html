@@ -21,6 +21,10 @@
   <script defer src="/core/markdown.js"></script>
   <script defer src="/core/sources.js"></script>
   <script defer src="/core/export.js"></script>
+  <script defer src="/core/audio.js"></script>
+  <script defer src="/core/geo-view.js"></script>
+  <script defer src="/core/history.js"></script>
+  <script defer src="/core/settings-ui.js"></script>
   <script defer src="/app.js"></script>
 </head>
 <body class="mode-core">
@@ -374,6 +378,11 @@
           <option value="full">Completa (quiz, ripasso, appunti, stile, TTS)</option>
         </select>
       </label>
+      <div class="settings-backup">
+        <label class="settings-check"><input id="setBackup" type="checkbox" /> Backup automatico dei dati</label>
+        <label>Ogni <input id="setBackupHours" type="number" min="1" max="168" step="1" inputmode="numeric" /> ore</label>
+        <p class="settings-hint">Salva chat, appunti e ripasso in <code>backups/</code>. La chiave API non viene inclusa.</p>
+      </div>
       <div class="settings-diag">
         <b>Funzionalità</b>
         <div id="diagStatus" class="settings-hint">...</div>

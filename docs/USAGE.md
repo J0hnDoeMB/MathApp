@@ -238,8 +238,8 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python test/test_sympy_cli.py -v`.
 - Math eval deterministico: `npm run eval` (17 casi SymPy, in CI).
-- Test rapidi senza server: `npm test` (120 check: 23 test dei moduli + 4 del loop agente + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 41 security/sessione/lock + 25 hardening + 6 restore + parser + smoke con CSRF, body cap, path traversal, modalità core, API impostazioni, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
-- Smoke browser: `npm run test:ui` (25 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view, quaderno parziali); richiede Edge/Chrome e `puppeteer-core`, in CI è automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
+- Test rapidi senza server: `npm test` (135 check: 23 test dei moduli + 4 del loop agente + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 11 cronologia/backup scheduler + 45 security/sessione + 6 lock di istanza + 25 hardening + 6 restore + parser + smoke con CSRF, body cap, path traversal, modalit? core, API impostazioni, paginazione cronologia, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
+- Smoke browser: `npm run test:ui` (29 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, paginazione cronologia, backup a caldo, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view, quaderno parziali); richiede Edge/Chrome e `puppeteer-core`, in CI ? automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test/test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test/test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test/test_conversation_restore.mjs`, `node test/test_conversation_switch.mjs`, `node test/test_geogebra_state.mjs`, `node test/test_geogebra_3d.mjs`, `node test/test_layout.mjs`, `node test/test_tutor.mjs`, `node test/test_review.mjs`, `node test/test_algebra_ui.mjs`, `node test/test_vista.mjs` e `node test/test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test/test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.
@@ -250,8 +250,9 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - `routes/` — API settings, backup, kb, profile, review, study, compute, conversations, chat
 - `lib/chat-service.mjs`, `lib/security.mjs` — orchestrazione chat e guardie HTTP
 - `public/state.js` — store client domain/UI con eventi
+- `public/core/` - helper client classic script: formattazione, Markdown, note, export, cronologia, impostazioni, audio e vista GeoGebra
 - `public/features.js` — loader plugin UI; `public/features/{quiz,review,tts,kb,style}.js` — feature lazy
-- `test/test_ui_smoke.mjs` — smoke browser (nuova chat, restore, view)
+- `test/test_ui_smoke.mjs` — smoke browser (nuova chat, restore, view, cronologia paginata, backup a caldo)
 - `setup.cmd`, `setup.ps1` — setup Windows: Node portatile, Python/SymPy opzionali
 - `requirements.txt`, `requirements-whisper.txt` — dipendenze Python opzionali
 - `docs/SETUP-WINDOWS.md` — guida di installazione rapida

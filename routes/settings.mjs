@@ -3,6 +3,7 @@ import { settings as SETTINGS, providerName, keySource, currentKey, saveSettings
 import { MODELS, MODEL_VISION, VISION_FALLBACK, OR_MODEL_MAP } from "../lib/models.mjs";
 import { setWhisperLanguage } from "../lib/audio.mjs";
 import { normalizeLevel } from "../lib/levels.mjs";
+import { scheduleBackups } from "../lib/storage.mjs";
 import { diagnostics } from "../lib/diagnostics.mjs";
 import { recent } from "../lib/observability.mjs";
 
@@ -47,6 +48,7 @@ if (req.method === "GET" && url.pathname === "/api/models") {
     req.on("end", () => {
       try {
         const j = JSON.parse(b || "{}");
+        let backupChanged = false;
         if (j.mode !== undefined) {
           if (!["core", "full"].includes(j.mode)) throw new Error("modalita' non valida");
           SETTINGS.mode = j.mode;
@@ -75,10 +77,22 @@ if (req.method === "GET" && url.pathname === "/api/models") {
           SETTINGS.whisperLanguage = j.whisperLanguage;
           setWhisperLanguage(j.whisperLanguage);
         }
+        if (j.backup !== undefined) {
+          if (typeof j.backup !== "boolean") throw new Error("backup non valido");
+          if ((SETTINGS.backup !== false) !== j.backup) backupChanged = true;
+          SETTINGS.backup = j.backup;
+        }
+        if (j.backupHours !== undefined) {
+          const hours = Number(j.backupHours);
+          if (!Number.isInteger(hours) || hours < 1 || hours > 168) throw new Error("intervallo backup non valido (1-168 ore)");
+          if ((Number(SETTINGS.backupHours) || 24) !== hours) backupChanged = true;
+          SETTINGS.backupHours = hours;
+        }
         saveSettingsFile();
+        if (backupChanged) scheduleBackups();
         const src = keySource();
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: (SETTINGS.whisperLanguage || "it"), hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), mode: isFullMode() ? "full" : "core", level: normalizeLevel(SETTINGS.level) || "auto" }));
+        res.end(JSON.stringify({ ok: true, provider: providerName(), model: SETTINGS.model || MODELS[0], whisperLanguage: (SETTINGS.whisperLanguage || "it"), hasKey: src !== "none", keySource: src, keyHint: src === "none" ? "" : (currentKey() || "").slice(-4), backup: SETTINGS.backup !== false, backupHours: Number(SETTINGS.backupHours) || 24, mode: isFullMode() ? "full" : "core", level: normalizeLevel(SETTINGS.level) || "auto" }));
       } catch (e) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, err: String(e.message || e) }));

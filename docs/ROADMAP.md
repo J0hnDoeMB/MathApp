@@ -49,6 +49,9 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] security model, performance budget, scorecard, ADR
 - [x] adapter container in produzione + validazione repository secondari
 - [x] event model per i top-level flussi UI → application (command bus; i widget interni restano Presentation).
+- [x] cronologia paginata (`limit`/`offset`, “Mostra altri”) con cache intestazioni invalidata su scrittura/delete.
+- [x] backup automatici attivabili e con intervallo 1-168h applicato a caldo dalle Impostazioni.
+- [x] split core UI in `public/core/{history,settings-ui,audio,geo-view}.js`; `app.js` 2468 → 2055 righe, nessun build step.
 
 **Exit criteria:** ogni feature ha un test dedicato, un limite di errore isolato (un provider/PDF/audio rotto non blocca chat e grafo) e un toggle core/full.
 

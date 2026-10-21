@@ -134,6 +134,13 @@ try {
   chk("risposta senza chiave completa", !save.body.includes("security-test-9999"));
   chk("settings.json scritto in modo atomico", fs.existsSync(settingsFile) && JSON.parse(fs.readFileSync(settingsFile, "utf8")).apiKey === "sk-or-v1-security-test-9999");
 
+  const backupCfg = await request(port, "POST", "/api/settings", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backup: false, backupHours: 6 }) });
+  const backupJson = JSON.parse(backupCfg.body);
+  chk("settings: backup a caldo", backupCfg.status === 200 && backupJson.backup === false && backupJson.backupHours === 6);
+  const badBackup = await request(port, "POST", "/api/settings", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backupHours: 0 }) });
+  chk("settings: intervallo backup invalido -> 400", badBackup.status === 400);
+  await request(port, "POST", "/api/settings", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backup: true, backupHours: 24 }) });
+
   const clear = await request(port, "POST", "/api/settings", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clearKey: true }) });
   chk("clearKey -> 200 senza chiave", clear.status === 200 && JSON.parse(clear.body).hasKey === false);
 
@@ -157,9 +164,14 @@ try {
   chk("state: revisione negativa -> 400", badRevision.status === 400);
   const noId = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ revision: 1 }) });
   chk("state: id mancante -> 400", noId.status === 400);
+  await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...stateBody, id: "state-test-2", revision: 1 }) });
   const history = await request(port, "GET", "/api/history");
   const histJson = JSON.parse(history.body);
   chk("history includes persisted session", history.status === 200 && histJson.items.some((it) => it.id === stateId && it.cells === 1));
+  const historyPage = JSON.parse((await request(port, "GET", "/api/history?limit=1&offset=0")).body);
+  chk("history pagina: totale e hasMore", historyPage.items.length === 1 && historyPage.total >= 2 && historyPage.hasMore === true);
+  const historyTail = JSON.parse((await request(port, "GET", "/api/history?limit=1&offset=1")).body);
+  chk("history pagina: offset", historyTail.items.length === 1 && historyTail.items[0].id !== historyPage.items[0].id);
 
   const trav1 = await request(port, "GET", "/../server.mjs");
   const trav2 = await request(port, "GET", "/..%2Fserver.mjs");

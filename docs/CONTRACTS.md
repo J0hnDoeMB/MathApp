@@ -55,11 +55,11 @@ Adapter: `lib/documents.mjs` (PDF/testo).
 read(id) -> Session|null
 applyState(rawState) -> { ok, stale?, error? }
 list() -> SessionSummary[]
-history(query) -> SessionSummary[]
+history(query, { limit = 50, offset = 0 } = {}) -> { items: SessionSummary[], total, offset, limit, hasMore }
 delete(id) -> void
 updateTags(id, tag, action) -> { status, ok, tags?, error? }
 ```
-Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`.
+Implementazione: `lib/session-store.mjs`; schema: `lib/schema.mjs`. Le intestazioni sono cacheate per path e invalidate su scrittura/delete o cambio mtime/size; `limit` è 1-200.
 
 ### ClientFeaturePlugin
 ```text
@@ -128,6 +128,15 @@ MathAppState.dispatch(name, payload) -> Promise
 Commands: `session.new`, `chat.send`, `session.restore`, `settings.open`, `settings.toggle`, `settings.save`, `settings.clearKey`, `settings.close`, `view.mode`, `view.toggle3d`, `chat.stop`, `chat.regenerate`, `theme.toggle`, `tutor.toggle`, `tutor.off`, `history.toggle`, `history.close`, `history.search`, `conversation.open`, `conversation.delete`, `backup.create`, `export.pdf`, `export.markdown`, `export.notebook`, `diagnostics.refresh`, `model.select`. UI events call dispatch; application handlers mutate state.
 Implementation: `public/state.js`. `app.js` uses `MathAppState` directly; no legacy global state.
 
+### Client core modules
+```text
+MathAppHistory.create(deps) -> { refreshHistory, openConv, toggleHistory, closeHistory }
+MathAppSettingsUI.create(deps) -> { init, loadSettings, saveSettings }
+MathAppAudio.create(deps) -> { b64FromBlob, toggleMic }
+MathAppGeoView.create(deps) -> { viewFinite, viewFromBoard, applyViewToBoard, viewPanelSync, setViewPanel, fitToContent }
+```
+Classic scripts loaded before `app.js`; they share `MathAppState` and receive callbacks explicitly. No build step.
+
 ### ChatOrchestrator
 ```text
 executeChat({ body, send, isGone, signal, deps? }) -> { cancelled, finalText, convId, usedModel }
@@ -144,6 +153,8 @@ Implementation: `lib/security.mjs` (CSRF + body cap).
 ```text
 dataDir, convDir, backups
 runBackup() -> { ok, file?, size?, error? }
+backupSchedule() -> { enabled, hours }
+scheduleBackups() -> { enabled, hours }
 ```
 Implementazione: `lib/storage.mjs`.
 

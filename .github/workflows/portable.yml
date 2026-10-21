@@ -46,7 +46,7 @@ jobs:
           node --check public/core/export.js
           node --check public/state.js
           node --check public/features.js
-          find public/features -name '*.js' -print0 | xargs -0 -n1 node --check
+          find public/core public/features -name '*.js' -print0 | xargs -0 -n1 node --check
           find lib routes test scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check
       - name: Node tests + coverage
         run: npm run coverage

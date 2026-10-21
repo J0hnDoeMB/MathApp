@@ -1725,6 +1725,17 @@ body.theme-dark .cell-out.cell-err {
   font-size: 11px;
 }
 
+.hist-more {
+  padding: 10px 12px 4px;
+  text-align: center;
+}
+
+.hist-more button {
+  width: 100%;
+  min-height: 34px;
+  color: var(--muted);
+}
+
 .hist-empty {
   padding: 20px 12px;
   color: var(--muted);
@@ -3032,6 +3043,27 @@ body.theme-dark .settings-body select { background: #101822; color: var(--ink); 
 #historyDrawer, #reviewDrawer, #quizDrawer, #kbDrawer, #styleDrawer, #settingsDrawer {
   z-index: 2147483000 !important;
 }
+.settings-backup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px;
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.settings-backup .settings-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.settings-backup input[type="number"] {
+  width: 66px;
+  min-height: 30px;
+}
+.settings-backup .settings-hint { flex-basis: 100%; }
+
 .settings-diag {
   display: flex;
   flex-direction: column;
