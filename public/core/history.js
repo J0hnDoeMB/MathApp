@@ -107,15 +107,57 @@
       tagRow.appendChild(addBtn);
       t.appendChild(tagRow);
 
+      const rename = document.createElement("button");
+      rename.type = "button";
+      rename.className = "hist-rename";
+      rename.textContent = "Rinomina";
+      rename.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (row.querySelector(".hist-title-input")) return;
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "hist-title-input";
+        inp.maxLength = 90;
+        inp.value = it.title || "";
+        inp.setAttribute("aria-label", "Nuovo titolo");
+        b.replaceWith(inp);
+        inp.focus();
+        inp.select();
+        let closed = false;
+        const finish = async (save) => {
+          if (closed) return;
+          closed = true;
+          const next = inp.value.replace(/\s+/g, " ").trim();
+          if (!save || !next || next === (it.title || "")) { inp.replaceWith(b); return; }
+          try {
+            const title = await MathAppState.dispatch("conversation.rename", { id: it.id, title: next });
+            b.textContent = title || next;
+            it.title = title || next;
+          } catch {
+            flash("rinomina non riuscita");
+          }
+          inp.replaceWith(b);
+        };
+        inp.addEventListener("click", (e2) => e2.stopPropagation());
+        inp.addEventListener("keydown", (e2) => {
+          e2.stopPropagation();
+          if (e2.key === "Enter") { e2.preventDefault(); finish(true); }
+          else if (e2.key === "Escape") { e2.preventDefault(); finish(false); }
+        });
+        inp.addEventListener("blur", () => finish(true));
+      });
+
       const del = document.createElement("button");
       del.type = "button";
       del.className = "hist-del";
       del.textContent = "Elimina";
       del.addEventListener("click", (ev) => {
         ev.stopPropagation();
+        const label = it.title || "Senza titolo";
+        if (!window.confirm('Eliminare "' + label + '"? L\'operazione non si puo annullare.')) return;
         MathAppState.dispatch("conversation.delete", { id: it.id }).catch((err) => console.warn("[MathApp] conversation.delete", err));
       });
-      row.append(t, del);
+      row.append(t, rename, del);
       row.addEventListener("click", () => MathAppState.dispatch("conversation.open", { id: it.id }).catch((err) => console.warn("[MathApp] conversation.open", err)));
       return row;
     }

@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#edf3f3" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <meta name="application-name" content="MathApp" />
+  <meta name="apple-mobile-web-app-title" content="MathApp" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>MathApp — Tutor di matematica</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23edf3f3'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23a87338' stroke-width='2'/%3E%3Cpath d='M16 4v24M4 16h24' stroke='%231b303d' stroke-width='2'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,6 +31,7 @@
   <script defer src="/core/geo-view.js"></script>
   <script defer src="/core/history.js"></script>
   <script defer src="/core/settings-ui.js"></script>
+  <script defer src="/core/drawer-a11y.js"></script>
   <script defer src="/app.js"></script>
 </head>
 <body class="mode-core">
@@ -246,7 +253,7 @@
     </section>
   </main>
 
-  <aside id="historyDrawer" hidden aria-label="Cronologia degli argomenti">
+  <aside id="historyDrawer" hidden role="dialog" aria-modal="true" tabindex="-1" aria-label="Cronologia degli argomenti">
     <div class="drawer-head">
       <div>
         <span class="section-label">Cronologia</span>
@@ -264,7 +271,7 @@
     </div>
   </aside>
 
-  <aside id="reviewDrawer" hidden aria-label="Argomenti da ripassare">
+  <aside id="reviewDrawer" hidden role="dialog" aria-modal="true" tabindex="-1" aria-label="Argomenti da ripassare">
     <div class="drawer-head">
       <div>
         <span class="section-label">Ripasso</span>
@@ -279,7 +286,7 @@
     </div>
   </aside>
 
-  <aside id="quizDrawer" hidden aria-label="Verifica a quiz">
+  <aside id="quizDrawer" hidden role="dialog" aria-modal="true" tabindex="-1" aria-label="Verifica a quiz">
     <div class="drawer-head">
       <div>
         <span class="section-label">Quiz</span>
@@ -301,7 +308,7 @@
     </div>
   </aside>
 
-  <aside id="kbDrawer" hidden aria-label="Rete concettuale: appunti e libri">
+  <aside id="kbDrawer" hidden role="dialog" aria-modal="true" tabindex="-1" aria-label="Rete concettuale: appunti e libri">
     <div class="drawer-head">
       <div>
         <span class="section-label">Appunti</span>
@@ -318,7 +325,7 @@
     <div id="kbViewer" hidden></div>
   </aside>
 
-  <aside id="styleDrawer" hidden aria-label="Stile imparato dall'IA">
+  <aside id="styleDrawer" hidden role="dialog" aria-modal="true" tabindex="-1" aria-label="Stile imparato dall'IA">
     <div class="drawer-head">
       <div>
         <span class="section-label">Stile</span>
@@ -333,7 +340,7 @@
     <div id="styleList"></div>
   </aside>
 
-  <aside id="settingsDrawer" hidden aria-label="Impostazioni">
+  <aside id="settingsDrawer" hidden role="dialog" aria-modal="true" tabindex="-1" aria-label="Impostazioni">
     <div class="drawer-head">
       <div>
         <span class="section-label">Impostazioni</span>
@@ -355,6 +362,10 @@
       <label>Modello predefinito
         <select id="setModel"></select>
       </label>
+      <div class="settings-test">
+        <button id="settingsTest" type="button">Testa connessione</button>
+        <span id="settingsTestMsg" class="settings-hint" role="status" aria-live="polite"></span>
+      </div>
       <label>Lingua dettatura
         <select id="setLang">
           <option value="it">Italiano</option>
@@ -387,6 +398,11 @@
         <b>Funzionalità</b>
         <div id="diagStatus" class="settings-hint">...</div>
         <button id="diagRefresh" type="button">Ricontrolla</button>
+      </div>
+      <div class="settings-install">
+        <b>Installa MathApp</b>
+        <p id="installHint" class="settings-hint">Dal menu del browser scegli &ldquo;Installa app&rdquo;. Su iPhone usa Condividi &rarr; Aggiungi alla schermata Home.</p>
+        <button id="installApp" type="button" hidden>Installa sul dispositivo</button>
       </div>
       <div class="privacy-note">
         <b>Privacy e chiave API</b>

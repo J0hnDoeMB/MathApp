@@ -36,8 +36,9 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 
 ## Cosa include
 
-- **Core**: chat, sessioni/cronologia paginata, GeoGebra, SymPy, backup automatici configurabili, sicurezza.
-- **Offline**: dopo il primo caricamento il service worker conserva UI e asset CDN (GeoGebra/KaTeX); le API e i dati utente non vengono mai messi in cache.
+- **Core**: chat, sessioni/cronologia paginata con rinomina e conferma eliminazione, GeoGebra, SymPy, backup automatici configurabili, sicurezza.
+- **Provider**: OpenRouter o OpenCode Go, con test di connessione dalle Impostazioni che non salva la chiave digitata.
+- **PWA/Offline**: installabile dal browser (manifest + icone); dopo il primo caricamento il service worker conserva UI e asset CDN (GeoGebra/KaTeX). Le API e i dati utente non vengono mai messi in cache.
 - **Completa** (opzionale): quiz, ripasso, appunti/KB, flashcard, TTS, dettatura, stile. Si attiva da **Impostazioni → Modalità**.
 - **BYO key**: OpenRouter o OpenCode Go, configurata in Impostazioni. Nessuna telemetria; la chiave non è nei backup.
 
@@ -45,8 +46,8 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 
 ```bash
 npm run lint      # ESLint (no-undef e regole di correttezza)
-npm test          # 135 check Node
-npm run test:ui   # 29 check browser (richiede Edge/Chrome + puppeteer-core)
+npm test          # 166 check Node
+npm run test:ui   # 38 check browser (richiede Edge/Chrome + puppeteer-core)
 npm run test:xss  # 14 check browser XSS (richiede Edge/Chrome + puppeteer-core)
 npm run test:switch # 1 check cambio conversazione (richiede Edge/Chrome + puppeteer-core)
 npm run test:geo  # 5 check GeoGebra (richiede CDN)

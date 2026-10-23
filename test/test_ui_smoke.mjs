@@ -152,7 +152,7 @@ try {
   }));
   chk("state store domain/UI", store.exists && store.domain && store.ui && typeof store.conversationId === "string" && !store.legacy);
   const commands = await page.evaluate(() => window.MathAppState.commands());
-  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore", "settings.open", "settings.toggle", "settings.save", "settings.clearKey", "settings.close", "view.mode", "view.toggle3d", "chat.stop", "chat.regenerate", "theme.toggle", "tutor.toggle", "tutor.off", "history.toggle", "history.close", "history.search", "conversation.open", "conversation.delete", "backup.create", "export.pdf", "export.markdown", "export.notebook", "diagnostics.refresh", "model.select"].every((c) => commands.includes(c)));
+  chk("command bus UI -> application", ["session.new", "chat.send", "session.restore", "settings.open", "settings.toggle", "settings.save", "settings.test", "settings.clearKey", "settings.close", "view.mode", "view.toggle3d", "chat.stop", "chat.regenerate", "theme.toggle", "tutor.toggle", "tutor.off", "history.toggle", "history.close", "history.search", "conversation.open", "conversation.rename", "conversation.delete", "backup.create", "export.pdf", "export.markdown", "export.notebook", "diagnostics.refresh", "model.select"].every((c) => commands.includes(c)));
 
   const busEvents = await page.evaluate(async () => {
     const seen = [];
@@ -190,12 +190,70 @@ try {
   await page.click(".hist-more button");
   await page.waitForFunction(() => document.querySelectorAll(".hist-item").length === 42, { timeout: 10000 });
   chk("history: seconda pagina", true);
+  await page.click(".hist-item .hist-rename");
+  await page.waitForSelector(".hist-title-input", { timeout: 5000 });
+  await page.$eval(".hist-title-input", (el) => { el.value = "Titolo dalla UI"; });
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector(".hist-item b")?.textContent === "Titolo dalla UI", { timeout: 5000 });
+  const renamedHistory = JSON.parse((await request(port, "GET", "/api/history?limit=50")).body);
+  chk("history: rinomina inline persistita", renamedHistory.items.some((it) => it.title === "Titolo dalla UI"));
+  let dialogMessage = "";
+  page.once("dialog", async (dialog) => { dialogMessage = dialog.message(); await dialog.dismiss(); });
+  const rowsBeforeDelete = await page.$$eval(".hist-item", (els) => els.length);
+  await page.click(".hist-item .hist-del");
+  await new Promise((r) => setTimeout(r, 350));
+  const rowsAfterDelete = await page.$$eval(".hist-item", (els) => els.length);
+  chk("history: elimina chiede conferma", /Eliminare/.test(dialogMessage) && rowsAfterDelete === rowsBeforeDelete, dialogMessage);
   await page.evaluate(() => window.MathAppState.dispatch("history.close"));
   await page.waitForFunction(() => document.querySelector("#historyDrawer").hidden, { timeout: 5000 });
 
   await page.evaluate(() => window.MathAppState.dispatch("settings.open"));
   await page.waitForFunction(() => !document.querySelector("#settingsDrawer").hidden, { timeout: 5000 });
   chk("command settings.open", true);
+  const settingsA11y = await page.evaluate(() => {
+    const drawer = document.querySelector("#settingsDrawer");
+    return {
+      role: drawer.getAttribute("role"),
+      modal: drawer.getAttribute("aria-modal"),
+      tabindex: drawer.getAttribute("tabindex"),
+      focusInside: drawer.contains(document.activeElement),
+      expanded: document.querySelector("#settingsBtn").getAttribute("aria-expanded"),
+    };
+  });
+  chk("drawer: dialog, focus iniziale e aria-expanded", settingsA11y.role === "dialog" && settingsA11y.modal === "true" && settingsA11y.tabindex === "-1" && settingsA11y.focusInside && settingsA11y.expanded === "true", JSON.stringify(settingsA11y));
+  const trapFirst = await page.evaluate(() => {
+    const drawer = document.querySelector("#settingsDrawer");
+    const nodes = [...drawer.querySelectorAll("button:not([disabled]), select:not([disabled]), input:not([disabled]):not([type=hidden])")].filter((el) => el.getClientRects().length);
+    nodes[nodes.length - 1].focus();
+    return nodes[0].id;
+  });
+  await page.keyboard.press("Tab");
+  const trapAfter = await page.evaluate(() => document.activeElement.id);
+  chk("drawer: focus trap circolare", trapAfter === trapFirst, trapAfter + " != " + trapFirst);
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.querySelector("#settingsDrawer").hidden, { timeout: 5000 });
+  const focusRestored = await page.evaluate(() => document.activeElement === document.querySelector("#settingsBtn"));
+  chk("drawer: Escape chiude e ripristina il focus", focusRestored);
+  await page.evaluate(() => window.MathAppState.dispatch("history.toggle"));
+  await page.waitForFunction(() => !document.querySelector("#historyDrawer").hidden, { timeout: 5000 });
+  await page.evaluate(() => window.MathAppState.dispatch("settings.open"));
+  await page.waitForFunction(() => !document.querySelector("#settingsDrawer").hidden, { timeout: 5000 });
+  const exclusiveDrawer = await page.evaluate(() => ({
+    historyHidden: document.querySelector("#historyDrawer").hidden,
+    settingsOpen: !document.querySelector("#settingsDrawer").hidden,
+  }));
+  chk("drawer: apertura esclusiva", exclusiveDrawer.historyHidden && exclusiveDrawer.settingsOpen, JSON.stringify(exclusiveDrawer));
+  await page.$eval("#setKey", (el) => { el.value = "sk-or-test"; });
+  await page.select("#setProvider", "opencode");
+  await page.waitForFunction(() => [...document.querySelectorAll("#setModel option")].some((o) => o.value === "space-bunny"), { timeout: 5000 });
+  await page.select("#setProvider", "openrouter");
+  await page.waitForFunction(() => ![...document.querySelectorAll("#setModel option")].some((o) => o.value === "space-bunny"), { timeout: 5000 });
+  const providerSwitch = await page.evaluate(() => ({ key: document.querySelector("#setKey").value, state: document.querySelector("#setKeyState").textContent }));
+  chk("settings: cambio provider ricarica modelli e azzera la chiave", providerSwitch.key === "" && /premi Test/.test(providerSwitch.state), JSON.stringify(providerSwitch));
+  await page.click("#settingsTest");
+  await page.waitForFunction(() => /Errore:/.test(document.querySelector("#settingsTestMsg").textContent), { timeout: 10000 });
+  chk("settings: test connessione senza chiave", /nessuna chiave/.test(await page.$eval("#settingsTestMsg", (el) => el.textContent)));
+  chk("PWA: UI installazione presente", (await page.$("#installApp")) !== null && (await page.$('link[rel="manifest"]')) !== null);
   const backupDefaults = await page.evaluate(() => ({ on: document.querySelector("#setBackup").checked, hours: document.querySelector("#setBackupHours").value }));
   chk("settings: backup default", backupDefaults.on === true && backupDefaults.hours === "24", JSON.stringify(backupDefaults));
   await page.click("#setBackup");

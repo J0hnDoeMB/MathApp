@@ -51,6 +51,7 @@ A missing optional dependency must never block chat, GeoGebra or saved conversat
 | `public/core/format.js`, `public/core/markdown.js` | formatting helpers and safe Markdown/KaTeX rendering | browser only |
 | `public/core/sources.js`, `public/core/export.js` | note-source matching and PDF/Markdown export | browser only |
 | `public/core/history.js`, `public/core/settings-ui.js` | history drawer with pagination and settings drawer (hot backup options) | `MathAppState`, HTTP API |
+| `public/core/drawer-a11y.js` | drawer dialog semantics, focus trap, exclusive opening, Escape and focus restore | DOM only |
 | `public/core/audio.js`, `public/core/geo-view.js` | dictation bridge and GeoGebra view panel/fit helpers | browser only |
 | `public/sw.js` | offline shell and CDN asset cache (GET only; never `/api`) | browser only |
 | `public/features.js`, `public/features/*.js` | lazy optional UI plugins (quiz, review, TTS, KB, style) | `MathAppApp` API |
@@ -97,14 +98,16 @@ External I/O is isolated in `lib/llm.mjs`:
 - configurable base URL/key/model (OpenRouter, OpenCode Go);
 - timeout/retry, clear 401/403 messages;
 - one streaming parser and one non-streaming path;
-- capability detection from a local catalog with safe fallbacks.
+- capability detection from a local catalog with safe fallbacks;
+- provider-aware model catalog (`modelsForProvider`/`pickModelForProvider`): OpenRouter exposes only mapped models, and settings/agent/chat never silently select an incompatible model; `openRouterModel` rejects unmapped models with `MODEL_NOT_AVAILABLE` instead of falling back to a default;
+- connection tests validate model/provider compatibility and use only the selected provider's key.
 
 ## Testing
 
 - `npm run eval`: 17 deterministic SymPy cases (`eval/`).
 - `npm run lint`: ESLint correctness rules (`no-undef`, unreachable/duplicate keys, and related checks).
-- `npm test`: 135 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 11 history/backup scheduler + 45 security/session + 6 instance lock + 25 hardening + 6 restore + parser).
-- `npm run test:ui`: 29 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open/save including backup interval, history pagination, lazy plugins core/full, drawers, new chat, session restore, view, algebra partials); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
+- `npm test`: 166 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 17 provider connection + 2 LLM model mapping + 4 session recovery + 15 history/backup scheduler + 51 security/session + 6 instance lock + 25 hardening + 6 restore + 2 parser).
+- `npm run test:ui`: 38 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open/save including provider test, install UI and backup interval, history pagination/rename/delete confirmation, lazy plugins core/full, accessible drawers with focus trap/exclusive opening/Escape/focus restore, new chat, session restore, view, algebra partials); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
 - `npm run test:xss`: 14 self-contained browser checks (Markdown, tools, LaTeX) with a temporary server, in CI.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).
 - `npm run test:py`: 29 SymPy parser/tool tests.

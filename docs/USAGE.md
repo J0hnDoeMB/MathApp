@@ -30,7 +30,7 @@ In alternativa: `npm start` (stesso server; il browser va aperto a mano).
 
 ## Configurazione (API key)
 
-Al primo avvio compare un banner: apri **Impostazioni**, scegli il provider (**OpenRouter** consigliato, oppure OpenCode Go se hai gia una chiave opencode), incolla la chiave e salva. Da quel momento l'app usa la tua chiave; modello predefinito e lingua della dettatura si scelgono nella stessa finestra.
+Al primo avvio compare un banner: apri **Impostazioni**, scegli il provider (**OpenRouter** consigliato, oppure OpenCode Go se hai gia una chiave opencode), incolla la chiave e salva. Da quel momento l'app usa la tua chiave; modello predefinito e lingua della dettatura si scelgono nella stessa finestra. Il pulsante **Testa connessione** verifica provider e modello con una richiesta minima: puoi usare una chiave digitata senza salvarla e la chiave non viene mai restituita. Il cambio provider ricarica la lista dei modelli compatibili e azzera la chiave digitata; senza una nuova chiave quella del provider precedente viene rimossa, non riusata. Un modello non disponibile viene rifiutato invece di essere sostituito in silenzio.
 
 La chiave resta in `settings.json`, solo sul tuo PC, e non viene mai mostrata. Senza chiave l'app resta utilizzabile per il quaderno SymPy/GeoGebra ma la chat non risponde. Le dipendenze Python (SymPy, Whisper) sono opzionali: senza di esse restano disponibili chat e GeoGebra.
 
@@ -101,7 +101,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
   `N figure · N calcoli`); riaprendola si ripristina quella sessione, non solo la chat. "Nuova chat" avvia invece
   una sessione nuova e vuota.
 - **Strumenti di studio** (barra in alto):
-  - **■ Stop** (o `Esc`): interrompe la risposta mentre si genera.
+  - **■ Stop** (o `Esc`): interrompe la risposta mentre si genera (con un pannello aperto, Esc chiude prima il pannello).
   - **↻ Rigenera** (o `Alt+R`): rifà l'ultima risposta senza riscrivere la domanda.
   - **⧉ Copia** su ogni risposta (Markdown) e **clic su una formula in blocco** per copiarne il LaTeX.
   - **Modo del tutor** (selettore **Esercitami / Passo-passo** nella barra, stessa grafica di Figura/Algebra):
@@ -137,7 +137,7 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
   (I comandi di stile `SetColor`, `SetVisible`… sono tradotti in chiamate API: `evalCommand` non li esegue.)
 - **Due letture**: per ogni richiesta l'IA risponde SEMPRE con "Lettura algebrica" (formule e passaggi, calcoli
   esatti con SymPy) e "Lettura geometrica" (figura nell'applet + commento), quando il concetto lo consente.
-- **Cronologia**: elenca gli argomenti già trattati (titolo = prima domanda); clicca per riaprire una conversazione.
+- **Cronologia**: elenca gli argomenti già trattati (titolo = prima domanda); clicca per riaprire una conversazione. Ogni riga permette di **rinominare** l'argomento o di **eliminarlo** dopo una conferma.
 - **Memoria di stile (Stile)**: l'IA **impara come vuoi le spiegazioni** e se le **rilegge prima di ogni risposta**.
   Le preferenze si accumulano in `data/profile.json` in due modi: **l'IA le registra da sola** (tool `ricorda`) quando
   la correggi sullo stile o esprimi un gusto stabile, oppure **le aggiungi tu** dal pannello **Stile** (con eliminazione).
@@ -238,8 +238,8 @@ Ogni risposta che usa calcoli esatti mostra un riepilogo **SymPy: N calcoli esat
 - Aprire un argomento dallo Storico annulla lo stream precedente e ripristina messaggi, calcoli, costruzioni, modalità e stato GeoGebra. Il caricamento GeoGebra attende il callback; le scritture dello stato hanno revisioni monotone per ignorare snapshot vecchi arrivati tardi.
 - Test parser: `python test/test_sympy_cli.py -v`.
 - Math eval deterministico: `npm run eval` (17 casi SymPy, in CI).
-- Test rapidi senza server: `npm test` (135 check: 23 test dei moduli + 4 del loop agente + 6 chat-service + 3 observability + 2 provider fallback + 4 session recovery + 11 cronologia/backup scheduler + 45 security/sessione + 6 lock di istanza + 25 hardening + 6 restore + parser + smoke con CSRF, body cap, path traversal, modalit? core, API impostazioni, paginazione cronologia, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
-- Smoke browser: `npm run test:ui` (29 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, paginazione cronologia, backup a caldo, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view, quaderno parziali); richiede Edge/Chrome e `puppeteer-core`, in CI ? automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
+- Test rapidi senza server: `npm test` (166 check: 23 test dei moduli + 4 del loop agente + 6 chat-service + 3 observability + 2 provider fallback + 17 test connessione provider + 2 mapping LLM + 4 session recovery + 15 cronologia/backup scheduler + 51 security/sessione + 6 lock di istanza + 25 hardening + 6 restore + parser + smoke con CSRF, body cap, path traversal, modalit? core, API impostazioni, paginazione cronologia, schema/migrazione, JSON atomico/quarantena, persistenza, route feature, adapter/capability, diagnostica, versione, trace/request ID e lock di istanza); `npm run test:py` per SymPy.
+- Smoke browser: `npm run test:ui` (38 check: UI, service worker e ricarica offline, skip link, mobile senza overflow, state store, command bus/settings.open, paginazione/rinomina cronologia, conferma eliminazione, test provider, drawer accessibili con focus trap/apertura esclusiva/Escape/ripristino focus, install UI, backup a caldo, lazy plugin core/full, drawer Ripasso/Appunti/Stile, nuova chat, ripristino sessione/view, quaderno parziali); richiede Edge/Chrome e `puppeteer-core`, in CI ? automatico. `npm run test:xss` esegue 14 check XSS e `npm run test:switch` 1 check sul cambio conversazione, entrambi con server temporaneo autonomo.
 - Test server (cancellazione, revisioni legacy/ordinate e timeout): `node test/test_server_cancel.mjs` (usa solo una copia temporanea in `%LOCALAPPDATA%\Temp\opencode`).
 - Test trascrittore (protocollo worker e riutilizzo del modello): `node test/test_whisper.mjs` (con MathApp avviata).
 - Test UI (con MathApp già avviata su `127.0.0.1:8790`): `node test/test_conversation_restore.mjs`, `node test/test_conversation_switch.mjs`, `node test/test_geogebra_state.mjs`, `node test/test_geogebra_3d.mjs`, `node test/test_layout.mjs`, `node test/test_tutor.mjs`, `node test/test_review.mjs`, `node test/test_algebra_ui.mjs`, `node test/test_vista.mjs` e `node test/test_analisi.mjs`. Richiedono Puppeteer: `npm i -D puppeteer` oppure `MATHAPP_PUPPETEER=<path>`; `test/test_geogebra_3d.mjs` avvia Chrome con WebGL software per la vista 3D.

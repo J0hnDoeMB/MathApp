@@ -1986,7 +1986,7 @@ async function loadDiagnostics() {
 }
 
 const settingsUi = window.MathAppSettingsUI.create({
-  appState, $, applyMode, loadDiagnostics, modelEl, inputEl,
+  appState, $, applyMode, loadDiagnostics, modelEl, inputEl, flash,
 });
 const { loadSettings, saveSettings } = settingsUi;
 settingsUi.init();
@@ -2004,6 +2004,17 @@ MathAppState.handle("history.toggle", toggleHistory);
 MathAppState.handle("history.close", closeHistory);
 MathAppState.handle("history.search", async ({ q }) => { const el = $("#historySearch"); if (el && typeof q === "string") el.value = q; await refreshHistory(); return true; });
 MathAppState.handle("conversation.open", ({ id }) => openConv(id));
+MathAppState.handle("conversation.rename", async ({ id, title }) => {
+  if (!id || typeof title !== "string") throw new Error("titolo non valido");
+  const r = await fetch("/api/conversation/title", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, title }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || "rinomina non riuscita");
+  return j.title;
+});
 MathAppState.handle("conversation.delete", async ({ id }) => {
   if (!id) return false;
   await fetch("/api/conversation?id=" + encodeURIComponent(id), { method: "DELETE" });

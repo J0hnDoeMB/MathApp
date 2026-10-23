@@ -63,6 +63,8 @@ Feature modules con contratti espliciti, senza nuove UI in questa fase:
 - [x] accessibilità di base (skip link, focus) e smoke mobile 390 px
 - [x] documentazione per utenti finali completa (USER-GUIDE + USAGE)
 - [x] metriche di errore, first-token trace e diagnostica
+- [x] PWA installabile: manifest, icone 192/512/maskable, prompt di installazione e shell offline
+- [x] gestione sessioni: rinomina inline, conferma eliminazione e test provider dalle Impostazioni
 
 ## Regola di feature freeze
 

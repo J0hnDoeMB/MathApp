@@ -54,6 +54,8 @@ Per aggiungere anche la dettatura:
 .\setup.ps1 -Full
 ```
 
+Su Chrome/Edge puoi installare MathApp come app dal pulsante in **Impostazioni**: si apre in una finestra dedicata e la shell resta disponibile offline dopo il primo caricamento.
+
 ### macOS e Linux
 
 ```bash
@@ -90,7 +92,7 @@ dalla console del provider.
 ## 5. Usare la chat
 
 - Scrivi nella casella in basso: **Invio** invia, **Shift+Invio** va a capo.
-- **Stop** o `Esc` interrompe una risposta in corso.
+- **Stop** o `Esc` interrompe una risposta in corso (con un pannello aperto, `Esc` chiude prima il pannello).
 - **Rigenera** o `Alt+R` ripete l'ultima risposta senza riscrivere la domanda.
 - **Copia** copia una risposta in Markdown; un clic su una formula in blocco
   copia il LaTeX.
@@ -142,7 +144,7 @@ di funzione, statistica e regressione.
 - **Nuova chat** azzera conversazione, quaderno e allegati.
 - **Cronologia** riapre una conversazione con figure e calcoli; la ricerca
   accetta anche tag come `#verifica`. Se le conversazioni sono molte, **Mostra
-  altri** carica la pagina successiva (40 per volta).
+  altri** carica la pagina successiva (40 per volta). Ogni riga permette di rinominare la conversazione o eliminarla dopo conferma.
 
 La sessione è **persistente**: F5 non cancella conversazione, figure o quaderno.
 Se lo stato esatto manca, l'app prova a ricostruirlo dai comandi salvati.
@@ -195,7 +197,7 @@ test vedi [`ONBOARDING.md`](ONBOARDING.md) e [`QUALITY-GATE.md`](QUALITY-GATE.md
 |---|---|
 | `Invio` | invia |
 | `Shift+Invio` | nuova riga |
-| `Esc` | ferma la risposta |
+| `Esc` | chiude il pannello aperto o ferma la risposta |
 | `Alt+R` | rigenera |
 | `Alt+N` | nuova chat |
 | `Ctrl+K` | cursore nella casella |

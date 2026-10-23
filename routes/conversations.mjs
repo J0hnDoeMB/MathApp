@@ -1,5 +1,5 @@
 // Route di sessione, cronologia e stato GeoGebra.
-import { readSession, applyState, history, deleteSession, updateTags } from "../lib/session-store.mjs";
+import { readSession, applyState, history, deleteSession, updateTags, renameSession } from "../lib/session-store.mjs";
 
 function sendJson(res, status, value) {
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
@@ -37,6 +37,18 @@ export function handle(req, res, url) {
   if (req.method === "DELETE" && url.pathname === "/api/conversation") {
     deleteSession(url.searchParams.get("id") || "");
     sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/conversation/title") {
+    let b = "";
+    req.on("data", (c) => (b += c));
+    req.on("end", () => {
+      let body;
+      try { body = JSON.parse(b || "{}"); } catch { return sendJson(res, 400, { ok: false, error: "richiesta non valida" }); }
+      const result = renameSession(body.id, body.title);
+      sendJson(res, result.status, result);
+    });
     return true;
   }
 

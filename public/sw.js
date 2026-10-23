@@ -1,9 +1,14 @@
 // Offline shell + CDN cache. The app stays local-first: the service worker
 // only caches static GET assets, never /api traffic or user data.
-const VERSION = "mathapp-v4";
+const VERSION = "mathapp-v6";
 const SHELL = [
   "/",
   "/index.html",
+  "/manifest.webmanifest",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+  "/icons/apple-touch-icon.png",
   "/style.css",
   "/state.js",
   "/features.js",
@@ -15,6 +20,7 @@ const SHELL = [
   "/core/geo-view.js",
   "/core/history.js",
   "/core/settings-ui.js",
+  "/core/drawer-a11y.js",
   "/app.js",
 ];
 const CDN = [

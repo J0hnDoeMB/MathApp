@@ -1,18 +1,21 @@
 # Product scorecard
 
-Current state (v1.30.0):
+Current state (unreleased, after v1.30.0):
 
 | Metric | Current |
 |---|---|
 | Build/CI | Windows + Linux core matrix, branch protected |
-| Node checks | 135 |
-| UI smoke | 29 |
+| Node checks | 166 |
+| UI smoke | 38 |
 | XSS browser checks | 14 |
 | Conversation-switch checks | 1 |
 | GeoGebra smoke | 5 |
 | Python tests | 29 |
 | Portable CI | Node 18 / 20 / 22 on Linux + browser smoke |
-| Coverage | c8, 65% line gate (73.2% measured) |
+| Coverage | c8, 65% line gate (75.2% measured) |
+| PWA | manifest, 192/512/maskable icons, install prompt, offline shell |
+| Session management | paginated history, inline rename, delete confirmation |
+| Provider check | `POST /api/settings/test`, no key persistence or echo |
 | Real-provider eval | 5/5 (deepseek-v4-flash, 2026-10-21; optional, key-gated) |
 | Math eval cases | 17 |
 | Critical vulnerabilities | none known; no runtime npm deps |

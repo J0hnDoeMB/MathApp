@@ -1718,11 +1718,38 @@ body.theme-dark .cell-out.cell-err {
   font-size: 10px;
 }
 
-.hist-del {
+.hist-del,
+.hist-rename {
   flex: 0 0 auto;
   min-height: 26px;
   padding: 0 7px;
   font-size: 11px;
+}
+
+.hist-rename {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.hist-rename:hover {
+  border-color: var(--grid);
+  color: var(--ink);
+}
+
+.hist-title-input {
+  width: 100%;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid var(--signal);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+body.theme-dark .hist-title-input {
+  background: #101822;
 }
 
 .hist-more {
@@ -3031,6 +3058,29 @@ body.theme-dark #kbUpload { color: #101822; }
   flex-wrap: wrap;
 }
 #settingsMsg { color: var(--muted); font-size: 12px; }
+
+.settings-test {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: -6px;
+}
+
+.settings-test .settings-hint { flex: 1 1 180px; }
+
+.settings-install {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+.settings-install b { color: var(--ink); }
+.settings-install button { align-self: flex-start; }
 
 body.theme-dark .settings-body input,
 body.theme-dark .settings-body select { background: #101822; color: var(--ink); }

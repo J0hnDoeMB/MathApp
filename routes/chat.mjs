@@ -1,5 +1,6 @@
 // Route di chat, spiegazione e conferme GeoGebra.
-import { MODELS } from "../lib/models.mjs";
+import { pickModelForProvider } from "../lib/models.mjs";
+import { providerName } from "../lib/config.mjs";
 import { streamWithEscalation } from "../lib/agent.mjs";
 import { EXPLAIN_PROMPT } from "../lib/prompts.mjs";
 import { resolveGGB } from "../lib/geogebra.mjs";
@@ -40,7 +41,7 @@ if (req.method === "POST" && url.pathname === "/api/geogebra-result") {
       const result = String(body.result || "").slice(0, 3000);
       const latex = String(body.latex || "").slice(0, 1500);
       if (!expr) { res.writeHead(400); return res.end('{"error":"espressione mancante"}'); }
-      const model = MODELS.includes(body.model) ? body.model : MODELS[0];
+      const model = pickModelForProvider(providerName(), body.model);
       // L'istruzione critica va anche ACCANTO alla richiesta: cosi' il modello la segue davvero.
       const guardia = "[ISTRUZIONE — scrivi solo la spiegazione finale in italiano, senza raccontare cosa stai per fare e senza inglese.]\n\n";
       const userMsg = `${guardia}Operazione: ${op || "calcolo"}\nEspressione: ${expr}\nRisultato esatto: ${result || "(vedi LaTeX)"}${latex ? "\nLaTeX del risultato: " + latex : ""}\n\nSpiega i passaggi.`;

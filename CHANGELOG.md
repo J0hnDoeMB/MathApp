@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Installable PWA: `manifest.webmanifest`, 192/512/maskable icons, Apple touch icon, install prompt in Settings and manifest/assets cached by the offline service worker.
+- "Testa connessione" in Settings with `POST /api/settings/test`: verifies the selected provider and model with a minimal request, uses a typed key without saving it, and never echoes the key.
+- Rename conversations inline from the history drawer (`POST /api/conversation/title`) and require confirmation before deleting one.
+- Accessible drawers: dialog semantics, initial focus, circular focus trap, exclusive opening, Escape to close and focus restore.
+
+### Changed
+- Service-worker cache bumped to `mathapp-v6`; static MIME types now include manifest, PNG, SVG, ICO, WOFF2 and PDF.
+- Settings, chat, agent and `/api/models` select models per provider; switching provider without a new key clears the previous provider key instead of reusing it.
+- OpenRouter mapping is explicit: an unmapped model raises `MODEL_NOT_AVAILABLE` instead of silently using a default model.
+
+### Tests
+- 166 Node checks, 38 UI smoke checks, 14 XSS, 1 conversation-switch, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage 75.2%.
+
 ## v1.30.0 - 2026-10-22
 
 ### Security

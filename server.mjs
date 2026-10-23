@@ -1,6 +1,7 @@
 // MathApp server - guscio HTTP: sicurezza, route API, statici e avvio.
 import http from "node:http";
-import { settings as SETTINGS, getKey } from "./lib/config.mjs";
+import { settings as SETTINGS, getKey, providerName } from "./lib/config.mjs";
+import { pickModelForProvider } from "./lib/models.mjs";
 import { applySecurityHeaders, guardRequest } from "./lib/security.mjs";
 import { logErr } from "./lib/log.mjs";
 import { scheduleBackups } from "./lib/storage.mjs";
@@ -17,6 +18,12 @@ const instanceLock = acquireInstanceLock({ port: PORT });
 if (!instanceLock.ok) {
   console.error("MathApp: " + instanceLock.error + ". Close the other instance or set MATHAPP_DATA_DIR to a different directory.");
   process.exit(1);
+}
+
+const startModel = pickModelForProvider(providerName(), SETTINGS.model);
+if (startModel && startModel !== SETTINGS.model) {
+  console.warn(`MathApp: modello "${SETTINGS.model}" non disponibile per ${providerName()}; uso "${startModel}".`);
+  SETTINGS.model = startModel;
 }
 
 // ---------- http ----------

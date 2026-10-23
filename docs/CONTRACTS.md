@@ -22,7 +22,13 @@ stream({ sessionId, payload }, send, signal) -> { content, toolCalls, usage }
 generate(messages, { maxTokens, signal }) -> { text, usage }
 cancel(sessionId) -> void
 ```
-Adapter: `lib/llm.mjs` (OpenRouter/OpenCode, fallback). Gli errori di provider espongono messaggio leggibile; il chiamante decide il fallback.
+Adapter: `lib/llm.mjs` (OpenRouter/OpenCode, fallback). Gli errori di provider espongono messaggio leggibile; il chiamante decide il fallback. Un modello non mappato per OpenRouter viene rifiutato con `MODEL_NOT_AVAILABLE`, mai sostituito in silenzio con un default.
+
+### ProviderConnectionTest
+```text
+testProviderConnection({ provider, model, apiKey? }) -> { status, ok, provider, model, mappedModel?, latencyMs?, reply?, error? }
+```
+Adapter: `lib/llm.mjs`. Usa la chiave digitata solo per la richiesta, non la salva e non la restituisce; nessun fallback tra provider. Rifiuta 400 se provider, modello o chiave non sono compatibili; la chiave salvata vale solo per il provider salvato; se il provider cambia senza una nuova chiave, quella precedente viene rimossa e non riusata. Timeout `MATHAPP_PROVIDER_TEST_TIMEOUT_MS` (default 20 s).
 
 ### MathEngine
 ```text
@@ -56,6 +62,7 @@ read(id) -> Session|null
 applyState(rawState) -> { ok, stale?, error? }
 list() -> SessionSummary[]
 history(query, { limit = 50, offset = 0 } = {}) -> { items: SessionSummary[], total, offset, limit, hasMore }
+rename(id, title) -> { status, ok, title?, error? }
 delete(id) -> void
 updateTags(id, tag, action) -> { status, ok, tags?, error? }
 ```
@@ -125,7 +132,7 @@ MathAppState.handle(name, fn)
 MathAppState.dispatch(name, payload) -> Promise
 // events: command:<name>, command:done:<name>, command:error:<name>
 ```
-Commands: `session.new`, `chat.send`, `session.restore`, `settings.open`, `settings.toggle`, `settings.save`, `settings.clearKey`, `settings.close`, `view.mode`, `view.toggle3d`, `chat.stop`, `chat.regenerate`, `theme.toggle`, `tutor.toggle`, `tutor.off`, `history.toggle`, `history.close`, `history.search`, `conversation.open`, `conversation.delete`, `backup.create`, `export.pdf`, `export.markdown`, `export.notebook`, `diagnostics.refresh`, `model.select`. UI events call dispatch; application handlers mutate state.
+Commands: `session.new`, `chat.send`, `session.restore`, `settings.open`, `settings.toggle`, `settings.save`, `settings.test`, `settings.clearKey`, `settings.close`, `view.mode`, `view.toggle3d`, `chat.stop`, `chat.regenerate`, `theme.toggle`, `tutor.toggle`, `tutor.off`, `history.toggle`, `history.close`, `history.search`, `conversation.open`, `conversation.rename`, `conversation.delete`, `backup.create`, `export.pdf`, `export.markdown`, `export.notebook`, `diagnostics.refresh`, `model.select`. UI events call dispatch; application handlers mutate state.
 Implementation: `public/state.js`. `app.js` uses `MathAppState` directly; no legacy global state.
 
 ### Client core modules

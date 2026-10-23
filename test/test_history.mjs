@@ -51,6 +51,12 @@ try {
   const tagged = store.history("#esame", { limit: 50, offset: 0 });
   chk("history: ricerca per tag", tagged.total === 1 && tagged.items[0].id === "s0");
 
+  const renamed = store.renameSession("s1", "  Nuovo   titolo  ");
+  chk("history: rinomina normalizza il titolo", renamed.status === 200 && renamed.title === "Nuovo titolo" && store.readSession("s1").title === "Nuovo titolo");
+  chk("history: rinomina aggiorna la lista", store.listSessions().find((s) => s.id === "s1")?.title === "Nuovo titolo");
+  chk("history: rinomina rifiuta titolo vuoto", store.renameSession("s1", "   ").status === 400);
+  chk("history: rinomina sessione assente", store.renameSession("missing", "Titolo").status === 404);
+
   store.deleteSession("s0");
   chk("history: delete invalida la cache", store.listSessions().length === 4 && store.history("", {}).total === 4);
 

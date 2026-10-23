@@ -63,6 +63,13 @@ try {
 
   const home = await request(port, "GET", "/");
   chk("GET / -> 200 con UI", home.status === 200 && /Impostazioni/.test(home.body));
+  chk("PWA: manifest collegato", /rel="manifest"/.test(home.body));
+  const manifest = await request(port, "GET", "/manifest.webmanifest");
+  let manifestJson = {};
+  try { manifestJson = JSON.parse(manifest.body); } catch {}
+  chk("PWA: manifest servito", manifest.status === 200 && String(manifest.headers["content-type"]).includes("manifest+json") && manifestJson.short_name === "MathApp" && manifestJson.icons.length >= 3);
+  const icon = await request(port, "GET", "/icons/icon-192.png");
+  chk("PWA: icona 192 servita", icon.status === 200 && icon.headers["content-type"] === "image/png" && icon.body.length > 500);
 
   const s0 = await request(port, "GET", "/api/settings");
   const j0 = JSON.parse(s0.body);
@@ -165,6 +172,12 @@ try {
   const noId = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ revision: 1 }) });
   chk("state: id mancante -> 400", noId.status === 400);
   await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...stateBody, id: "state-test-2", revision: 1 }) });
+  const rename = await request(port, "POST", "/api/conversation/title", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: stateId, title: "  Titolo   rinominato  " }) });
+  chk("conversation/title -> 200", rename.status === 200 && JSON.parse(rename.body).title === "Titolo rinominato");
+  const renameBad = await request(port, "POST", "/api/conversation/title", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: stateId, title: " " }) });
+  chk("conversation/title vuoto -> 400", renameBad.status === 400);
+  const renameMissing = await request(port, "POST", "/api/conversation/title", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "missing", title: "Titolo" }) });
+  chk("conversation/title assente -> 404", renameMissing.status === 404);
   const history = await request(port, "GET", "/api/history");
   const histJson = JSON.parse(history.body);
   chk("history includes persisted session", history.status === 200 && histJson.items.some((it) => it.id === stateId && it.cells === 1));
