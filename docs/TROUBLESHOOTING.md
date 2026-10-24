@@ -3,7 +3,7 @@
 ## Il server non parte
 - **Node mancante o troppo vecchio**: serve Node 18+ (22.5+ consigliato). `node -v`.
 - **Porta occupata**: un'altra istanza è già in ascolto. Chiudila oppure usa `MATHAPP_PORT=8791` (e apri `http://127.0.0.1:8791`).
-- **"another instance is already using ..."**: c'? gi? un processo sulla stessa data directory. Chiudilo; per test o istanze parallele usa una `MATHAPP_DATA_DIR` diversa. Il lock (`data/.mathapp-instance.lock`) viene recuperato da solo se il PID non ? pi? attivo.
+- **"another instance is already using ..."**: c'è già un processo sulla stessa data directory. Chiudilo; per test o istanze parallele usa una `MATHAPP_DATA_DIR` diversa. Il lock (`data/.mathapp-instance.lock`) viene recuperato da solo se il PID non è più attivo.
 - **Errore all'avvio**: controlla `mathapp.log` nella cartella dell'app; la console stampa un messaggio chiaro.
 
 ## Python / SymPy non ci sono
