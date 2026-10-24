@@ -62,11 +62,11 @@ CI su Windows e Linux (Node 18/20/22) con branch protection. Diagnostica: `GET /
 
 ## Documentazione
 
-- [Guida completa](docs/USAGE.md) ? [Contributing](CONTRIBUTING.md) ? [Security](SECURITY.md)
+- [Guida completa](docs/USAGE.md)  [Contributing](CONTRIBUTING.md)  [Security](SECURITY.md)
 - [Architettura](docs/ARCHITECTURE.md) · [Contratti](docs/CONTRACTS.md) · [Modello dati](docs/DATA-MODEL.md) · [Persistenza](docs/PERSISTENCE.md)
 - [Capabilities](docs/CAPABILITIES.md) · [Sicurezza](docs/SECURITY-MODEL.md) · [Performance](docs/PERFORMANCE.md) · [Scorecard](docs/SCORECARD.md)
 - [Setup Windows](docs/SETUP-WINDOWS.md) · [Setup macOS/Linux](docs/SETUP-MACOS-LINUX.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Quality gate](docs/QUALITY-GATE.md) ? [Release](docs/RELEASE.md) ? [Osservabilit?](docs/OBSERVABILITY.md) ? [Limiti noti](docs/KNOWN-LIMITATIONS.md) ? [ADR](docs/adr/)
+- [Quality gate](docs/QUALITY-GATE.md)  [Release](docs/RELEASE.md)  [Osservability](docs/OBSERVABILITY.md)  [Limiti noti](docs/KNOWN-LIMITATIONS.md)  [ADR](docs/adr/)
 
 ## Struttura
 
@@ -80,4 +80,4 @@ eval/             casi matematici deterministici
 docs/             guide, contratti e decisioni
 ```
 
-Licenza MIT. Nessun dato personale nel repository.
+Licenza MIT.
