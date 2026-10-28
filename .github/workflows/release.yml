@@ -1,4 +1,4 @@
-﻿name: release
+name: release
 
 on:
   push:
@@ -73,7 +73,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: mathapp-release
           path: release
