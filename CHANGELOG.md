@@ -14,7 +14,7 @@
 - OpenRouter mapping is explicit: an unmapped model raises `MODEL_NOT_AVAILABLE` instead of silently using a default model.
 
 ### Tests
-- 166 Node checks, 38 UI smoke checks, 14 XSS, 1 conversation-switch, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage 75.2%.
+- 170 Node checks, 38 UI smoke checks, 14 XSS, 1 conversation-switch, 5 GeoGebra, 29 Python, 17 deterministic eval; coverage 75.2%.
 
 ## v1.30.0 - 2026-10-22
 

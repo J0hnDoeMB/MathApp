@@ -1,6 +1,6 @@
 // Route della configurazione e diagnostica.
 import { settings as SETTINGS, providerName, keySource, currentKey, keyForProvider, saveSettingsFile } from "../lib/config.mjs";
-import { MODEL_VISION, VISION_FALLBACK, modelsForProvider, isModelForProvider } from "../lib/models.mjs";
+import { MODEL_VISION, visionModelForProvider, modelsForProvider, isModelForProvider } from "../lib/models.mjs";
 import { setWhisperLanguage } from "../lib/audio.mjs";
 import { normalizeLevel } from "../lib/levels.mjs";
 import { scheduleBackups } from "../lib/storage.mjs";
@@ -18,7 +18,7 @@ export function handle(req, res, url, ctx) {
     const def = (SETTINGS.model && list.includes(SETTINGS.model)) ? SETTINGS.model : list[0];
     const hasKey = provider === providerName() ? keySource() !== "none" : !!keyForProvider(provider);
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
-    return res.end(JSON.stringify({ models: list, default: def, provider, savedProvider: providerName(), hasKey, vision: MODEL_VISION, visionFallback: VISION_FALLBACK }));
+    return res.end(JSON.stringify({ models: list, default: def, provider, savedProvider: providerName(), hasKey, vision: MODEL_VISION, visionFallback: visionModelForProvider(provider) }));
   }
   if (req.method === "GET" && url.pathname === "/api/traces") {
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });

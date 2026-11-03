@@ -74,6 +74,7 @@ try {
   const s0 = await request(port, "GET", "/api/settings");
   const j0 = JSON.parse(s0.body);
   chk("GET /api/settings -> provider openrouter senza chiave", j0.ok === true && j0.provider === "openrouter" && j0.hasKey === false);
+  chk("avvio senza settings.model non stampa falso warning undefined", !/modello "undefined"/.test(log), log);
   chk("X-Request-Id presente", /^req_/.test(String(s0.headers["x-request-id"] || "")));
   chk("default mode -> core", j0.mode === "core");
   chk("default level -> auto", j0.level === "auto");
@@ -162,7 +163,7 @@ try {
   chk("conversation/state -> 200", stateSave.status === 200 && JSON.parse(stateSave.body).ok === true);
   const stateGet = await request(port, "GET", `/api/conversation?id=${encodeURIComponent(stateId)}`);
   const saved = JSON.parse(stateGet.body);
-  chk("session persistence: ggb/cells/view/schema", stateGet.status === 200 && saved.ggb === "<ggb/>" && saved.cells.length === 1 && saved.view && saved.view.xmin === -5 && saved.stateRevision === 1 && saved.schemaVersion === 1);
+  chk("session persistence: ggb/cells/view/schema", stateGet.status === 200 && saved.ggb === "<ggb/>" && saved.model === "deepseek-v4-flash" && saved.cells.length === 1 && saved.view && saved.view.xmin === -5 && saved.stateRevision === 1 && saved.schemaVersion === 1);
   const stale = await request(port, "POST", "/api/conversation/state", { origin: base, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...stateBody, ggb: "<stale/>" }) });
   const staleJson = JSON.parse(stale.body);
   const afterStale = JSON.parse((await request(port, "GET", `/api/conversation?id=${encodeURIComponent(stateId)}`)).body);

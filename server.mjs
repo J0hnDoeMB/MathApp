@@ -22,7 +22,9 @@ if (!instanceLock.ok) {
 
 const startModel = pickModelForProvider(providerName(), SETTINGS.model);
 if (startModel && startModel !== SETTINGS.model) {
-  console.warn(`MathApp: modello "${SETTINGS.model}" non disponibile per ${providerName()}; uso "${startModel}".`);
+  if (SETTINGS.model) {
+    console.warn(`MathApp: modello "${SETTINGS.model}" non disponibile per ${providerName()}; uso "${startModel}".`);
+  }
   SETTINGS.model = startModel;
 }
 

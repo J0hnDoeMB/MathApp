@@ -5,7 +5,7 @@ Current state (unreleased, after v1.30.0):
 | Metric | Current |
 |---|---|
 | Build/CI | Windows + Linux core matrix, branch protected |
-| Node checks | 166 |
+| Node checks | 170 |
 | UI smoke | 38 |
 | XSS browser checks | 14 |
 | Conversation-switch checks | 1 |

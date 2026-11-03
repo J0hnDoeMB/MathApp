@@ -65,6 +65,11 @@ const upstream = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: "invalid key: " + lastAuth }));
       return;
     }
+    if (upstreamMode === "quiz") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: '[{"d":"Derivata di x^2?","opts":["x","2x","x^2","2"],"ok":1,"why":"regola"}]' } }] }));
+      return;
+    }
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: "OK" } }] }));
   });
@@ -163,6 +168,17 @@ try {
   const toOR = await postSettings({ provider: "openrouter" });
   const toORBody = JSON.parse(toOR.body);
   chk("settings: cambio provider sceglie modello compatibile", toOpenCode.status === 200 && toOR.status === 200 && toORBody.provider === "openrouter" && toORBody.model !== "space-bunny", toOR.body);
+
+  await postSettings({ mode: "full", provider: "openrouter", model: "qwen3.8-flash", apiKey: secret });
+  upstreamMode = "quiz";
+  const quizRes = await request(port, "POST", "/api/quiz", {
+    origin: base,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ topic: "derivate", n: 3 }),
+  });
+  const quizBody = JSON.parse(quizRes.body);
+  upstreamMode = "ok";
+  chk("study: /api/quiz usa il modello configurato per il provider", quizRes.status === 200 && quizBody.ok === true && quizBody.model === "qwen3.8-flash" && lastPayload && lastPayload.model === "qwen/qwen3.8-flash", quizRes.body);
 } finally {
   try { await fetch(`http://127.0.0.1:${port}/__test_shutdown`, { method: "POST", signal: AbortSignal.timeout(1000) }); } catch {}
   await new Promise((r) => setTimeout(r, 600));

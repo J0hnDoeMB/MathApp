@@ -46,7 +46,7 @@ Apri `http://127.0.0.1:8790`. `setup.ps1`/`start-mathapp.ps1` sono solo Windows;
 
 ```bash
 npm run lint      # ESLint (no-undef e regole di correttezza)
-npm test          # 166 check Node
+npm test          # 170 check Node
 npm run test:ui   # 38 check browser (richiede Edge/Chrome + puppeteer-core)
 npm run test:xss  # 14 check browser XSS (richiede Edge/Chrome + puppeteer-core)
 npm run test:switch # 1 check cambio conversazione (richiede Edge/Chrome + puppeteer-core)

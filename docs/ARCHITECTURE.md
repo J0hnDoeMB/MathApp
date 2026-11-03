@@ -106,7 +106,7 @@ External I/O is isolated in `lib/llm.mjs`:
 
 - `npm run eval`: 17 deterministic SymPy cases (`eval/`).
 - `npm run lint`: ESLint correctness rules (`no-undef`, unreachable/duplicate keys, and related checks).
-- `npm test`: 166 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 17 provider connection + 2 LLM model mapping + 4 session recovery + 15 history/backup scheduler + 51 security/session + 6 instance lock + 25 hardening + 6 restore + 2 parser).
+- `npm test`: 170 checks (23 module + 4 agent + 6 chat-service + 3 observability + 2 provider fallback + 18 provider connection + 4 LLM model mapping + 4 session recovery + 15 history/backup scheduler + 52 security/session + 6 instance lock + 25 hardening + 6 restore + 2 parser).
 - `npm run test:ui`: 38 browser smoke checks (UI, service-worker offline shell, skip link, mobile 390 px overflow/composer, state store, command bus, settings open/save including provider test, install UI and backup interval, history pagination/rename/delete confirmation, lazy plugins core/full, accessible drawers with focus trap/exclusive opening/Escape/focus restore, new chat, session restore, view, algebra partials); CI uses puppeteer-core with Edge/Chrome; Linux uses headless Chrome.
 - `npm run test:xss`: 14 self-contained browser checks (Markdown, tools, LaTeX) with a temporary server, in CI.
 - `npm run test:geo`: 5 GeoGebra checks (build, base64, state save, reload rebuild).

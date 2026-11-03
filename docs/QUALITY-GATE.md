@@ -26,7 +26,7 @@ Gli extra restano dietro il gate core/full e, per la UI, dietro il loader `publi
 ## Gate di qualità
 
 1. `npm run lint` verde (ESLint, `no-undef` e regole di correttezza).
-2. `npm test` verde: **166 check** (23 moduli, 4 agente, 6 chat-service, 3 observability, 2 provider fallback, 17 test connessione provider, 2 mapping LLM, 4 session recovery, 15 cronologia/backup scheduler, 51 security/sessione, 6 lock di istanza, 25 hardening, 6 restore, 2 parser).
+2. `npm test` verde: **170 check** (23 moduli, 4 agente, 6 chat-service, 3 observability, 2 provider fallback, 18 test connessione provider, 4 mapping LLM, 4 session recovery, 15 cronologia/backup scheduler, 52 security/sessione, 6 lock di istanza, 25 hardening, 6 restore, 2 parser).
 3. `npm run test:ui` verde: **38 check** browser (skip link, mobile 390 px, paginazione/rinomina cronologia, conferma eliminazione, test provider, drawer accessibili con focus trap/apertura esclusiva/Escape/ripristino focus, install UI e backup a caldo inclusi).
 4. `npm run test:xss` verde: **14 check** XSS self-contained.
 5. `npm run test:switch` verde: **1 check** cambio conversazione self-contained.

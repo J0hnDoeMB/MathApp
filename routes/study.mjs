@@ -1,6 +1,7 @@
 // Studio: flashcard e quiz.
 import crypto from "node:crypto";
-import { MODELS } from "../lib/models.mjs";
+import { pickModelForProvider } from "../lib/models.mjs";
+import { settings as SETTINGS, providerName } from "../lib/config.mjs";
 import { kbLoad, kbChunks } from "../lib/kb.mjs";
 import { readReview, writeReview } from "../lib/storage.mjs";
 import { flashcardPrompt, quizPrompt, generateFlashcards, generateQuiz } from "../lib/study.mjs";
@@ -21,7 +22,7 @@ export function handle(req, res, url) {
         if (testo.length < 40) { res.writeHead(400, { "Content-Type": "application/json" }); return res.end('{"ok":false,"error":"il documento non ha testo indicizzato (immagine o scansione)"}'); }
         const prompt = flashcardPrompt(testo, n);
         if (dry) { res.writeHead(200, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ ok: true, dry: true, prompt })); }
-        const model = MODELS[0];
+        const model = pickModelForProvider(providerName(), SETTINGS.model);
         const { cards } = await generateFlashcards({ text: testo, n, model });
         if (!cards.length) { res.writeHead(502, { "Content-Type": "application/json" }); return res.end('{"ok":false,"error":"il modello non ha prodotto flashcard leggibili"}'); }
         const list = readReview();
@@ -56,7 +57,7 @@ export function handle(req, res, url) {
         const quante = Math.max(3, Math.min(10, Number(n) || 5));
         const prompt = quizPrompt(arg, n);
         if (dry) { res.writeHead(200, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ ok: true, dry: true, prompt })); }
-        const model = MODELS[0];
+        const model = pickModelForProvider(providerName(), SETTINGS.model);
         const { questions } = await generateQuiz({ topic: arg, n, model });
         if (!questions.length) { res.writeHead(502, { "Content-Type": "application/json" }); return res.end('{"ok":false,"error":"il modello non ha prodotto domande leggibili, riprova"}'); }
         res.writeHead(200, { "Content-Type": "application/json" });
